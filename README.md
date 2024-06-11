@@ -11,6 +11,8 @@ More details on the two different versions can be found in the respective folder
 
 **NOTE**: This is work in progress! Don't expect things to be complete. Use at your own risk.
 
+### License
+See LICENSE file.
 
 ### Acknowledgments
 The work presented in this repository is part of the [CROSSCON project](https://crosscon.eu/) that received funding from the European Union’s Horizon Europe research and innovation programme under grant agreement No 101070537.
