@@ -154,6 +154,9 @@ Following, there is a list of instructions and broad guidelines on how to compil
         - `8bit2dimMatrix/`: instrumented and correctly working.
         - `16bit2dimMatrix/`: instrumented and correctly working.
         
+## Licensing
+
+See the LICENSE file in the top-level directory.
 
 # Introduction
 nonMPU-BareMetal-TEE is a bare-metal Trusted Execution Environment (TEE) for low-end embedded systems with no support to MMU/MPU. As a TEE, nonMPU-BareMetal-TEE creates a new execution environments where secure software can run without interference from the untrusted software. We refer to these two environments as the TEE and the Unstrusted Environment (UE). These two environments coexist on the device and are separated by nonMPU-BareMetal-TEE' software-based primitives, which ensure that the TEE is completely isolated from the UE. 

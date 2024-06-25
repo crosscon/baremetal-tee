@@ -43,7 +43,7 @@ The OS folder, which include the code code of the system, is organized as follow
 
 ## Licensing
 
-TODO: Add the part about the licenses
+See the LICENSE file in the top-level directory.
 
 ## Configuration, Usage and Development of applications for MCU Fortifier
 
