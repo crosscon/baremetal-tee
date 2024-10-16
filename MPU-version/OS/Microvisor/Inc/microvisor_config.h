@@ -7,8 +7,8 @@ extern const uint8_t license[LICENSE_LEN];	// MCU-Fortifier license
 extern const uint32_t firmware_size;	// user application size
 
 /* Network Connection Configuration */
-#define SSID		"OpenWrt"
-#define PASSWORD	"cavallari"
+#define SSID		"test"
+#define PASSWORD	"ciao1234"
 
 /* Update Server Connection Configuration */
 #define READ_TIMEOUT 3000	// socket read timeout in ms

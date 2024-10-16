@@ -10,8 +10,6 @@
 #define ERROR_PPB_ACCESS 3	// Error during PPB access recovery
 #define ERROR_REGISTER_SIM 4	// Invalid register used during simulated instruction
 #define ERROR_MPU_VIOLATION 5	// MPU violation error
-#define ERROR_INVALID_LICENSE 6		// License is not valid
-#define ERROR_LICENSE_LIMIT_EXCEEDED 7	// License exceeded number of MCU that can be activated
 
 /* Error associated data length (in words) */
 #define ERROR_NONE_DATA_LEN 0
@@ -20,8 +18,6 @@
 #define ERROR_PPB_ACCESS_DATA_LEN 0
 #define ERROR_REGISTER_SIM_DATA_LEN 0
 #define ERROR_MPU_VIOLATION_DATA_LEN 6
-#define ERROR_INVALID_LICENSE_LEN 0
-#define ERROR_LICENSE_LIMIT_EXCEEDED_LEN 0
 
 /* Function to return the length of the error given its ID */
 uint32_t error_data_len_from_id(uint32_t error_id);

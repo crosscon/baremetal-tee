@@ -1,7 +1,6 @@
 #include "ota.h"
 #include "mbedtls/sha256.h"
 #include "stm32l4xx_hal.h"
-#include "activator.h"
 #include "permanent_storage.h"
 #include "memory_map.h"
 #include "microvisor_config.h"

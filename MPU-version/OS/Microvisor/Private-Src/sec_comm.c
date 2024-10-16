@@ -1,6 +1,5 @@
 #include "sec_comm.h"
 #include "wifi_wrapper.h"
-#include "activator.h"
 
 #define PACKET_LEN_BYTES 4	// bytes indicating packet size (4 = 32 bit unsigned integer)
 

@@ -199,16 +199,19 @@ __attribute__((naked)) void Exception_Return_Handler(unsigned int* auto_frame) {
 	__asm__(
 		"ldr r2, [r0, #24]\n"	// load faulty address (PC value before exception)
 		
-		/* Check if a exception return was requested (by comparing with address boundries)*/
-		/* The addresses boundries are defined globally when simulating an exception */
+		/** 
+		  * Check if a exception return was requested after the execution of a deprioritized handler
+		  * This is done by comparing the address that caused the Hard Fault with boundries
+		  * The addresses boundries are defined globally when simulating an exception 
+		*/
 		"ldr r3, =EXC_RET_START\n"
 		"cmp r2, r3\n"
-		"blo .NO_EXC_RET_REQUESTED\n" // PC is less than EXC_RET_START, no exception return was requested (return)
+		"blo .NO_EXC_RET_REQUESTED\n" // PC is less than EXC_RET_START, no exception return was requested
 		"ldr r3, =EXC_RET_END\n"
 		"cmp r2, r3\n"
-		"bhi .NO_EXC_RET_REQUESTED\n" // PC is greater than EXC_RET_END, no exception return was requested (return)
+		"bhi .NO_EXC_RET_REQUESTED\n" // PC is greater than EXC_RET_END, no exception return was requested
 
-		/* Exception return requested */
+		/* Exception return from deprioritezed handler requested */
 		"add sp, #4\n"	// remove pushed LR (before function call) form MSP
 		"cmp sp, r0\n"	// check where auto_frame is stored
 		"itee eq\n"
@@ -231,11 +234,49 @@ __attribute__((naked)) void Exception_Return_Handler(unsigned int* auto_frame) {
 		"msr BASEPRI, r3\n"
 		/* Disable PRIMASK */
 		"cpsie i\n"
-		/* Write EXC_RETURN value to LR */
+		/* Write EXC_RETURN value to LR to perform the return from the exception */
 		"pop {lr}\n"
 		
-		/* Perform return */
+		/**
+		 *  No exeption return requested, check if a return from a Global Platform API was requested instead 
+		 *  This is done by comparing the address that caused the Hard Fault with boundries
+		 *  The addresses boundries are defined globally when calling the API 
+		 */
 		".NO_EXC_RET_REQUESTED:\n"
+		"ldr r3, =API_RET_START\n"
+		"cmp r2, r3\n"
+		"blo .NO_API_RET_REQUESTED\n" // PC is less than API_RET_START, no return from api call was requested (return)
+		"ldr r3, =API_RET_END\n"
+		"cmp r2, r3\n"
+		"bhi .NO_API_RET_REQUESTED\n" // PC is greater than API_RET_END, no return from api call was requested (return)
+
+		/* API return requested */
+		"add sp, #4\n"	// remove pushed LR (before function call) form MSP
+		"cmp sp, r0\n"	// check where auto_frame is stored
+		"itee eq\n"
+		"addeq sp, #32\n"	// auto_frame stored on MSP, remove it
+		"addne r0, #32\n"	// auto_frame stored on PSP: decrease pointer
+		"msrne PSP, r0\n"	// and update PSP
+
+		/* Clear CFSR (Configurable Fault Status Register) as the value was changed by the HardFault triggered on purpose */
+		"ldr r2, =0xE000ED28\n" 
+		"ldr r3, =0xFFFFFFFF\n" // clear all bits
+		"str r3, [r2]\n"
+
+		/* Read and set BASEPRI */
+		"pop {r3}\n"
+		"msr BASEPRI, r3\n"
+		/* Disable PRIMASK */
+		"cpsie i\n"
+		/** 
+		 * Reconfigure back the MPU to the original configuration used before the API call
+		 * This enforce isolation and separation between TA and client applications
+		 */
+		"blx Configure_MPU\n"
+		/* Write EXC_RETURN value to LR to perform the return from the exception (to the code called before the API call) */
+		"pop {lr}\n"
+
+		".NO_API_RET_REQUESTED:\n"
 		"bx lr\n"
 	);
 }

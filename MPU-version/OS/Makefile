@@ -1,5 +1,5 @@
 ##########################################################################################################################
-# Author: Giuliani Daniele
+# Authors: Giuliani Daniele, Emanuele Beozzo
 ##########################################################################################################################
 
 ######################################
@@ -12,7 +12,7 @@ MICROVISOR_ELF = $(PROJECT_NAME).elf
 ######################################
 # GNU Arm Embedded Toolchain Path
 ######################################
-GCC_PATH = /home/beaglehot/gcc-arm-none-eabi-10-2020-q4-major/bin
+GCC_PATH = /home/emanuele/st/stm32cubeide_1.15.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.12.3.rel1.linux64_1.0.200.202406132123/tools/bin
 PREFIX = arm-none-eabi-
 
 ######################################
@@ -30,6 +30,38 @@ OPT = -Og
 LIB_DIR = Lib
 BUILD_DIR = Build
 TEMP_DIR = Build-Lib
+TA1_BUILD_DIR = $(BUILD_DIR)/TA/TA1
+TA2_BUILD_DIR = $(BUILD_DIR)/TA/TA2
+
+
+# First TA main file path and include path
+TA1 = TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c
+TA1_INCLUDE = \
+-ITAs/bitcoin-wallet-ta \
+-ITAs/bitcoin-wallet-ta/include \
+-ITAs/bitcoin-wallet-ta/crypto \
+
+# Second TA main file path and include path
+TA2 = TAs/ta2/ta2.c
+TA2_INCLUDE = -ITAs/ta2/include
+
+
+######################################
+# TA1 code (Bitcoin Wallet TA) and TA2 code
+######################################
+TA1_C_SOURCES = \
+TAs/bitcoin-wallet-ta/bip39.c \
+TAs/bitcoin-wallet-ta/bip32.c \
+TAs/bitcoin-wallet-ta/crypto/sha2.c \
+TAs/bitcoin-wallet-ta/crypto/ecdsa.c \
+TAs/bitcoin-wallet-ta/crypto/hmac.c \
+TAs/bitcoin-wallet-ta/crypto/secp256k1.c \
+TAs/bitcoin-wallet-ta/crypto/ta_ripemd160.c \
+TAs/bitcoin-wallet-ta/crypto/memzero.c \
+TAs/bitcoin-wallet-ta/crypto/bignum.c \
+TAs/bitcoin-wallet-ta/crypto/pbkdf2.c \
+
+TA2_C_SOURCES = \
 
 ######################################
 # Microvisor code
@@ -46,13 +78,20 @@ Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rcc_ex.c \
 Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr.c \
 Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_pwr_ex.c \
 Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_gpio.c \
+Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_qspi.c \
 Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_spi.c \
 Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_dma.c \
 Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash.c \
 Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_flash_ex.c \
+Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart.c \
+Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_uart_ex.c \
 Middlewares/Wifi/Src/es_wifi_io.c \
 Middlewares/Wifi/Src/es_wifi.c \
 Middlewares/Wifi/Src/wifi.c \
+Middlewares/cJSON/src/cJSON.c \
+Middlewares/cJSON/src/cJSON_Utils.c \
+$(TA1) \
+$(TA2) \
 
 MICROVISOR_ASM_SOURCES = \
 startup_bootloader.s \
@@ -70,7 +109,6 @@ Microvisor/Private-Src/PPB_recovery.c \
 Microvisor/Private-Src/simulator_common.c \
 Microvisor/Private-Src/system_instruction_recovery.c \
 Microvisor/Private-Src/virtual_IPSR.c \
-Microvisor/Private-Src/activator.c \
 Microvisor/Private-Src/system_stm32l4xx.c \
 Microvisor/Private-Src/mbedtls_rng_wrapper.c \
 Microvisor/Private-Src/ota.c \
@@ -78,12 +116,15 @@ Microvisor/Private-Src/permanent_storage.c \
 Microvisor/Private-Src/error.c \
 Microvisor/Private-Src/sec_comm.c \
 Microvisor/Private-Src/wifi_wrapper.c \
+Microvisor/Private-Src/internal_core_api.c \
+Microvisor/Private-Src/tee_core_api.c \
+Microvisor/Private-Src/flash.c \
 
 MICROVISOR_LIB_ASM_SOURCES = \
 
 ######################################
 # binaries
-######################################
+#############################q#########
 CC = $(GCC_PATH)/$(PREFIX)gcc
 AS = $(GCC_PATH)/$(PREFIX)gcc -x assembler-with-cpp
 CP = $(GCC_PATH)/$(PREFIX)objcopy
@@ -123,7 +164,9 @@ C_INCLUDES =  \
 -IDrivers/BSP/B-L475E-IOT01 \
 -IMiddlewares/mbedtls/include \
 -IMiddlewares/Wifi/Inc \
--IMiddlewares/ST/STM32_Cryptographic/include \
+-IMiddlewares/cJSON/inc \
+$(TA1_INCLUDE) \
+$(TA2_INCLUDE) \
 
 # compile gcc flags
 ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
@@ -136,13 +179,19 @@ endif
 # Generate dependency information
 CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
 
+# Specific flags for ta.c and ta2.c
+# As both ta.c and ta2.c contain the same functions with the same name, as part of GlobalPlatform TEE Client APIs, and are compiled in the same executable
+# We need to rename these functions using the -D directive to avoid conflicts
+TA1_CFLAGS = $(CFLAGS) -DTA_CreateEntryPoint=TA_CreateEntryPoint1 -DTA_DestroyEntryPoint=TA_DestroyEntryPoint1 -DTA_InvokeCommandEntryPoint=TA_InvokeCommandEntryPoint1 -DTA_CloseSessionEntryPoint=TA_CloseSessionEntryPoint1 -DTA_OpenSessionEntryPoint=TA_OpenSessionEntryPoint1
+TA2_CFLAGS = $(CFLAGS) -DTA_CreateEntryPoint=TA_CreateEntryPoint2 -DTA_DestroyEntryPoint=TA_DestroyEntryPoint2 -DTA_InvokeCommandEntryPoint=TA_InvokeCommandEntryPoint2 -DTA_CloseSessionEntryPoint=TA_CloseSessionEntryPoint2 -DTA_OpenSessionEntryPoint=TA_OpenSessionEntryPoint2
+
 ######################################
 # LDFLAGS
 ######################################
 # link script
 MICROVISOR_LDSCRIPT = BOOTLOADER.ld
 
-# libraries
+# libraries	
 LIBS = -Wl,--whole-archive -l$(PROJECT_NAME) -Wl,--no-whole-archive -lc -lm -lnosys -lmbedtls -lmbedx509 -lmbedcrypto
 LIBDIR = -LMiddlewares/mbedtls/library -L$(LIB_DIR)
 MICROVISOR_LDFLAGS = $(MCU) -specs=nano.specs -T$(MICROVISOR_LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(PROJECT_NAME).map,--cref -Wl,--gc-sections -Wl,-z,max-page-size=2048
@@ -160,10 +209,30 @@ vpath %.c $(sort $(dir $(MICROVISOR_C_SOURCES)))
 # list of Microvisor ASM objects
 MICROVISOR_OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(MICROVISOR_ASM_SOURCES:.s=.o)))
 vpath %.s $(sort $(dir $(MICROVISOR_ASM_SOURCES)))
+# list of TA1 C objects
+MICROVISOR_OBJECTS += $(addprefix $(TA1_BUILD_DIR)/,$(notdir $(TA1_C_SOURCES:.c=.o)))
+vpath %.c $(sort $(dir $(TA1_C_SOURCES)))
+# list of TA2 C objects
+#MICROVISOR_OBJECTS += $(addprefix $(TA2_BUILD_DIR)/,$(notdir $(TA2_C_SOURCES:.c=.o)))
+#vpath %.c $(sort $(dir $(TA2_C_SOURCES)))
 
 # compile microvisor .c sources
 $(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR)
 	$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
+
+# compile ta1 main source for library with specific flags
+$(BUILD_DIR)/$(patsubst %.c,%.o,$(notdir $(TA1))): $(TA1) Makefile | $(BUILD_DIR)
+	$(CC) -c $(TA1_CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(TA1:.c=.lst)) $< -o $@
+
+# compile ta2 main source for library with specific flags
+$(BUILD_DIR)/$(patsubst %.c,%.o,$(notdir $(TA2))): $(TA2) Makefile | $(BUILD_DIR)
+	$(CC) -c $(TA2_CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
+
+$(TA1_BUILD_DIR)/%.o: %.c Makefile | $(TA1_BUILD_DIR)
+	$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(TA1_BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
+
+#$(TA2_BUILD_DIR)/%.o: %.c Makefile | $(TA2_BUILD_DIR)
+#	$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(TA2_BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
 
 # assemble microvisor .s files (that were not .c previously e.g. startup code)
 $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
@@ -207,6 +276,10 @@ $(LIB_DIR):
 	mkdir $@
 $(TEMP_DIR):
 	mkdir $@
+$(TA1_BUILD_DIR):
+	mkdir -p $@
+$(TA2_BUILD_DIR):
+	mkdir -p $@
 
 ######################################
 # clean up
@@ -223,5 +296,8 @@ clean-temp:
 # dependencies
 ######################################
 -include $(wildcard $(BUILD_DIR)/*.d)
+-include $(wildcard $(TEMP_DIR)/*.d)
+-include $(wildcard $(TA1_BUILD_DIR)/*.d)	
+-include $(wildcard $(TA2_BUILD_DIR)/*.d)
 
 # *** EOF ***

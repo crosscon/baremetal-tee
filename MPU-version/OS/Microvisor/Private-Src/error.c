@@ -21,10 +21,6 @@ uint32_t error_data_len_from_id(uint32_t error_id) {
 			return ERROR_REGISTER_SIM_DATA_LEN;
 		case ERROR_MPU_VIOLATION:
 			return ERROR_MPU_VIOLATION_DATA_LEN;
-		case ERROR_INVALID_LICENSE:
-			return ERROR_INVALID_LICENSE_LEN;
-		case ERROR_LICENSE_LIMIT_EXCEEDED:
-			return ERROR_LICENSE_LIMIT_EXCEEDED_LEN;
 		case ERROR_NONE:
 		default:
 			return 0;

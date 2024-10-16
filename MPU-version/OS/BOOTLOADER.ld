@@ -29,12 +29,43 @@ SECTIONS
     KEEP(*(.isr_vector_deprio))
   } >FLASH_BOOT
 
+  /* Section to contain TA1 objects, in this example the Bitcoin Wallet TA objects, that is accessible only by TA1 or TEE */
+  .code_TA1 :
+  { 
+    . = ALIGN(4);
+    Build/bitcoin_wallet_ta.o(.text .text* .rodata .rodata* .constdata .constdata*)  /* Entry point object for TA1 which include GP Client API*/ 
+    Build/TA/TA1/*.o(.text .text* .rodata .rodata* .constdata .constdata*) /* Other objects of TA1 */ 
+    . = ALIGN(4); 
+  } >FLASH_TA1
+
+  /* Section to contain TA2 objects */
+  .code_TA2 :
+  { 
+    . = ALIGN(4);
+    Build/TA/TA2/*.o(.text .text* .rodata .rodata* .constdata .constdata*)  /* Entry point object for TA2 which include GP Client API*/ 
+    Build/ta2.o(.text .text* .rodata .rodata* .constdata .constdata*)  /* Other objects of TA2 */ 
+    . = ALIGN(4); 
+  } >FLASH_TA2
+
+  /* Section that contains the TEE code and libraries that should be accessible also by CA and TAs */
+  .microvisor-nopri :
+  {
+    . = ALIGN(4);
+    *(.microvisor-nopri)           /* .microvisor-nopri sections (code) */
+    libc_a-*.o(.text .text*)      /* move libc function in this no priority area (so TAs can use standard functions like malloc, strcmp, etc.) */
+    . = ALIGN(4);
+  } >FLASH_BOOT_NOPRI
+
+
   /* The program code and other data goes into FLASH */
   .text :
   {
     . = ALIGN(4);
     *(.text)           /* .text sections (code) */
     *(.text*)          /* .text* sections (code) */
+
+    *(EXCLUDE_FILE(Build/TA/*/.o).text .text* .rodata .rodata* .constdata .constdata*) /* Exclude the TAs code already include in other sections */
+
     *(.glue_7)         /* glue arm to thumb code */
     *(.glue_7t)        /* glue thumb to arm code */
     *(.eh_frame)
@@ -54,13 +85,6 @@ SECTIONS
     . = . + 1;        /* inscrease pointer by one for ALIGN */
     . = ALIGN(2048);  /* ALIGN to page flash boundry (for STM32L475 MCU) */
   } >FLASH_BOOT
-
-  .microvisor-nopri :
-  {
-    . = ALIGN(4);
-    *(.microvisor-nopri)           /* .microvisor-nopri sections (code) */
-    . = ALIGN(4);
-  } >FLASH_BOOT_NOPRI
 
   /* Constant data goes into FLASH */
   .rodata :
@@ -123,6 +147,44 @@ SECTIONS
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
   } >RAM AT> FLASH_BOOT
+
+  /* Section to store the custom heap memory dedicated to TA1 */
+  .heap_TA1 :
+  {
+    *(.heap_TA1)
+  } > RAM_TA1
+
+  /* Section to store the custom heap memory dedicated to TA2 */
+  .heap_TA2 :
+  {
+    *(.heap_TA2)
+  } > RAM_TA2
+
+  /* RAM section to store data that should be accessible by boot TEE and TAs (e.g. passing parameters) */
+  .TEE_TA_data :
+  {
+    *(.TEE_TA_data*);
+  } > RAM
+
+  /* Uninitialized data section (BSS) dedicated for TA1 */
+  .bss_TA1 :
+  {
+    . = ALIGN(4);
+    *(.bss_TA1)
+    Build/bitcoin_wallet_ta.o(.bss .bss*) /* Entry point object for TA1 which include GP Client API*/ 
+    Build/TA/TA1/*.o(.bss .bss*) /* Other objects of TA1 */ 
+    . = ALIGN(4);
+  } > RAM_TA1
+
+  /* Uninitialized data section (BSS) dedicated for TA2 */
+  .bss_TA2 :
+  {
+    . = ALIGN(4);
+    *(.bss_TA2)
+    Build/TA/TA2/*.o(.bss .bss*) /* Entry point object for TA2 which include GP Client API*/ 
+    Build/ta2.o(.bss .bss*) /* Other objects of TA2 */ 
+    . = ALIGN(4);
+  } > RAM_TA2
 
   /* Uninitialized data section */
   . = ALIGN(4);

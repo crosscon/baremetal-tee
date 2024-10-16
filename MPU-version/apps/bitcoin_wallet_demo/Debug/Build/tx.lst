@@ -1,0 +1,2192 @@
+ARM GAS  Build/tx.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 1
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"tx.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "../Core/Src/tx.c"
+  18              		.section	.text.new_intx,"ax",%progbits
+  19              		.align	1
+  20              		.global	new_intx
+  21              		.syntax unified
+  22              		.thumb
+  23              		.thumb_func
+  25              	new_intx:
+  26              	.LVL0:
+  27              	.LFB3:
+   1:../Core/Src/tx.c **** //#include <err.h>
+   2:../Core/Src/tx.c **** #include <stdio.h>
+   3:../Core/Src/tx.c **** #include <string.h>
+   4:../Core/Src/tx.c **** #include <stdlib.h>
+   5:../Core/Src/tx.c **** #include <unistd.h>
+   6:../Core/Src/tx.c **** //#include <tee_client_api.h>
+   7:../Core/Src/tx.c **** #include "tx.h"
+   8:../Core/Src/tx.c **** 
+   9:../Core/Src/tx.c **** /***************************************************************************//**
+  10:../Core/Src/tx.c **** * Transaction & Serialisation Structs Definitions
+  11:../Core/Src/tx.c **** *******************************************************************************/
+  12:../Core/Src/tx.c **** 
+  13:../Core/Src/tx.c **** struct intx_t {
+  14:../Core/Src/tx.c **** 	uint8_t *prvhash;
+  15:../Core/Src/tx.c **** 	uint8_t *prvindexl;
+  16:../Core/Src/tx.c **** 	uint8_t scrlen;
+  17:../Core/Src/tx.c **** 	uint8_t *scrsig;
+  18:../Core/Src/tx.c **** 	uint8_t *sequence;
+  19:../Core/Src/tx.c **** };
+  20:../Core/Src/tx.c **** 
+  21:../Core/Src/tx.c **** struct outtx_t {
+  22:../Core/Src/tx.c **** 	uint8_t *value;
+  23:../Core/Src/tx.c **** 	uint8_t scrlen;
+  24:../Core/Src/tx.c **** 	uint8_t *scrpubkey;
+  25:../Core/Src/tx.c **** };
+  26:../Core/Src/tx.c **** 
+  27:../Core/Src/tx.c **** struct tx_t {
+  28:../Core/Src/tx.c **** 	uint8_t *version;
+  29:../Core/Src/tx.c **** 	uint8_t incount;
+  30:../Core/Src/tx.c **** 	INTX inputtx;
+  31:../Core/Src/tx.c **** 	uint8_t outcount;
+ARM GAS  Build/tx.s 			page 2
+
+
+  32:../Core/Src/tx.c **** 	OUTTX outputtx;
+  33:../Core/Src/tx.c **** 	uint8_t *lock;
+  34:../Core/Src/tx.c **** };
+  35:../Core/Src/tx.c **** 
+  36:../Core/Src/tx.c **** struct serbuf_t {
+  37:../Core/Src/tx.c ****     void *data;
+  38:../Core/Src/tx.c ****     uint32_t next;
+  39:../Core/Src/tx.c ****     size_t size;
+  40:../Core/Src/tx.c **** };
+  41:../Core/Src/tx.c **** 
+  42:../Core/Src/tx.c **** 
+  43:../Core/Src/tx.c **** /***************************************************************************//**
+  44:../Core/Src/tx.c **** * Constructor methods: we don't want direct access to a struct's members.
+  45:../Core/Src/tx.c **** * Opaque handles are used and access/init is gained through the appropriate
+  46:../Core/Src/tx.c **** * methods. Typedefs are in the tx.h file.
+  47:../Core/Src/tx.c **** *******************************************************************************/
+  48:../Core/Src/tx.c **** 
+  49:../Core/Src/tx.c **** /**
+  50:../Core/Src/tx.c ****  * Initializes a new transaction input (INTX).
+  51:../Core/Src/tx.c ****  *
+  52:../Core/Src/tx.c ****  * @param prh
+  53:../Core/Src/tx.c ****  * @param tmpscr
+  54:../Core/Src/tx.c ****  */
+  55:../Core/Src/tx.c **** INTX new_intx(const uint8_t *prh, const uint8_t *tmpscr)
+  56:../Core/Src/tx.c **** {
+  28              		.loc 1 56 1 view -0
+  29              		.cfi_startproc
+  30              		@ args = 0, pretend = 0, frame = 8
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32              		.loc 1 56 1 is_stmt 0 view .LVU1
+  33 0000 F0B5     		push	{r4, r5, r6, r7, lr}
+  34              	.LCFI0:
+  35              		.cfi_def_cfa_offset 20
+  36              		.cfi_offset 4, -20
+  37              		.cfi_offset 5, -16
+  38              		.cfi_offset 6, -12
+  39              		.cfi_offset 7, -8
+  40              		.cfi_offset 14, -4
+  41 0002 83B0     		sub	sp, sp, #12
+  42              	.LCFI1:
+  43              		.cfi_def_cfa_offset 32
+  44 0004 0546     		mov	r5, r0
+  45 0006 0E46     		mov	r6, r1
+  57:../Core/Src/tx.c **** 	INTX intx = malloc(sizeof(struct intx_t));
+  46              		.loc 1 57 2 is_stmt 1 view .LVU2
+  47              		.loc 1 57 14 is_stmt 0 view .LVU3
+  48 0008 1420     		movs	r0, #20
+  49              	.LVL1:
+  50              		.loc 1 57 14 view .LVU4
+  51 000a FFF7FEFF 		bl	malloc
+  52              	.LVL2:
+  58:../Core/Src/tx.c **** 
+  59:../Core/Src/tx.c **** 	/* At the moment transactions with one input/output are supported */
+  60:../Core/Src/tx.c **** 	const uint8_t index[] = {0x01, 0x00, 0x00, 0x00};
+  53              		.loc 1 60 2 is_stmt 1 view .LVU5
+  54              		.loc 1 60 16 is_stmt 0 view .LVU6
+  55 000e 0123     		movs	r3, #1
+ARM GAS  Build/tx.s 			page 3
+
+
+  56 0010 0193     		str	r3, [sp, #4]
+  61:../Core/Src/tx.c **** 	const uint8_t seq[] = {0xff, 0xff, 0xff, 0xff};
+  57              		.loc 1 61 2 is_stmt 1 view .LVU7
+  58              		.loc 1 61 16 is_stmt 0 view .LVU8
+  59 0012 4FF0FF33 		mov	r3, #-1
+  60 0016 0093     		str	r3, [sp]
+  62:../Core/Src/tx.c **** 
+  63:../Core/Src/tx.c **** 	if(intx == NULL)
+  61              		.loc 1 63 2 is_stmt 1 view .LVU9
+  62              		.loc 1 63 4 is_stmt 0 view .LVU10
+  63 0018 0746     		mov	r7, r0
+  64 001a 0028     		cmp	r0, #0
+  65 001c 37D0     		beq	.L1
+  64:../Core/Src/tx.c **** 		return NULL;
+  65:../Core/Src/tx.c **** 
+  66:../Core/Src/tx.c **** 	intx->prvhash = malloc(32); /* 32 bytes length of previous tx hash */
+  66              		.loc 1 66 2 is_stmt 1 view .LVU11
+  67              		.loc 1 66 18 is_stmt 0 view .LVU12
+  68 001e 2020     		movs	r0, #32
+  69              	.LVL3:
+  70              		.loc 1 66 18 view .LVU13
+  71 0020 FFF7FEFF 		bl	malloc
+  72              	.LVL4:
+  73 0024 0446     		mov	r4, r0
+  74              		.loc 1 66 16 view .LVU14
+  75 0026 3860     		str	r0, [r7]
+  67:../Core/Src/tx.c **** 	intx->prvindexl = malloc(4); /* 4 bytes index */
+  76              		.loc 1 67 2 is_stmt 1 view .LVU15
+  77              		.loc 1 67 20 is_stmt 0 view .LVU16
+  78 0028 0420     		movs	r0, #4
+  79 002a FFF7FEFF 		bl	malloc
+  80              	.LVL5:
+  81              		.loc 1 67 18 view .LVU17
+  82 002e 7860     		str	r0, [r7, #4]
+  68:../Core/Src/tx.c **** 	intx->scrsig = malloc(25); /* initially the previous pubscript is used */
+  83              		.loc 1 68 2 is_stmt 1 view .LVU18
+  84              		.loc 1 68 17 is_stmt 0 view .LVU19
+  85 0030 1920     		movs	r0, #25
+  86 0032 FFF7FEFF 		bl	malloc
+  87              	.LVL6:
+  88              		.loc 1 68 15 view .LVU20
+  89 0036 F860     		str	r0, [r7, #12]
+  69:../Core/Src/tx.c **** 	intx->sequence = malloc(4);
+  90              		.loc 1 69 2 is_stmt 1 view .LVU21
+  91              		.loc 1 69 19 is_stmt 0 view .LVU22
+  92 0038 0420     		movs	r0, #4
+  93 003a FFF7FEFF 		bl	malloc
+  94              	.LVL7:
+  95              		.loc 1 69 17 view .LVU23
+  96 003e 3861     		str	r0, [r7, #16]
+  70:../Core/Src/tx.c **** 
+  71:../Core/Src/tx.c **** 	intx->scrlen = 0x19; /* initially the script length is 25 */
+  97              		.loc 1 71 2 is_stmt 1 view .LVU24
+  98              		.loc 1 71 15 is_stmt 0 view .LVU25
+  99 0040 1923     		movs	r3, #25
+ 100 0042 3B72     		strb	r3, [r7, #8]
+  72:../Core/Src/tx.c **** 	memcpy(intx->prvhash, prh, 32);
+ARM GAS  Build/tx.s 			page 4
+
+
+ 101              		.loc 1 72 2 is_stmt 1 view .LVU26
+ 102 0044 2868     		ldr	r0, [r5]	@ unaligned
+ 103 0046 6968     		ldr	r1, [r5, #4]	@ unaligned
+ 104 0048 AA68     		ldr	r2, [r5, #8]	@ unaligned
+ 105 004a EB68     		ldr	r3, [r5, #12]	@ unaligned
+ 106 004c 2060     		str	r0, [r4]	@ unaligned
+ 107 004e 6160     		str	r1, [r4, #4]	@ unaligned
+ 108 0050 A260     		str	r2, [r4, #8]	@ unaligned
+ 109 0052 E360     		str	r3, [r4, #12]	@ unaligned
+ 110 0054 2869     		ldr	r0, [r5, #16]	@ unaligned
+ 111 0056 6969     		ldr	r1, [r5, #20]	@ unaligned
+ 112 0058 AA69     		ldr	r2, [r5, #24]	@ unaligned
+ 113 005a EB69     		ldr	r3, [r5, #28]	@ unaligned
+ 114 005c 2061     		str	r0, [r4, #16]	@ unaligned
+ 115 005e 6161     		str	r1, [r4, #20]	@ unaligned
+ 116 0060 A261     		str	r2, [r4, #24]	@ unaligned
+ 117 0062 E361     		str	r3, [r4, #28]	@ unaligned
+  73:../Core/Src/tx.c **** 	memcpy(intx->prvindexl, index, 4);
+ 118              		.loc 1 73 2 view .LVU27
+ 119              		.loc 1 73 13 is_stmt 0 view .LVU28
+ 120 0064 7B68     		ldr	r3, [r7, #4]
+ 121              		.loc 1 73 2 view .LVU29
+ 122 0066 019A     		ldr	r2, [sp, #4]
+ 123 0068 1A60     		str	r2, [r3]	@ unaligned
+  74:../Core/Src/tx.c **** 	memcpy(intx->scrsig, tmpscr, 25);
+ 124              		.loc 1 74 2 is_stmt 1 view .LVU30
+ 125              		.loc 1 74 13 is_stmt 0 view .LVU31
+ 126 006a FB68     		ldr	r3, [r7, #12]
+ 127              		.loc 1 74 2 view .LVU32
+ 128 006c 3168     		ldr	r1, [r6]	@ unaligned
+ 129 006e 7268     		ldr	r2, [r6, #4]	@ unaligned
+ 130 0070 B468     		ldr	r4, [r6, #8]	@ unaligned
+ 131 0072 F068     		ldr	r0, [r6, #12]	@ unaligned
+ 132 0074 1960     		str	r1, [r3]	@ unaligned
+ 133 0076 5A60     		str	r2, [r3, #4]	@ unaligned
+ 134 0078 9C60     		str	r4, [r3, #8]	@ unaligned
+ 135 007a D860     		str	r0, [r3, #12]	@ unaligned
+ 136 007c 3169     		ldr	r1, [r6, #16]	@ unaligned
+ 137 007e 7269     		ldr	r2, [r6, #20]	@ unaligned
+ 138 0080 1961     		str	r1, [r3, #16]	@ unaligned
+ 139 0082 5A61     		str	r2, [r3, #20]	@ unaligned
+ 140 0084 327E     		ldrb	r2, [r6, #24]	@ zero_extendqisi2
+ 141 0086 1A76     		strb	r2, [r3, #24]
+  75:../Core/Src/tx.c **** 	memcpy(intx->sequence, seq, 4);
+ 142              		.loc 1 75 2 is_stmt 1 view .LVU33
+ 143              		.loc 1 75 13 is_stmt 0 view .LVU34
+ 144 0088 3B69     		ldr	r3, [r7, #16]
+ 145              		.loc 1 75 2 view .LVU35
+ 146 008a 009A     		ldr	r2, [sp]
+ 147 008c 1A60     		str	r2, [r3]	@ unaligned
+  76:../Core/Src/tx.c **** 
+  77:../Core/Src/tx.c **** 	return intx;
+ 148              		.loc 1 77 2 is_stmt 1 view .LVU36
+ 149              	.L1:
+  78:../Core/Src/tx.c **** }
+ 150              		.loc 1 78 1 is_stmt 0 view .LVU37
+ 151 008e 3846     		mov	r0, r7
+ARM GAS  Build/tx.s 			page 5
+
+
+ 152 0090 03B0     		add	sp, sp, #12
+ 153              	.LCFI2:
+ 154              		.cfi_def_cfa_offset 20
+ 155              		@ sp needed
+ 156 0092 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 157              		.loc 1 78 1 view .LVU38
+ 158              		.cfi_endproc
+ 159              	.LFE3:
+ 161              		.section	.text.new_outtx,"ax",%progbits
+ 162              		.align	1
+ 163              		.global	new_outtx
+ 164              		.syntax unified
+ 165              		.thumb
+ 166              		.thumb_func
+ 168              	new_outtx:
+ 169              	.LVL8:
+ 170              	.LFB4:
+  79:../Core/Src/tx.c **** 
+  80:../Core/Src/tx.c **** 
+  81:../Core/Src/tx.c **** /**
+  82:../Core/Src/tx.c ****  * Initializes a new transaction output (OUTTX).
+  83:../Core/Src/tx.c ****  *
+  84:../Core/Src/tx.c ****  * @param val The bitcoin value we want to redeem
+  85:../Core/Src/tx.c ****  * @param tmpscr
+  86:../Core/Src/tx.c ****  */
+  87:../Core/Src/tx.c **** OUTTX new_outtx(const uint8_t *val, const uint8_t *tmpscr)
+  88:../Core/Src/tx.c **** {
+ 171              		.loc 1 88 1 is_stmt 1 view -0
+ 172              		.cfi_startproc
+ 173              		@ args = 0, pretend = 0, frame = 0
+ 174              		@ frame_needed = 0, uses_anonymous_args = 0
+ 175              		.loc 1 88 1 is_stmt 0 view .LVU40
+ 176 0000 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 177              	.LCFI3:
+ 178              		.cfi_def_cfa_offset 24
+ 179              		.cfi_offset 3, -24
+ 180              		.cfi_offset 4, -20
+ 181              		.cfi_offset 5, -16
+ 182              		.cfi_offset 6, -12
+ 183              		.cfi_offset 7, -8
+ 184              		.cfi_offset 14, -4
+ 185 0002 0646     		mov	r6, r0
+ 186 0004 0C46     		mov	r4, r1
+  89:../Core/Src/tx.c **** 	OUTTX outtx = malloc(sizeof(struct outtx_t));
+ 187              		.loc 1 89 2 is_stmt 1 view .LVU41
+ 188              		.loc 1 89 16 is_stmt 0 view .LVU42
+ 189 0006 0C20     		movs	r0, #12
+ 190              	.LVL9:
+ 191              		.loc 1 89 16 view .LVU43
+ 192 0008 FFF7FEFF 		bl	malloc
+ 193              	.LVL10:
+  90:../Core/Src/tx.c **** 	if (outtx == NULL)
+ 194              		.loc 1 90 2 is_stmt 1 view .LVU44
+ 195              		.loc 1 90 5 is_stmt 0 view .LVU45
+ 196 000c 0746     		mov	r7, r0
+ 197 000e E0B1     		cbz	r0, .L4
+  91:../Core/Src/tx.c **** 		return NULL;
+ARM GAS  Build/tx.s 			page 6
+
+
+  92:../Core/Src/tx.c **** 
+  93:../Core/Src/tx.c **** 	outtx->value = malloc(8);
+ 198              		.loc 1 93 2 is_stmt 1 view .LVU46
+ 199              		.loc 1 93 17 is_stmt 0 view .LVU47
+ 200 0010 0820     		movs	r0, #8
+ 201              	.LVL11:
+ 202              		.loc 1 93 17 view .LVU48
+ 203 0012 FFF7FEFF 		bl	malloc
+ 204              	.LVL12:
+ 205 0016 0546     		mov	r5, r0
+ 206              		.loc 1 93 15 view .LVU49
+ 207 0018 3860     		str	r0, [r7]
+  94:../Core/Src/tx.c **** 	outtx->scrpubkey = malloc(25);
+ 208              		.loc 1 94 2 is_stmt 1 view .LVU50
+ 209              		.loc 1 94 21 is_stmt 0 view .LVU51
+ 210 001a 1920     		movs	r0, #25
+ 211 001c FFF7FEFF 		bl	malloc
+ 212              	.LVL13:
+ 213              		.loc 1 94 19 view .LVU52
+ 214 0020 B860     		str	r0, [r7, #8]
+  95:../Core/Src/tx.c **** 
+  96:../Core/Src/tx.c **** 	outtx->scrlen = 0x19;
+ 215              		.loc 1 96 2 is_stmt 1 view .LVU53
+ 216              		.loc 1 96 16 is_stmt 0 view .LVU54
+ 217 0022 1923     		movs	r3, #25
+ 218 0024 3B71     		strb	r3, [r7, #4]
+  97:../Core/Src/tx.c **** 	memcpy(outtx->value, val, 8);
+ 219              		.loc 1 97 2 is_stmt 1 view .LVU55
+ 220 0026 3268     		ldr	r2, [r6]	@ unaligned
+ 221 0028 7368     		ldr	r3, [r6, #4]	@ unaligned
+ 222 002a 2A60     		str	r2, [r5]	@ unaligned
+ 223 002c 6B60     		str	r3, [r5, #4]	@ unaligned
+  98:../Core/Src/tx.c **** 	memcpy(outtx->scrpubkey, tmpscr, 25);
+ 224              		.loc 1 98 2 view .LVU56
+ 225 002e 2268     		ldr	r2, [r4]	@ unaligned
+ 226 0030 6368     		ldr	r3, [r4, #4]	@ unaligned
+ 227 0032 A568     		ldr	r5, [r4, #8]	@ unaligned
+ 228 0034 E168     		ldr	r1, [r4, #12]	@ unaligned
+ 229 0036 0260     		str	r2, [r0]	@ unaligned
+ 230 0038 4360     		str	r3, [r0, #4]	@ unaligned
+ 231 003a 8560     		str	r5, [r0, #8]	@ unaligned
+ 232 003c C160     		str	r1, [r0, #12]	@ unaligned
+ 233 003e 2269     		ldr	r2, [r4, #16]	@ unaligned
+ 234 0040 6369     		ldr	r3, [r4, #20]	@ unaligned
+ 235 0042 0261     		str	r2, [r0, #16]	@ unaligned
+ 236 0044 4361     		str	r3, [r0, #20]	@ unaligned
+ 237 0046 237E     		ldrb	r3, [r4, #24]	@ zero_extendqisi2
+ 238 0048 0376     		strb	r3, [r0, #24]
+  99:../Core/Src/tx.c **** 
+ 100:../Core/Src/tx.c **** 	return outtx;
+ 239              		.loc 1 100 2 view .LVU57
+ 240              	.L4:
+ 101:../Core/Src/tx.c **** }
+ 241              		.loc 1 101 1 is_stmt 0 view .LVU58
+ 242 004a 3846     		mov	r0, r7
+ 243 004c F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 244              		.loc 1 101 1 view .LVU59
+ARM GAS  Build/tx.s 			page 7
+
+
+ 245              		.cfi_endproc
+ 246              	.LFE4:
+ 248              		.section	.text.new_tx,"ax",%progbits
+ 249              		.align	1
+ 250              		.global	new_tx
+ 251              		.syntax unified
+ 252              		.thumb
+ 253              		.thumb_func
+ 255              	new_tx:
+ 256              	.LVL14:
+ 257              	.LFB5:
+ 102:../Core/Src/tx.c **** 
+ 103:../Core/Src/tx.c **** 
+ 104:../Core/Src/tx.c **** /**
+ 105:../Core/Src/tx.c ****  * Initializes a complete transaction (TX).
+ 106:../Core/Src/tx.c ****  *
+ 107:../Core/Src/tx.c ****  * @param intx The Input transaction
+ 108:../Core/Src/tx.c ****  * @param outtx The Output trsansaction
+ 109:../Core/Src/tx.c ****  */
+ 110:../Core/Src/tx.c **** TX new_tx(INTX intx, OUTTX outtx)
+ 111:../Core/Src/tx.c **** {
+ 258              		.loc 1 111 1 is_stmt 1 view -0
+ 259              		.cfi_startproc
+ 260              		@ args = 0, pretend = 0, frame = 8
+ 261              		@ frame_needed = 0, uses_anonymous_args = 0
+ 262              		.loc 1 111 1 is_stmt 0 view .LVU61
+ 263 0000 F0B5     		push	{r4, r5, r6, r7, lr}
+ 264              	.LCFI4:
+ 265              		.cfi_def_cfa_offset 20
+ 266              		.cfi_offset 4, -20
+ 267              		.cfi_offset 5, -16
+ 268              		.cfi_offset 6, -12
+ 269              		.cfi_offset 7, -8
+ 270              		.cfi_offset 14, -4
+ 271 0002 83B0     		sub	sp, sp, #12
+ 272              	.LCFI5:
+ 273              		.cfi_def_cfa_offset 32
+ 274 0004 0746     		mov	r7, r0
+ 275 0006 0E46     		mov	r6, r1
+ 112:../Core/Src/tx.c **** 	TX tx = malloc(sizeof(struct tx_t));
+ 276              		.loc 1 112 2 is_stmt 1 view .LVU62
+ 277              		.loc 1 112 10 is_stmt 0 view .LVU63
+ 278 0008 1820     		movs	r0, #24
+ 279              	.LVL15:
+ 280              		.loc 1 112 10 view .LVU64
+ 281 000a FFF7FEFF 		bl	malloc
+ 282              	.LVL16:
+ 113:../Core/Src/tx.c **** 	const uint8_t ver[] = {0x01, 0x00, 0x00, 0x00};
+ 283              		.loc 1 113 2 is_stmt 1 view .LVU65
+ 284              		.loc 1 113 16 is_stmt 0 view .LVU66
+ 285 000e 0123     		movs	r3, #1
+ 286 0010 0193     		str	r3, [sp, #4]
+ 114:../Core/Src/tx.c **** 	const uint8_t lk[] = {0x00, 0x00, 0x00, 0x00};
+ 287              		.loc 1 114 2 is_stmt 1 view .LVU67
+ 288              		.loc 1 114 16 is_stmt 0 view .LVU68
+ 289 0012 0023     		movs	r3, #0
+ 290 0014 0093     		str	r3, [sp]
+ARM GAS  Build/tx.s 			page 8
+
+
+ 115:../Core/Src/tx.c **** 
+ 116:../Core/Src/tx.c **** 	if (tx == NULL)
+ 291              		.loc 1 116 2 is_stmt 1 view .LVU69
+ 292              		.loc 1 116 5 is_stmt 0 view .LVU70
+ 293 0016 0446     		mov	r4, r0
+ 294 0018 88B1     		cbz	r0, .L7
+ 117:../Core/Src/tx.c **** 		return NULL;
+ 118:../Core/Src/tx.c **** 
+ 119:../Core/Src/tx.c **** 	tx->version = malloc(4);
+ 295              		.loc 1 119 2 is_stmt 1 view .LVU71
+ 296              		.loc 1 119 16 is_stmt 0 view .LVU72
+ 297 001a 0420     		movs	r0, #4
+ 298              	.LVL17:
+ 299              		.loc 1 119 16 view .LVU73
+ 300 001c FFF7FEFF 		bl	malloc
+ 301              	.LVL18:
+ 302 0020 0546     		mov	r5, r0
+ 303              		.loc 1 119 14 view .LVU74
+ 304 0022 2060     		str	r0, [r4]
+ 120:../Core/Src/tx.c **** 	tx->lock = malloc(4);
+ 305              		.loc 1 120 2 is_stmt 1 view .LVU75
+ 306              		.loc 1 120 13 is_stmt 0 view .LVU76
+ 307 0024 0420     		movs	r0, #4
+ 308 0026 FFF7FEFF 		bl	malloc
+ 309              	.LVL19:
+ 310              		.loc 1 120 11 view .LVU77
+ 311 002a 6061     		str	r0, [r4, #20]
+ 121:../Core/Src/tx.c **** 
+ 122:../Core/Src/tx.c **** 	memcpy(tx->version, ver, 4);
+ 312              		.loc 1 122 2 is_stmt 1 view .LVU78
+ 313 002c 019A     		ldr	r2, [sp, #4]
+ 314 002e 2A60     		str	r2, [r5]	@ unaligned
+ 123:../Core/Src/tx.c **** 	tx->incount = 0x01;
+ 315              		.loc 1 123 2 view .LVU79
+ 316              		.loc 1 123 14 is_stmt 0 view .LVU80
+ 317 0030 0122     		movs	r2, #1
+ 318 0032 2271     		strb	r2, [r4, #4]
+ 124:../Core/Src/tx.c **** 	tx->inputtx = intx;
+ 319              		.loc 1 124 2 is_stmt 1 view .LVU81
+ 320              		.loc 1 124 14 is_stmt 0 view .LVU82
+ 321 0034 A760     		str	r7, [r4, #8]
+ 125:../Core/Src/tx.c **** 	tx->outcount = 0x01;
+ 322              		.loc 1 125 2 is_stmt 1 view .LVU83
+ 323              		.loc 1 125 15 is_stmt 0 view .LVU84
+ 324 0036 2273     		strb	r2, [r4, #12]
+ 126:../Core/Src/tx.c **** 	tx->outputtx = outtx;
+ 325              		.loc 1 126 2 is_stmt 1 view .LVU85
+ 326              		.loc 1 126 15 is_stmt 0 view .LVU86
+ 327 0038 2661     		str	r6, [r4, #16]
+ 127:../Core/Src/tx.c **** 	memcpy(tx->lock, lk, 4);
+ 328              		.loc 1 127 2 is_stmt 1 view .LVU87
+ 329 003a 009A     		ldr	r2, [sp]
+ 330 003c 0260     		str	r2, [r0]	@ unaligned
+ 128:../Core/Src/tx.c **** 
+ 129:../Core/Src/tx.c **** 	return tx;
+ 331              		.loc 1 129 2 view .LVU88
+ 332              	.L7:
+ARM GAS  Build/tx.s 			page 9
+
+
+ 130:../Core/Src/tx.c **** }
+ 333              		.loc 1 130 1 is_stmt 0 view .LVU89
+ 334 003e 2046     		mov	r0, r4
+ 335 0040 03B0     		add	sp, sp, #12
+ 336              	.LCFI6:
+ 337              		.cfi_def_cfa_offset 20
+ 338              		@ sp needed
+ 339 0042 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 340              		.loc 1 130 1 view .LVU90
+ 341              		.cfi_endproc
+ 342              	.LFE5:
+ 344              		.section	.text.new_txbuf,"ax",%progbits
+ 345              		.align	1
+ 346              		.global	new_txbuf
+ 347              		.syntax unified
+ 348              		.thumb
+ 349              		.thumb_func
+ 351              	new_txbuf:
+ 352              	.LFB6:
+ 131:../Core/Src/tx.c **** 
+ 132:../Core/Src/tx.c **** 
+ 133:../Core/Src/tx.c **** /**
+ 134:../Core/Src/tx.c ****  * Initializes a new transaction buffer (TXBUF). Used to stored the serialized
+ 135:../Core/Src/tx.c ****  * byte data of a transaction struct. Its mainly used to store to byte string of
+ 136:../Core/Src/tx.c ****  * a transaction and passing it to the Secure World for hashing and signing.
+ 137:../Core/Src/tx.c ****  */
+ 138:../Core/Src/tx.c **** TXBUF new_txbuf(void)
+ 139:../Core/Src/tx.c **** {
+ 353              		.loc 1 139 1 is_stmt 1 view -0
+ 354              		.cfi_startproc
+ 355              		@ args = 0, pretend = 0, frame = 0
+ 356              		@ frame_needed = 0, uses_anonymous_args = 0
+ 357 0000 10B5     		push	{r4, lr}
+ 358              	.LCFI7:
+ 359              		.cfi_def_cfa_offset 8
+ 360              		.cfi_offset 4, -8
+ 361              		.cfi_offset 14, -4
+ 140:../Core/Src/tx.c ****     TXBUF buf = malloc(sizeof(struct serbuf_t));
+ 362              		.loc 1 140 5 view .LVU92
+ 363              		.loc 1 140 17 is_stmt 0 view .LVU93
+ 364 0002 0C20     		movs	r0, #12
+ 365 0004 FFF7FEFF 		bl	malloc
+ 366              	.LVL20:
+ 141:../Core/Src/tx.c **** 	if (buf == NULL)
+ 367              		.loc 1 141 2 is_stmt 1 view .LVU94
+ 368              		.loc 1 141 5 is_stmt 0 view .LVU95
+ 369 0008 0446     		mov	r4, r0
+ 370 000a 38B1     		cbz	r0, .L10
+ 142:../Core/Src/tx.c **** 		return NULL;
+ 143:../Core/Src/tx.c **** 
+ 144:../Core/Src/tx.c ****     buf->data = malloc(TXBUF_INIT_SIZE);
+ 371              		.loc 1 144 5 is_stmt 1 view .LVU96
+ 372              		.loc 1 144 17 is_stmt 0 view .LVU97
+ 373 000c 4020     		movs	r0, #64
+ 374              	.LVL21:
+ 375              		.loc 1 144 17 view .LVU98
+ 376 000e FFF7FEFF 		bl	malloc
+ARM GAS  Build/tx.s 			page 10
+
+
+ 377              	.LVL22:
+ 378              		.loc 1 144 15 view .LVU99
+ 379 0012 2060     		str	r0, [r4]
+ 145:../Core/Src/tx.c ****     buf->size = TXBUF_INIT_SIZE;
+ 380              		.loc 1 145 5 is_stmt 1 view .LVU100
+ 381              		.loc 1 145 15 is_stmt 0 view .LVU101
+ 382 0014 4023     		movs	r3, #64
+ 383 0016 A360     		str	r3, [r4, #8]
+ 146:../Core/Src/tx.c ****     buf->next = 0;
+ 384              		.loc 1 146 5 is_stmt 1 view .LVU102
+ 385              		.loc 1 146 15 is_stmt 0 view .LVU103
+ 386 0018 0023     		movs	r3, #0
+ 387 001a 6360     		str	r3, [r4, #4]
+ 147:../Core/Src/tx.c **** 
+ 148:../Core/Src/tx.c ****     return buf;
+ 388              		.loc 1 148 5 is_stmt 1 view .LVU104
+ 389              	.L10:
+ 149:../Core/Src/tx.c **** }
+ 390              		.loc 1 149 1 is_stmt 0 view .LVU105
+ 391 001c 2046     		mov	r0, r4
+ 392 001e 10BD     		pop	{r4, pc}
+ 393              		.loc 1 149 1 view .LVU106
+ 394              		.cfi_endproc
+ 395              	.LFE6:
+ 397              		.section	.text.free_intx,"ax",%progbits
+ 398              		.align	1
+ 399              		.global	free_intx
+ 400              		.syntax unified
+ 401              		.thumb
+ 402              		.thumb_func
+ 404              	free_intx:
+ 405              	.LVL23:
+ 406              	.LFB7:
+ 150:../Core/Src/tx.c **** 
+ 151:../Core/Src/tx.c **** 
+ 152:../Core/Src/tx.c **** /***************************************************************************//**
+ 153:../Core/Src/tx.c **** * Destroyer functions: Deallocate resources after we finish with the transaction.
+ 154:../Core/Src/tx.c **** *******************************************************************************/
+ 155:../Core/Src/tx.c **** 
+ 156:../Core/Src/tx.c **** /**
+ 157:../Core/Src/tx.c ****  * Frees an Input transaction (INTX)
+ 158:../Core/Src/tx.c ****  *
+ 159:../Core/Src/tx.c ****  * @param itx An initialized INTX Opaque handle.
+ 160:../Core/Src/tx.c ****  */
+ 161:../Core/Src/tx.c **** void free_intx(INTX itx)
+ 162:../Core/Src/tx.c **** {
+ 407              		.loc 1 162 1 is_stmt 1 view -0
+ 408              		.cfi_startproc
+ 409              		@ args = 0, pretend = 0, frame = 0
+ 410              		@ frame_needed = 0, uses_anonymous_args = 0
+ 163:../Core/Src/tx.c **** 	if (itx != NULL) {
+ 411              		.loc 1 163 2 view .LVU108
+ 412              		.loc 1 163 5 is_stmt 0 view .LVU109
+ 413 0000 88B1     		cbz	r0, .L16
+ 162:../Core/Src/tx.c **** 	if (itx != NULL) {
+ 414              		.loc 1 162 1 view .LVU110
+ 415 0002 10B5     		push	{r4, lr}
+ARM GAS  Build/tx.s 			page 11
+
+
+ 416              	.LCFI8:
+ 417              		.cfi_def_cfa_offset 8
+ 418              		.cfi_offset 4, -8
+ 419              		.cfi_offset 14, -4
+ 420 0004 0446     		mov	r4, r0
+ 164:../Core/Src/tx.c **** 		free(itx->prvhash);
+ 421              		.loc 1 164 3 is_stmt 1 view .LVU111
+ 422 0006 0068     		ldr	r0, [r0]
+ 423              	.LVL24:
+ 424              		.loc 1 164 3 is_stmt 0 view .LVU112
+ 425 0008 FFF7FEFF 		bl	free
+ 426              	.LVL25:
+ 165:../Core/Src/tx.c **** 		free(itx->prvindexl);
+ 427              		.loc 1 165 3 is_stmt 1 view .LVU113
+ 428 000c 6068     		ldr	r0, [r4, #4]
+ 429 000e FFF7FEFF 		bl	free
+ 430              	.LVL26:
+ 166:../Core/Src/tx.c **** 		free(itx->scrsig);
+ 431              		.loc 1 166 3 view .LVU114
+ 432 0012 E068     		ldr	r0, [r4, #12]
+ 433 0014 FFF7FEFF 		bl	free
+ 434              	.LVL27:
+ 167:../Core/Src/tx.c **** 		free(itx->sequence);
+ 435              		.loc 1 167 3 view .LVU115
+ 436 0018 2069     		ldr	r0, [r4, #16]
+ 437 001a FFF7FEFF 		bl	free
+ 438              	.LVL28:
+ 168:../Core/Src/tx.c **** 		free(itx);
+ 439              		.loc 1 168 3 view .LVU116
+ 440 001e 2046     		mov	r0, r4
+ 441 0020 FFF7FEFF 		bl	free
+ 442              	.LVL29:
+ 169:../Core/Src/tx.c **** 	}
+ 170:../Core/Src/tx.c **** }
+ 443              		.loc 1 170 1 is_stmt 0 view .LVU117
+ 444 0024 10BD     		pop	{r4, pc}
+ 445              	.LVL30:
+ 446              	.L16:
+ 447              	.LCFI9:
+ 448              		.cfi_def_cfa_offset 0
+ 449              		.cfi_restore 4
+ 450              		.cfi_restore 14
+ 451              		.loc 1 170 1 view .LVU118
+ 452 0026 7047     		bx	lr
+ 453              		.cfi_endproc
+ 454              	.LFE7:
+ 456              		.section	.text.free_outtx,"ax",%progbits
+ 457              		.align	1
+ 458              		.global	free_outtx
+ 459              		.syntax unified
+ 460              		.thumb
+ 461              		.thumb_func
+ 463              	free_outtx:
+ 464              	.LVL31:
+ 465              	.LFB8:
+ 171:../Core/Src/tx.c **** 
+ 172:../Core/Src/tx.c **** 
+ARM GAS  Build/tx.s 			page 12
+
+
+ 173:../Core/Src/tx.c **** /**
+ 174:../Core/Src/tx.c ****  * Frees an Output transaction (OUTTX)
+ 175:../Core/Src/tx.c ****  *
+ 176:../Core/Src/tx.c ****  * @param otx An initialized OUTTX Opaque handle.
+ 177:../Core/Src/tx.c ****  */
+ 178:../Core/Src/tx.c **** void free_outtx(OUTTX otx)
+ 179:../Core/Src/tx.c **** {
+ 466              		.loc 1 179 1 is_stmt 1 view -0
+ 467              		.cfi_startproc
+ 468              		@ args = 0, pretend = 0, frame = 0
+ 469              		@ frame_needed = 0, uses_anonymous_args = 0
+ 180:../Core/Src/tx.c **** 	if (otx != NULL) {
+ 470              		.loc 1 180 2 view .LVU120
+ 471              		.loc 1 180 5 is_stmt 0 view .LVU121
+ 472 0000 58B1     		cbz	r0, .L22
+ 179:../Core/Src/tx.c **** 	if (otx != NULL) {
+ 473              		.loc 1 179 1 view .LVU122
+ 474 0002 10B5     		push	{r4, lr}
+ 475              	.LCFI10:
+ 476              		.cfi_def_cfa_offset 8
+ 477              		.cfi_offset 4, -8
+ 478              		.cfi_offset 14, -4
+ 479 0004 0446     		mov	r4, r0
+ 181:../Core/Src/tx.c **** 		free(otx->value);
+ 480              		.loc 1 181 3 is_stmt 1 view .LVU123
+ 481 0006 0068     		ldr	r0, [r0]
+ 482              	.LVL32:
+ 483              		.loc 1 181 3 is_stmt 0 view .LVU124
+ 484 0008 FFF7FEFF 		bl	free
+ 485              	.LVL33:
+ 182:../Core/Src/tx.c **** 		free(otx->scrpubkey);
+ 486              		.loc 1 182 3 is_stmt 1 view .LVU125
+ 487 000c A068     		ldr	r0, [r4, #8]
+ 488 000e FFF7FEFF 		bl	free
+ 489              	.LVL34:
+ 183:../Core/Src/tx.c **** 		free(otx);
+ 490              		.loc 1 183 3 view .LVU126
+ 491 0012 2046     		mov	r0, r4
+ 492 0014 FFF7FEFF 		bl	free
+ 493              	.LVL35:
+ 184:../Core/Src/tx.c **** 	}
+ 185:../Core/Src/tx.c **** }
+ 494              		.loc 1 185 1 is_stmt 0 view .LVU127
+ 495 0018 10BD     		pop	{r4, pc}
+ 496              	.LVL36:
+ 497              	.L22:
+ 498              	.LCFI11:
+ 499              		.cfi_def_cfa_offset 0
+ 500              		.cfi_restore 4
+ 501              		.cfi_restore 14
+ 502              		.loc 1 185 1 view .LVU128
+ 503 001a 7047     		bx	lr
+ 504              		.cfi_endproc
+ 505              	.LFE8:
+ 507              		.section	.text.free_tx,"ax",%progbits
+ 508              		.align	1
+ 509              		.global	free_tx
+ARM GAS  Build/tx.s 			page 13
+
+
+ 510              		.syntax unified
+ 511              		.thumb
+ 512              		.thumb_func
+ 514              	free_tx:
+ 515              	.LVL37:
+ 516              	.LFB9:
+ 186:../Core/Src/tx.c **** 
+ 187:../Core/Src/tx.c **** 
+ 188:../Core/Src/tx.c **** /**
+ 189:../Core/Src/tx.c ****  * Frees an Transaction (TX)
+ 190:../Core/Src/tx.c ****  *
+ 191:../Core/Src/tx.c ****  * @param otx An initialized TX Opaque handle.
+ 192:../Core/Src/tx.c ****  */
+ 193:../Core/Src/tx.c **** void free_tx(TX tx)
+ 194:../Core/Src/tx.c **** {
+ 517              		.loc 1 194 1 is_stmt 1 view -0
+ 518              		.cfi_startproc
+ 519              		@ args = 0, pretend = 0, frame = 0
+ 520              		@ frame_needed = 0, uses_anonymous_args = 0
+ 195:../Core/Src/tx.c **** 	if (tx != NULL) {
+ 521              		.loc 1 195 2 view .LVU130
+ 522              		.loc 1 195 5 is_stmt 0 view .LVU131
+ 523 0000 88B1     		cbz	r0, .L28
+ 194:../Core/Src/tx.c **** 	if (tx != NULL) {
+ 524              		.loc 1 194 1 view .LVU132
+ 525 0002 10B5     		push	{r4, lr}
+ 526              	.LCFI12:
+ 527              		.cfi_def_cfa_offset 8
+ 528              		.cfi_offset 4, -8
+ 529              		.cfi_offset 14, -4
+ 530 0004 0446     		mov	r4, r0
+ 196:../Core/Src/tx.c **** 		free_intx(tx->inputtx);
+ 531              		.loc 1 196 3 is_stmt 1 view .LVU133
+ 532 0006 8068     		ldr	r0, [r0, #8]
+ 533              	.LVL38:
+ 534              		.loc 1 196 3 is_stmt 0 view .LVU134
+ 535 0008 FFF7FEFF 		bl	free_intx
+ 536              	.LVL39:
+ 197:../Core/Src/tx.c **** 		free_outtx(tx->outputtx);
+ 537              		.loc 1 197 3 is_stmt 1 view .LVU135
+ 538 000c 2069     		ldr	r0, [r4, #16]
+ 539 000e FFF7FEFF 		bl	free_outtx
+ 540              	.LVL40:
+ 198:../Core/Src/tx.c **** 		free(tx->version);
+ 541              		.loc 1 198 3 view .LVU136
+ 542 0012 2068     		ldr	r0, [r4]
+ 543 0014 FFF7FEFF 		bl	free
+ 544              	.LVL41:
+ 199:../Core/Src/tx.c **** 		free(tx->lock);
+ 545              		.loc 1 199 3 view .LVU137
+ 546 0018 6069     		ldr	r0, [r4, #20]
+ 547 001a FFF7FEFF 		bl	free
+ 548              	.LVL42:
+ 200:../Core/Src/tx.c **** 		free(tx);
+ 549              		.loc 1 200 3 view .LVU138
+ 550 001e 2046     		mov	r0, r4
+ 551 0020 FFF7FEFF 		bl	free
+ARM GAS  Build/tx.s 			page 14
+
+
+ 552              	.LVL43:
+ 201:../Core/Src/tx.c **** 	}
+ 202:../Core/Src/tx.c **** }
+ 553              		.loc 1 202 1 is_stmt 0 view .LVU139
+ 554 0024 10BD     		pop	{r4, pc}
+ 555              	.LVL44:
+ 556              	.L28:
+ 557              	.LCFI13:
+ 558              		.cfi_def_cfa_offset 0
+ 559              		.cfi_restore 4
+ 560              		.cfi_restore 14
+ 561              		.loc 1 202 1 view .LVU140
+ 562 0026 7047     		bx	lr
+ 563              		.cfi_endproc
+ 564              	.LFE9:
+ 566              		.section	.text.free_txbuf,"ax",%progbits
+ 567              		.align	1
+ 568              		.global	free_txbuf
+ 569              		.syntax unified
+ 570              		.thumb
+ 571              		.thumb_func
+ 573              	free_txbuf:
+ 574              	.LVL45:
+ 575              	.LFB10:
+ 203:../Core/Src/tx.c **** 
+ 204:../Core/Src/tx.c **** 
+ 205:../Core/Src/tx.c **** void free_txbuf(TXBUF buf)
+ 206:../Core/Src/tx.c **** {
+ 576              		.loc 1 206 1 is_stmt 1 view -0
+ 577              		.cfi_startproc
+ 578              		@ args = 0, pretend = 0, frame = 0
+ 579              		@ frame_needed = 0, uses_anonymous_args = 0
+ 207:../Core/Src/tx.c **** 	if (buf != NULL) {
+ 580              		.loc 1 207 2 view .LVU142
+ 581              		.loc 1 207 5 is_stmt 0 view .LVU143
+ 582 0000 40B1     		cbz	r0, .L34
+ 206:../Core/Src/tx.c **** 	if (buf != NULL) {
+ 583              		.loc 1 206 1 view .LVU144
+ 584 0002 10B5     		push	{r4, lr}
+ 585              	.LCFI14:
+ 586              		.cfi_def_cfa_offset 8
+ 587              		.cfi_offset 4, -8
+ 588              		.cfi_offset 14, -4
+ 589 0004 0446     		mov	r4, r0
+ 208:../Core/Src/tx.c **** 		free(buf->data);
+ 590              		.loc 1 208 3 is_stmt 1 view .LVU145
+ 591 0006 0068     		ldr	r0, [r0]
+ 592              	.LVL46:
+ 593              		.loc 1 208 3 is_stmt 0 view .LVU146
+ 594 0008 FFF7FEFF 		bl	free
+ 595              	.LVL47:
+ 209:../Core/Src/tx.c **** 		free(buf);
+ 596              		.loc 1 209 3 is_stmt 1 view .LVU147
+ 597 000c 2046     		mov	r0, r4
+ 598 000e FFF7FEFF 		bl	free
+ 599              	.LVL48:
+ 210:../Core/Src/tx.c **** 	}
+ARM GAS  Build/tx.s 			page 15
+
+
+ 211:../Core/Src/tx.c **** }
+ 600              		.loc 1 211 1 is_stmt 0 view .LVU148
+ 601 0012 10BD     		pop	{r4, pc}
+ 602              	.LVL49:
+ 603              	.L34:
+ 604              	.LCFI15:
+ 605              		.cfi_def_cfa_offset 0
+ 606              		.cfi_restore 4
+ 607              		.cfi_restore 14
+ 608              		.loc 1 211 1 view .LVU149
+ 609 0014 7047     		bx	lr
+ 610              		.cfi_endproc
+ 611              	.LFE10:
+ 613              		.section	.text.reserve_space,"ax",%progbits
+ 614              		.align	1
+ 615              		.global	reserve_space
+ 616              		.syntax unified
+ 617              		.thumb
+ 618              		.thumb_func
+ 620              	reserve_space:
+ 621              	.LVL50:
+ 622              	.LFB11:
+ 212:../Core/Src/tx.c **** 
+ 213:../Core/Src/tx.c **** /***************************************************************************//**
+ 214:../Core/Src/tx.c **** * Serialisation functions: Used for seralising the transaction structures
+ 215:../Core/Src/tx.c **** * before propagating them to the Secure World for signing.
+ 216:../Core/Src/tx.c **** *******************************************************************************/
+ 217:../Core/Src/tx.c **** 
+ 218:../Core/Src/tx.c **** void reserve_space(TXBUF b, size_t bytes) {
+ 623              		.loc 1 218 43 is_stmt 1 view -0
+ 624              		.cfi_startproc
+ 625              		@ args = 0, pretend = 0, frame = 0
+ 626              		@ frame_needed = 0, uses_anonymous_args = 0
+ 219:../Core/Src/tx.c ****     if((b->next + bytes) > b->size) {
+ 627              		.loc 1 219 5 view .LVU151
+ 628              		.loc 1 219 10 is_stmt 0 view .LVU152
+ 629 0000 4368     		ldr	r3, [r0, #4]
+ 630              		.loc 1 219 17 view .LVU153
+ 631 0002 0B44     		add	r3, r3, r1
+ 632              		.loc 1 219 29 view .LVU154
+ 633 0004 8168     		ldr	r1, [r0, #8]
+ 634              	.LVL51:
+ 635              		.loc 1 219 7 view .LVU155
+ 636 0006 8B42     		cmp	r3, r1
+ 637 0008 00D8     		bhi	.L43
+ 638 000a 7047     		bx	lr
+ 639              	.L43:
+ 218:../Core/Src/tx.c ****     if((b->next + bytes) > b->size) {
+ 640              		.loc 1 218 43 view .LVU156
+ 641 000c 10B5     		push	{r4, lr}
+ 642              	.LCFI16:
+ 643              		.cfi_def_cfa_offset 8
+ 644              		.cfi_offset 4, -8
+ 645              		.cfi_offset 14, -4
+ 646 000e 0446     		mov	r4, r0
+ 220:../Core/Src/tx.c ****         /* double size to enforce O(lg N) reallocs */
+ 221:../Core/Src/tx.c ****         b->data = realloc(b->data, b->size * 2);
+ARM GAS  Build/tx.s 			page 16
+
+
+ 647              		.loc 1 221 9 is_stmt 1 view .LVU157
+ 648              		.loc 1 221 19 is_stmt 0 view .LVU158
+ 649 0010 4900     		lsls	r1, r1, #1
+ 650 0012 0068     		ldr	r0, [r0]
+ 651              	.LVL52:
+ 652              		.loc 1 221 19 view .LVU159
+ 653 0014 FFF7FEFF 		bl	realloc
+ 654              	.LVL53:
+ 655              		.loc 1 221 17 view .LVU160
+ 656 0018 2060     		str	r0, [r4]
+ 222:../Core/Src/tx.c ****         b->size *= 2;
+ 657              		.loc 1 222 9 is_stmt 1 view .LVU161
+ 658              		.loc 1 222 10 is_stmt 0 view .LVU162
+ 659 001a A368     		ldr	r3, [r4, #8]
+ 660              		.loc 1 222 17 view .LVU163
+ 661 001c 5B00     		lsls	r3, r3, #1
+ 662 001e A360     		str	r3, [r4, #8]
+ 223:../Core/Src/tx.c ****     }
+ 224:../Core/Src/tx.c **** }
+ 663              		.loc 1 224 1 view .LVU164
+ 664 0020 10BD     		pop	{r4, pc}
+ 665              		.loc 1 224 1 view .LVU165
+ 666              		.cfi_endproc
+ 667              	.LFE11:
+ 669              		.section	.text.serialize_bytestr,"ax",%progbits
+ 670              		.align	1
+ 671              		.global	serialize_bytestr
+ 672              		.syntax unified
+ 673              		.thumb
+ 674              		.thumb_func
+ 676              	serialize_bytestr:
+ 677              	.LVL54:
+ 678              	.LFB12:
+ 225:../Core/Src/tx.c **** 
+ 226:../Core/Src/tx.c **** 
+ 227:../Core/Src/tx.c **** void serialize_bytestr(uint8_t *x, size_t len, TXBUF b) {
+ 679              		.loc 1 227 57 is_stmt 1 view -0
+ 680              		.cfi_startproc
+ 681              		@ args = 0, pretend = 0, frame = 0
+ 682              		@ frame_needed = 0, uses_anonymous_args = 0
+ 683              		.loc 1 227 57 is_stmt 0 view .LVU167
+ 684 0000 70B5     		push	{r4, r5, r6, lr}
+ 685              	.LCFI17:
+ 686              		.cfi_def_cfa_offset 16
+ 687              		.cfi_offset 4, -16
+ 688              		.cfi_offset 5, -12
+ 689              		.cfi_offset 6, -8
+ 690              		.cfi_offset 14, -4
+ 691 0002 0646     		mov	r6, r0
+ 692 0004 0D46     		mov	r5, r1
+ 693 0006 1446     		mov	r4, r2
+ 228:../Core/Src/tx.c ****     /* assume int == long; how can this be done better? */
+ 229:../Core/Src/tx.c **** 
+ 230:../Core/Src/tx.c ****     reserve_space(b, len);
+ 694              		.loc 1 230 5 is_stmt 1 view .LVU168
+ 695 0008 1046     		mov	r0, r2
+ 696              	.LVL55:
+ARM GAS  Build/tx.s 			page 17
+
+
+ 697              		.loc 1 230 5 is_stmt 0 view .LVU169
+ 698 000a FFF7FEFF 		bl	reserve_space
+ 699              	.LVL56:
+ 231:../Core/Src/tx.c **** 
+ 232:../Core/Src/tx.c ****     memcpy(((uint8_t *)b->data) + b->next, x, len);
+ 700              		.loc 1 232 5 is_stmt 1 view .LVU170
+ 701              		.loc 1 232 25 is_stmt 0 view .LVU171
+ 702 000e 2068     		ldr	r0, [r4]
+ 703              		.loc 1 232 36 view .LVU172
+ 704 0010 6368     		ldr	r3, [r4, #4]
+ 705              		.loc 1 232 5 view .LVU173
+ 706 0012 2A46     		mov	r2, r5
+ 707 0014 3146     		mov	r1, r6
+ 708 0016 1844     		add	r0, r0, r3
+ 709 0018 FFF7FEFF 		bl	memcpy
+ 710              	.LVL57:
+ 233:../Core/Src/tx.c ****     b->next += len;
+ 711              		.loc 1 233 5 is_stmt 1 view .LVU174
+ 712              		.loc 1 233 6 is_stmt 0 view .LVU175
+ 713 001c 6368     		ldr	r3, [r4, #4]
+ 714              		.loc 1 233 13 view .LVU176
+ 715 001e 2B44     		add	r3, r3, r5
+ 716 0020 6360     		str	r3, [r4, #4]
+ 234:../Core/Src/tx.c **** }
+ 717              		.loc 1 234 1 view .LVU177
+ 718 0022 70BD     		pop	{r4, r5, r6, pc}
+ 719              		.loc 1 234 1 view .LVU178
+ 720              		.cfi_endproc
+ 721              	.LFE12:
+ 723              		.section	.text.serialize_intx,"ax",%progbits
+ 724              		.align	1
+ 725              		.global	serialize_intx
+ 726              		.syntax unified
+ 727              		.thumb
+ 728              		.thumb_func
+ 730              	serialize_intx:
+ 731              	.LVL58:
+ 732              	.LFB13:
+ 235:../Core/Src/tx.c **** 
+ 236:../Core/Src/tx.c **** void serialize_intx(INTX intx, TXBUF out)
+ 237:../Core/Src/tx.c **** {
+ 733              		.loc 1 237 1 is_stmt 1 view -0
+ 734              		.cfi_startproc
+ 735              		@ args = 0, pretend = 0, frame = 0
+ 736              		@ frame_needed = 0, uses_anonymous_args = 0
+ 737              		.loc 1 237 1 is_stmt 0 view .LVU180
+ 738 0000 38B5     		push	{r3, r4, r5, lr}
+ 739              	.LCFI18:
+ 740              		.cfi_def_cfa_offset 16
+ 741              		.cfi_offset 3, -16
+ 742              		.cfi_offset 4, -12
+ 743              		.cfi_offset 5, -8
+ 744              		.cfi_offset 14, -4
+ 745 0002 0446     		mov	r4, r0
+ 746 0004 0D46     		mov	r5, r1
+ 238:../Core/Src/tx.c **** 	serialize_bytestr(intx->prvhash, 32, out);
+ 747              		.loc 1 238 2 is_stmt 1 view .LVU181
+ARM GAS  Build/tx.s 			page 18
+
+
+ 748 0006 0A46     		mov	r2, r1
+ 749 0008 2021     		movs	r1, #32
+ 750              	.LVL59:
+ 751              		.loc 1 238 2 is_stmt 0 view .LVU182
+ 752 000a 0068     		ldr	r0, [r0]
+ 753              	.LVL60:
+ 754              		.loc 1 238 2 view .LVU183
+ 755 000c FFF7FEFF 		bl	serialize_bytestr
+ 756              	.LVL61:
+ 239:../Core/Src/tx.c **** 	serialize_bytestr(intx->prvindexl, 4, out);
+ 757              		.loc 1 239 2 is_stmt 1 view .LVU184
+ 758 0010 2A46     		mov	r2, r5
+ 759 0012 0421     		movs	r1, #4
+ 760 0014 6068     		ldr	r0, [r4, #4]
+ 761 0016 FFF7FEFF 		bl	serialize_bytestr
+ 762              	.LVL62:
+ 240:../Core/Src/tx.c **** 	serialize_bytestr(&intx->scrlen, 1, out);
+ 763              		.loc 1 240 2 view .LVU185
+ 764 001a 2A46     		mov	r2, r5
+ 765 001c 0121     		movs	r1, #1
+ 766 001e 04F10800 		add	r0, r4, #8
+ 767 0022 FFF7FEFF 		bl	serialize_bytestr
+ 768              	.LVL63:
+ 241:../Core/Src/tx.c **** 	serialize_bytestr(intx->scrsig, 25, out);
+ 769              		.loc 1 241 2 view .LVU186
+ 770 0026 2A46     		mov	r2, r5
+ 771 0028 1921     		movs	r1, #25
+ 772 002a E068     		ldr	r0, [r4, #12]
+ 773 002c FFF7FEFF 		bl	serialize_bytestr
+ 774              	.LVL64:
+ 242:../Core/Src/tx.c **** 	serialize_bytestr(intx->sequence, 4, out);
+ 775              		.loc 1 242 2 view .LVU187
+ 776 0030 2A46     		mov	r2, r5
+ 777 0032 0421     		movs	r1, #4
+ 778 0034 2069     		ldr	r0, [r4, #16]
+ 779 0036 FFF7FEFF 		bl	serialize_bytestr
+ 780              	.LVL65:
+ 243:../Core/Src/tx.c **** }
+ 781              		.loc 1 243 1 is_stmt 0 view .LVU188
+ 782 003a 38BD     		pop	{r3, r4, r5, pc}
+ 783              		.loc 1 243 1 view .LVU189
+ 784              		.cfi_endproc
+ 785              	.LFE13:
+ 787              		.section	.text.serialize_outtx,"ax",%progbits
+ 788              		.align	1
+ 789              		.global	serialize_outtx
+ 790              		.syntax unified
+ 791              		.thumb
+ 792              		.thumb_func
+ 794              	serialize_outtx:
+ 795              	.LVL66:
+ 796              	.LFB14:
+ 244:../Core/Src/tx.c **** 
+ 245:../Core/Src/tx.c **** void serialize_outtx(OUTTX outtx, TXBUF out)
+ 246:../Core/Src/tx.c **** {
+ 797              		.loc 1 246 1 is_stmt 1 view -0
+ 798              		.cfi_startproc
+ARM GAS  Build/tx.s 			page 19
+
+
+ 799              		@ args = 0, pretend = 0, frame = 0
+ 800              		@ frame_needed = 0, uses_anonymous_args = 0
+ 801              		.loc 1 246 1 is_stmt 0 view .LVU191
+ 802 0000 70B5     		push	{r4, r5, r6, lr}
+ 803              	.LCFI19:
+ 804              		.cfi_def_cfa_offset 16
+ 805              		.cfi_offset 4, -16
+ 806              		.cfi_offset 5, -12
+ 807              		.cfi_offset 6, -8
+ 808              		.cfi_offset 14, -4
+ 809 0002 0546     		mov	r5, r0
+ 810 0004 0C46     		mov	r4, r1
+ 247:../Core/Src/tx.c **** 	serialize_bytestr(outtx->value, 8, out);
+ 811              		.loc 1 247 2 is_stmt 1 view .LVU192
+ 812 0006 0646     		mov	r6, r0
+ 813 0008 0A46     		mov	r2, r1
+ 814 000a 0821     		movs	r1, #8
+ 815              	.LVL67:
+ 816              		.loc 1 247 2 is_stmt 0 view .LVU193
+ 817 000c 56F8040B 		ldr	r0, [r6], #4
+ 818              	.LVL68:
+ 819              		.loc 1 247 2 view .LVU194
+ 820 0010 FFF7FEFF 		bl	serialize_bytestr
+ 821              	.LVL69:
+ 248:../Core/Src/tx.c **** 	serialize_bytestr(&outtx->scrlen, 1, out);
+ 822              		.loc 1 248 2 is_stmt 1 view .LVU195
+ 823 0014 2246     		mov	r2, r4
+ 824 0016 0121     		movs	r1, #1
+ 825 0018 3046     		mov	r0, r6
+ 826 001a FFF7FEFF 		bl	serialize_bytestr
+ 827              	.LVL70:
+ 249:../Core/Src/tx.c **** 	serialize_bytestr(outtx->scrpubkey, 25, out);
+ 828              		.loc 1 249 2 view .LVU196
+ 829 001e 2246     		mov	r2, r4
+ 830 0020 1921     		movs	r1, #25
+ 831 0022 A868     		ldr	r0, [r5, #8]
+ 832 0024 FFF7FEFF 		bl	serialize_bytestr
+ 833              	.LVL71:
+ 250:../Core/Src/tx.c **** }
+ 834              		.loc 1 250 1 is_stmt 0 view .LVU197
+ 835 0028 70BD     		pop	{r4, r5, r6, pc}
+ 836              		.loc 1 250 1 view .LVU198
+ 837              		.cfi_endproc
+ 838              	.LFE14:
+ 840              		.section	.text.serialize_tx,"ax",%progbits
+ 841              		.align	1
+ 842              		.global	serialize_tx
+ 843              		.syntax unified
+ 844              		.thumb
+ 845              		.thumb_func
+ 847              	serialize_tx:
+ 848              	.LVL72:
+ 849              	.LFB15:
+ 251:../Core/Src/tx.c **** 
+ 252:../Core/Src/tx.c **** void serialize_tx(TX tx, TXBUF out)
+ 253:../Core/Src/tx.c **** {
+ 850              		.loc 1 253 1 is_stmt 1 view -0
+ARM GAS  Build/tx.s 			page 20
+
+
+ 851              		.cfi_startproc
+ 852              		@ args = 0, pretend = 0, frame = 0
+ 853              		@ frame_needed = 0, uses_anonymous_args = 0
+ 854              		.loc 1 253 1 is_stmt 0 view .LVU200
+ 855 0000 70B5     		push	{r4, r5, r6, lr}
+ 856              	.LCFI20:
+ 857              		.cfi_def_cfa_offset 16
+ 858              		.cfi_offset 4, -16
+ 859              		.cfi_offset 5, -12
+ 860              		.cfi_offset 6, -8
+ 861              		.cfi_offset 14, -4
+ 862 0002 0546     		mov	r5, r0
+ 863 0004 0C46     		mov	r4, r1
+ 254:../Core/Src/tx.c **** 	serialize_bytestr(tx->version, 4, out);
+ 864              		.loc 1 254 2 is_stmt 1 view .LVU201
+ 865 0006 0646     		mov	r6, r0
+ 866 0008 0A46     		mov	r2, r1
+ 867 000a 0421     		movs	r1, #4
+ 868              	.LVL73:
+ 869              		.loc 1 254 2 is_stmt 0 view .LVU202
+ 870 000c 56F8040B 		ldr	r0, [r6], #4
+ 871              	.LVL74:
+ 872              		.loc 1 254 2 view .LVU203
+ 873 0010 FFF7FEFF 		bl	serialize_bytestr
+ 874              	.LVL75:
+ 255:../Core/Src/tx.c **** 	serialize_bytestr(&tx->incount, 1, out);
+ 875              		.loc 1 255 2 is_stmt 1 view .LVU204
+ 876 0014 2246     		mov	r2, r4
+ 877 0016 0121     		movs	r1, #1
+ 878 0018 3046     		mov	r0, r6
+ 879 001a FFF7FEFF 		bl	serialize_bytestr
+ 880              	.LVL76:
+ 256:../Core/Src/tx.c **** 	serialize_intx(tx->inputtx, out);
+ 881              		.loc 1 256 2 view .LVU205
+ 882 001e 2146     		mov	r1, r4
+ 883 0020 A868     		ldr	r0, [r5, #8]
+ 884 0022 FFF7FEFF 		bl	serialize_intx
+ 885              	.LVL77:
+ 257:../Core/Src/tx.c **** 	serialize_bytestr(&tx->outcount, 1, out);
+ 886              		.loc 1 257 2 view .LVU206
+ 887 0026 2246     		mov	r2, r4
+ 888 0028 0121     		movs	r1, #1
+ 889 002a 05F10C00 		add	r0, r5, #12
+ 890 002e FFF7FEFF 		bl	serialize_bytestr
+ 891              	.LVL78:
+ 258:../Core/Src/tx.c **** 	serialize_outtx(tx->outputtx, out);
+ 892              		.loc 1 258 2 view .LVU207
+ 893 0032 2146     		mov	r1, r4
+ 894 0034 2869     		ldr	r0, [r5, #16]
+ 895 0036 FFF7FEFF 		bl	serialize_outtx
+ 896              	.LVL79:
+ 259:../Core/Src/tx.c **** 	serialize_bytestr(tx->lock, 4, out);
+ 897              		.loc 1 259 2 view .LVU208
+ 898 003a 2246     		mov	r2, r4
+ 899 003c 0421     		movs	r1, #4
+ 900 003e 6869     		ldr	r0, [r5, #20]
+ 901 0040 FFF7FEFF 		bl	serialize_bytestr
+ARM GAS  Build/tx.s 			page 21
+
+
+ 902              	.LVL80:
+ 260:../Core/Src/tx.c **** }
+ 903              		.loc 1 260 1 is_stmt 0 view .LVU209
+ 904 0044 70BD     		pop	{r4, r5, r6, pc}
+ 905              		.loc 1 260 1 view .LVU210
+ 906              		.cfi_endproc
+ 907              	.LFE15:
+ 909              		.section	.rodata.print_ser_bytes.str1.4,"aMS",%progbits,1
+ 910              		.align	2
+ 911              	.LC0:
+ 912 0000 25303278 		.ascii	"%02x\000"
+ 912      00
+ 913              		.section	.text.print_ser_bytes,"ax",%progbits
+ 914              		.align	1
+ 915              		.global	print_ser_bytes
+ 916              		.syntax unified
+ 917              		.thumb
+ 918              		.thumb_func
+ 920              	print_ser_bytes:
+ 921              	.LVL81:
+ 922              	.LFB16:
+ 261:../Core/Src/tx.c **** 
+ 262:../Core/Src/tx.c **** 
+ 263:../Core/Src/tx.c **** void print_ser_bytes(TXBUF buf)
+ 264:../Core/Src/tx.c **** {
+ 923              		.loc 1 264 1 is_stmt 1 view -0
+ 924              		.cfi_startproc
+ 925              		@ args = 0, pretend = 0, frame = 0
+ 926              		@ frame_needed = 0, uses_anonymous_args = 0
+ 927              		.loc 1 264 1 is_stmt 0 view .LVU212
+ 928 0000 38B5     		push	{r3, r4, r5, lr}
+ 929              	.LCFI21:
+ 930              		.cfi_def_cfa_offset 16
+ 931              		.cfi_offset 3, -16
+ 932              		.cfi_offset 4, -12
+ 933              		.cfi_offset 5, -8
+ 934              		.cfi_offset 14, -4
+ 935 0002 0546     		mov	r5, r0
+ 265:../Core/Src/tx.c **** 	for (size_t i = 0; i < buf->next; i++) {
+ 936              		.loc 1 265 2 is_stmt 1 view .LVU213
+ 937              	.LBB2:
+ 938              		.loc 1 265 7 view .LVU214
+ 939              	.LVL82:
+ 940              		.loc 1 265 14 is_stmt 0 view .LVU215
+ 941 0004 0024     		movs	r4, #0
+ 942              		.loc 1 265 2 view .LVU216
+ 943 0006 05E0     		b	.L53
+ 944              	.LVL83:
+ 945              	.L54:
+ 266:../Core/Src/tx.c **** 		printf("%02x", ((uint8_t *)buf->data)[i]);
+ 946              		.loc 1 266 3 is_stmt 1 discriminator 3 view .LVU217
+ 947              		.loc 1 266 33 is_stmt 0 discriminator 3 view .LVU218
+ 948 0008 2B68     		ldr	r3, [r5]
+ 949              		.loc 1 266 3 discriminator 3 view .LVU219
+ 950 000a 195D     		ldrb	r1, [r3, r4]	@ zero_extendqisi2
+ 951 000c 0548     		ldr	r0, .L56
+ 952 000e FFF7FEFF 		bl	printf
+ARM GAS  Build/tx.s 			page 22
+
+
+ 953              	.LVL84:
+ 265:../Core/Src/tx.c **** 	for (size_t i = 0; i < buf->next; i++) {
+ 954              		.loc 1 265 37 is_stmt 1 discriminator 3 view .LVU220
+ 955 0012 0134     		adds	r4, r4, #1
+ 956              	.LVL85:
+ 957              	.L53:
+ 265:../Core/Src/tx.c **** 	for (size_t i = 0; i < buf->next; i++) {
+ 958              		.loc 1 265 23 discriminator 1 view .LVU221
+ 265:../Core/Src/tx.c **** 	for (size_t i = 0; i < buf->next; i++) {
+ 959              		.loc 1 265 28 is_stmt 0 discriminator 1 view .LVU222
+ 960 0014 6B68     		ldr	r3, [r5, #4]
+ 265:../Core/Src/tx.c **** 	for (size_t i = 0; i < buf->next; i++) {
+ 961              		.loc 1 265 23 discriminator 1 view .LVU223
+ 962 0016 A342     		cmp	r3, r4
+ 963 0018 F6D8     		bhi	.L54
+ 964              	.LBE2:
+ 267:../Core/Src/tx.c **** 	}
+ 268:../Core/Src/tx.c **** 	putchar('\n');
+ 965              		.loc 1 268 2 is_stmt 1 view .LVU224
+ 966 001a 0A20     		movs	r0, #10
+ 967 001c FFF7FEFF 		bl	putchar
+ 968              	.LVL86:
+ 269:../Core/Src/tx.c **** }
+ 969              		.loc 1 269 1 is_stmt 0 view .LVU225
+ 970 0020 38BD     		pop	{r3, r4, r5, pc}
+ 971              	.LVL87:
+ 972              	.L57:
+ 973              		.loc 1 269 1 view .LVU226
+ 974 0022 00BF     		.align	2
+ 975              	.L56:
+ 976 0024 00000000 		.word	.LC0
+ 977              		.cfi_endproc
+ 978              	.LFE16:
+ 980              		.section	.text.get_txbuf_data,"ax",%progbits
+ 981              		.align	1
+ 982              		.global	get_txbuf_data
+ 983              		.syntax unified
+ 984              		.thumb
+ 985              		.thumb_func
+ 987              	get_txbuf_data:
+ 988              	.LVL88:
+ 989              	.LFB17:
+ 270:../Core/Src/tx.c **** 
+ 271:../Core/Src/tx.c **** void *get_txbuf_data(TXBUF buf)
+ 272:../Core/Src/tx.c **** {
+ 990              		.loc 1 272 1 is_stmt 1 view -0
+ 991              		.cfi_startproc
+ 992              		@ args = 0, pretend = 0, frame = 0
+ 993              		@ frame_needed = 0, uses_anonymous_args = 0
+ 994              		@ link register save eliminated.
+ 273:../Core/Src/tx.c **** 	return buf->data;
+ 995              		.loc 1 273 2 view .LVU228
+ 274:../Core/Src/tx.c **** }
+ 996              		.loc 1 274 1 is_stmt 0 view .LVU229
+ 997 0000 0068     		ldr	r0, [r0]
+ 998              	.LVL89:
+ 999              		.loc 1 274 1 view .LVU230
+ARM GAS  Build/tx.s 			page 23
+
+
+ 1000 0002 7047     		bx	lr
+ 1001              		.cfi_endproc
+ 1002              	.LFE17:
+ 1004              		.section	.text.get_txbuf_size,"ax",%progbits
+ 1005              		.align	1
+ 1006              		.global	get_txbuf_size
+ 1007              		.syntax unified
+ 1008              		.thumb
+ 1009              		.thumb_func
+ 1011              	get_txbuf_size:
+ 1012              	.LVL90:
+ 1013              	.LFB18:
+ 275:../Core/Src/tx.c **** 
+ 276:../Core/Src/tx.c **** size_t get_txbuf_size(TXBUF buf)
+ 277:../Core/Src/tx.c **** {
+ 1014              		.loc 1 277 1 is_stmt 1 view -0
+ 1015              		.cfi_startproc
+ 1016              		@ args = 0, pretend = 0, frame = 0
+ 1017              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1018              		@ link register save eliminated.
+ 278:../Core/Src/tx.c **** 	return buf->size;
+ 1019              		.loc 1 278 2 view .LVU232
+ 279:../Core/Src/tx.c **** }
+ 1020              		.loc 1 279 1 is_stmt 0 view .LVU233
+ 1021 0000 8068     		ldr	r0, [r0, #8]
+ 1022              	.LVL91:
+ 1023              		.loc 1 279 1 view .LVU234
+ 1024 0002 7047     		bx	lr
+ 1025              		.cfi_endproc
+ 1026              	.LFE18:
+ 1028              		.section	.text.get_txbuf_next,"ax",%progbits
+ 1029              		.align	1
+ 1030              		.global	get_txbuf_next
+ 1031              		.syntax unified
+ 1032              		.thumb
+ 1033              		.thumb_func
+ 1035              	get_txbuf_next:
+ 1036              	.LVL92:
+ 1037              	.LFB19:
+ 280:../Core/Src/tx.c **** 
+ 281:../Core/Src/tx.c **** uint32_t get_txbuf_next(TXBUF buf)
+ 282:../Core/Src/tx.c **** {
+ 1038              		.loc 1 282 1 is_stmt 1 view -0
+ 1039              		.cfi_startproc
+ 1040              		@ args = 0, pretend = 0, frame = 0
+ 1041              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1042              		@ link register save eliminated.
+ 283:../Core/Src/tx.c **** 	return buf->next;
+ 1043              		.loc 1 283 2 view .LVU236
+ 284:../Core/Src/tx.c **** }
+ 1044              		.loc 1 284 1 is_stmt 0 view .LVU237
+ 1045 0000 4068     		ldr	r0, [r0, #4]
+ 1046              	.LVL93:
+ 1047              		.loc 1 284 1 view .LVU238
+ 1048 0002 7047     		bx	lr
+ 1049              		.cfi_endproc
+ 1050              	.LFE19:
+ARM GAS  Build/tx.s 			page 24
+
+
+ 1052              		.section	.rodata.print_intx.str1.4,"aMS",%progbits,1
+ 1053              		.align	2
+ 1054              	.LC1:
+ 1055 0000 25782000 		.ascii	"%x \000"
+ 1056              		.section	.text.print_intx,"ax",%progbits
+ 1057              		.align	1
+ 1058              		.global	print_intx
+ 1059              		.syntax unified
+ 1060              		.thumb
+ 1061              		.thumb_func
+ 1063              	print_intx:
+ 1064              	.LVL94:
+ 1065              	.LFB20:
+ 285:../Core/Src/tx.c **** 
+ 286:../Core/Src/tx.c **** 
+ 287:../Core/Src/tx.c **** /***************************************************************************//**
+ 288:../Core/Src/tx.c **** * Debugging functions: Mainly used for printing and debugging transactions.
+ 289:../Core/Src/tx.c **** *******************************************************************************/
+ 290:../Core/Src/tx.c **** void print_intx(INTX intx)
+ 291:../Core/Src/tx.c **** {
+ 1066              		.loc 1 291 1 is_stmt 1 view -0
+ 1067              		.cfi_startproc
+ 1068              		@ args = 0, pretend = 0, frame = 0
+ 1069              		@ frame_needed = 0, uses_anonymous_args = 0
+ 292:../Core/Src/tx.c **** 	if (intx == NULL)
+ 1070              		.loc 1 292 2 view .LVU240
+ 1071              		.loc 1 292 5 is_stmt 0 view .LVU241
+ 1072 0000 0028     		cmp	r0, #0
+ 1073 0002 4ED0     		beq	.L82
+ 291:../Core/Src/tx.c **** 	if (intx == NULL)
+ 1074              		.loc 1 291 1 view .LVU242
+ 1075 0004 70B5     		push	{r4, r5, r6, lr}
+ 1076              	.LCFI22:
+ 1077              		.cfi_def_cfa_offset 16
+ 1078              		.cfi_offset 4, -16
+ 1079              		.cfi_offset 5, -12
+ 1080              		.cfi_offset 6, -8
+ 1081              		.cfi_offset 14, -4
+ 1082 0006 0546     		mov	r5, r0
+ 1083              	.LBB3:
+ 293:../Core/Src/tx.c **** 		return;
+ 294:../Core/Src/tx.c **** 
+ 295:../Core/Src/tx.c **** 	for (uint32_t i = 1; i <= 5; i++) {
+ 1084              		.loc 1 295 16 view .LVU243
+ 1085 0008 0126     		movs	r6, #1
+ 1086 000a 0BE0     		b	.L63
+ 1087              	.LVL95:
+ 1088              	.L71:
+ 1089              	.LBB4:
+ 296:../Core/Src/tx.c **** 
+ 297:../Core/Src/tx.c **** 		switch(i) {
+ 298:../Core/Src/tx.c **** 		case 1:
+ 299:../Core/Src/tx.c **** 			for (uint32_t j = 0; j < 32; j++) { printf("%x ", intx->prvhash[j]); }
+ 1090              		.loc 1 299 40 is_stmt 1 discriminator 3 view .LVU244
+ 1091              		.loc 1 299 58 is_stmt 0 discriminator 3 view .LVU245
+ 1092 000c 2B68     		ldr	r3, [r5]
+ 1093              		.loc 1 299 40 discriminator 3 view .LVU246
+ARM GAS  Build/tx.s 			page 25
+
+
+ 1094 000e 195D     		ldrb	r1, [r3, r4]	@ zero_extendqisi2
+ 1095 0010 2448     		ldr	r0, .L86
+ 1096 0012 FFF7FEFF 		bl	printf
+ 1097              	.LVL96:
+ 1098              		.loc 1 299 34 is_stmt 1 discriminator 3 view .LVU247
+ 1099 0016 0134     		adds	r4, r4, #1
+ 1100              	.LVL97:
+ 1101              	.L70:
+ 1102              		.loc 1 299 27 discriminator 1 view .LVU248
+ 1103 0018 1F2C     		cmp	r4, #31
+ 1104 001a F7D9     		bls	.L71
+ 1105              	.LBE4:
+ 300:../Core/Src/tx.c **** 			putchar('\n');
+ 1106              		.loc 1 300 4 view .LVU249
+ 1107 001c 0A20     		movs	r0, #10
+ 1108 001e FFF7FEFF 		bl	putchar
+ 1109              	.LVL98:
+ 301:../Core/Src/tx.c **** 			break;
+ 1110              		.loc 1 301 4 view .LVU250
+ 1111              	.L64:
+ 295:../Core/Src/tx.c **** 
+ 1112              		.loc 1 295 32 discriminator 2 view .LVU251
+ 1113 0022 0136     		adds	r6, r6, #1
+ 1114              	.LVL99:
+ 1115              	.L63:
+ 295:../Core/Src/tx.c **** 
+ 1116              		.loc 1 295 25 discriminator 1 view .LVU252
+ 1117 0024 052E     		cmp	r6, #5
+ 1118 0026 3BD8     		bhi	.L85
+ 297:../Core/Src/tx.c **** 		case 1:
+ 1119              		.loc 1 297 3 view .LVU253
+ 1120 0028 731E     		subs	r3, r6, #1
+ 1121 002a 042B     		cmp	r3, #4
+ 1122 002c F9D8     		bhi	.L64
+ 1123 002e DFE803F0 		tbb	[pc, r3]
+ 1124              	.L66:
+ 1125 0032 03       		.byte	(.L76-.L66)/2
+ 1126 0033 11       		.byte	(.L77-.L66)/2
+ 1127 0034 13       		.byte	(.L68-.L66)/2
+ 1128 0035 27       		.byte	(.L78-.L66)/2
+ 1129 0036 35       		.byte	(.L79-.L66)/2
+ 1130 0037 00       		.p2align 1
+ 1131              	.L76:
+ 1132 0038 0024     		movs	r4, #0
+ 1133 003a EDE7     		b	.L70
+ 1134              	.LVL100:
+ 1135              	.L72:
+ 1136              	.LBB5:
+ 302:../Core/Src/tx.c **** 		case 2:
+ 303:../Core/Src/tx.c **** 			for (uint32_t j = 0; j < 4; j++) { printf("%x ", intx->prvindexl[j]); }
+ 1137              		.loc 1 303 39 discriminator 3 view .LVU254
+ 1138              		.loc 1 303 57 is_stmt 0 discriminator 3 view .LVU255
+ 1139 003c 6B68     		ldr	r3, [r5, #4]
+ 1140              		.loc 1 303 39 discriminator 3 view .LVU256
+ 1141 003e 195D     		ldrb	r1, [r3, r4]	@ zero_extendqisi2
+ 1142 0040 1848     		ldr	r0, .L86
+ 1143 0042 FFF7FEFF 		bl	printf
+ARM GAS  Build/tx.s 			page 26
+
+
+ 1144              	.LVL101:
+ 1145              		.loc 1 303 33 is_stmt 1 discriminator 3 view .LVU257
+ 1146 0046 0134     		adds	r4, r4, #1
+ 1147              	.LVL102:
+ 1148              	.L69:
+ 1149              		.loc 1 303 27 discriminator 1 view .LVU258
+ 1150 0048 032C     		cmp	r4, #3
+ 1151 004a F7D9     		bls	.L72
+ 1152              	.LBE5:
+ 304:../Core/Src/tx.c **** 			putchar('\n');
+ 1153              		.loc 1 304 4 view .LVU259
+ 1154 004c 0A20     		movs	r0, #10
+ 1155 004e FFF7FEFF 		bl	putchar
+ 1156              	.LVL103:
+ 305:../Core/Src/tx.c **** 			break;
+ 1157              		.loc 1 305 4 view .LVU260
+ 1158 0052 E6E7     		b	.L64
+ 1159              	.LVL104:
+ 1160              	.L77:
+ 297:../Core/Src/tx.c **** 		case 1:
+ 1161              		.loc 1 297 3 is_stmt 0 view .LVU261
+ 1162 0054 0024     		movs	r4, #0
+ 1163 0056 F7E7     		b	.L69
+ 1164              	.L68:
+ 306:../Core/Src/tx.c **** 		case 3:
+ 307:../Core/Src/tx.c **** 			printf("%x ", intx->scrlen);
+ 1165              		.loc 1 307 4 is_stmt 1 view .LVU262
+ 1166 0058 297A     		ldrb	r1, [r5, #8]	@ zero_extendqisi2
+ 1167 005a 1248     		ldr	r0, .L86
+ 1168 005c FFF7FEFF 		bl	printf
+ 1169              	.LVL105:
+ 308:../Core/Src/tx.c **** 			putchar('\n');
+ 1170              		.loc 1 308 4 view .LVU263
+ 1171 0060 0A20     		movs	r0, #10
+ 1172 0062 FFF7FEFF 		bl	putchar
+ 1173              	.LVL106:
+ 309:../Core/Src/tx.c **** 			break;
+ 1174              		.loc 1 309 4 view .LVU264
+ 1175 0066 DCE7     		b	.L64
+ 1176              	.LVL107:
+ 1177              	.L73:
+ 1178              	.LBB6:
+ 310:../Core/Src/tx.c **** 		case 4:
+ 311:../Core/Src/tx.c **** 			for (uint32_t j = 0; j < 25; j++) { printf("%x ", intx->scrsig[j]); }
+ 1179              		.loc 1 311 40 discriminator 3 view .LVU265
+ 1180              		.loc 1 311 58 is_stmt 0 discriminator 3 view .LVU266
+ 1181 0068 EB68     		ldr	r3, [r5, #12]
+ 1182              		.loc 1 311 40 discriminator 3 view .LVU267
+ 1183 006a 195D     		ldrb	r1, [r3, r4]	@ zero_extendqisi2
+ 1184 006c 0D48     		ldr	r0, .L86
+ 1185 006e FFF7FEFF 		bl	printf
+ 1186              	.LVL108:
+ 1187              		.loc 1 311 34 is_stmt 1 discriminator 3 view .LVU268
+ 1188 0072 0134     		adds	r4, r4, #1
+ 1189              	.LVL109:
+ 1190              	.L67:
+ 1191              		.loc 1 311 27 discriminator 1 view .LVU269
+ARM GAS  Build/tx.s 			page 27
+
+
+ 1192 0074 182C     		cmp	r4, #24
+ 1193 0076 F7D9     		bls	.L73
+ 1194              	.LBE6:
+ 312:../Core/Src/tx.c **** 			putchar('\n');
+ 1195              		.loc 1 312 4 view .LVU270
+ 1196 0078 0A20     		movs	r0, #10
+ 1197 007a FFF7FEFF 		bl	putchar
+ 1198              	.LVL110:
+ 313:../Core/Src/tx.c **** 			break;
+ 1199              		.loc 1 313 4 view .LVU271
+ 1200 007e D0E7     		b	.L64
+ 1201              	.LVL111:
+ 1202              	.L78:
+ 297:../Core/Src/tx.c **** 		case 1:
+ 1203              		.loc 1 297 3 is_stmt 0 view .LVU272
+ 1204 0080 0024     		movs	r4, #0
+ 1205 0082 F7E7     		b	.L67
+ 1206              	.LVL112:
+ 1207              	.L74:
+ 1208              	.LBB7:
+ 314:../Core/Src/tx.c **** 		case 5:
+ 315:../Core/Src/tx.c **** 			for (uint32_t j = 0; j < 4; j++) { printf("%x ", intx->sequence[j]); }
+ 1209              		.loc 1 315 39 is_stmt 1 discriminator 3 view .LVU273
+ 1210              		.loc 1 315 57 is_stmt 0 discriminator 3 view .LVU274
+ 1211 0084 2B69     		ldr	r3, [r5, #16]
+ 1212              		.loc 1 315 39 discriminator 3 view .LVU275
+ 1213 0086 195D     		ldrb	r1, [r3, r4]	@ zero_extendqisi2
+ 1214 0088 0648     		ldr	r0, .L86
+ 1215 008a FFF7FEFF 		bl	printf
+ 1216              	.LVL113:
+ 1217              		.loc 1 315 33 is_stmt 1 discriminator 3 view .LVU276
+ 1218 008e 0134     		adds	r4, r4, #1
+ 1219              	.LVL114:
+ 1220              	.L65:
+ 1221              		.loc 1 315 27 discriminator 1 view .LVU277
+ 1222 0090 032C     		cmp	r4, #3
+ 1223 0092 F7D9     		bls	.L74
+ 1224              	.LBE7:
+ 316:../Core/Src/tx.c **** 			putchar('\n');
+ 1225              		.loc 1 316 4 view .LVU278
+ 1226 0094 0A20     		movs	r0, #10
+ 1227 0096 FFF7FEFF 		bl	putchar
+ 1228              	.LVL115:
+ 317:../Core/Src/tx.c **** 			break;
+ 1229              		.loc 1 317 4 view .LVU279
+ 1230 009a C2E7     		b	.L64
+ 1231              	.LVL116:
+ 1232              	.L79:
+ 297:../Core/Src/tx.c **** 		case 1:
+ 1233              		.loc 1 297 3 is_stmt 0 view .LVU280
+ 1234 009c 0024     		movs	r4, #0
+ 1235 009e F7E7     		b	.L65
+ 1236              	.L85:
+ 1237              	.LBE3:
+ 318:../Core/Src/tx.c **** 		}
+ 319:../Core/Src/tx.c **** 	}
+ 320:../Core/Src/tx.c **** }
+ARM GAS  Build/tx.s 			page 28
+
+
+ 1238              		.loc 1 320 1 view .LVU281
+ 1239 00a0 70BD     		pop	{r4, r5, r6, pc}
+ 1240              	.LVL117:
+ 1241              	.L82:
+ 1242              	.LCFI23:
+ 1243              		.cfi_def_cfa_offset 0
+ 1244              		.cfi_restore 4
+ 1245              		.cfi_restore 5
+ 1246              		.cfi_restore 6
+ 1247              		.cfi_restore 14
+ 1248              		.loc 1 320 1 view .LVU282
+ 1249 00a2 7047     		bx	lr
+ 1250              	.L87:
+ 1251              		.align	2
+ 1252              	.L86:
+ 1253 00a4 00000000 		.word	.LC1
+ 1254              		.cfi_endproc
+ 1255              	.LFE20:
+ 1257              		.section	.text.print_outtx,"ax",%progbits
+ 1258              		.align	1
+ 1259              		.global	print_outtx
+ 1260              		.syntax unified
+ 1261              		.thumb
+ 1262              		.thumb_func
+ 1264              	print_outtx:
+ 1265              	.LVL118:
+ 1266              	.LFB21:
+ 321:../Core/Src/tx.c **** 
+ 322:../Core/Src/tx.c **** 
+ 323:../Core/Src/tx.c **** void print_outtx(OUTTX outtx)
+ 324:../Core/Src/tx.c **** {
+ 1267              		.loc 1 324 1 is_stmt 1 view -0
+ 1268              		.cfi_startproc
+ 1269              		@ args = 0, pretend = 0, frame = 0
+ 1270              		@ frame_needed = 0, uses_anonymous_args = 0
+ 325:../Core/Src/tx.c **** 	if (outtx == NULL)
+ 1271              		.loc 1 325 2 view .LVU284
+ 1272              		.loc 1 325 5 is_stmt 0 view .LVU285
+ 1273 0000 80B3     		cbz	r0, .L101
+ 324:../Core/Src/tx.c **** 	if (outtx == NULL)
+ 1274              		.loc 1 324 1 view .LVU286
+ 1275 0002 70B5     		push	{r4, r5, r6, lr}
+ 1276              	.LCFI24:
+ 1277              		.cfi_def_cfa_offset 16
+ 1278              		.cfi_offset 4, -16
+ 1279              		.cfi_offset 5, -12
+ 1280              		.cfi_offset 6, -8
+ 1281              		.cfi_offset 14, -4
+ 1282 0004 0546     		mov	r5, r0
+ 1283              	.LBB8:
+ 326:../Core/Src/tx.c **** 		return;
+ 327:../Core/Src/tx.c **** 
+ 328:../Core/Src/tx.c **** 	for (uint32_t i = 1; i <= 3; i++) {
+ 1284              		.loc 1 328 16 view .LVU287
+ 1285 0006 0126     		movs	r6, #1
+ 1286 0008 0BE0     		b	.L90
+ 1287              	.LVL119:
+ARM GAS  Build/tx.s 			page 29
+
+
+ 1288              	.L95:
+ 1289              	.LBB9:
+ 329:../Core/Src/tx.c **** 		switch(i) {
+ 330:../Core/Src/tx.c **** 		case 1:
+ 331:../Core/Src/tx.c **** 			for (uint32_t j = 0; j < 8; j++) { printf("%x ", outtx->value[j]); }
+ 1290              		.loc 1 331 39 is_stmt 1 discriminator 3 view .LVU288
+ 1291              		.loc 1 331 58 is_stmt 0 discriminator 3 view .LVU289
+ 1292 000a 2B68     		ldr	r3, [r5]
+ 1293              		.loc 1 331 39 discriminator 3 view .LVU290
+ 1294 000c 195D     		ldrb	r1, [r3, r4]	@ zero_extendqisi2
+ 1295 000e 1648     		ldr	r0, .L105
+ 1296 0010 FFF7FEFF 		bl	printf
+ 1297              	.LVL120:
+ 1298              		.loc 1 331 33 is_stmt 1 discriminator 3 view .LVU291
+ 1299 0014 0134     		adds	r4, r4, #1
+ 1300              	.LVL121:
+ 1301              	.L93:
+ 1302              		.loc 1 331 27 discriminator 1 view .LVU292
+ 1303 0016 072C     		cmp	r4, #7
+ 1304 0018 F7D9     		bls	.L95
+ 1305              	.LBE9:
+ 332:../Core/Src/tx.c **** 			putchar('\n');
+ 1306              		.loc 1 332 4 view .LVU293
+ 1307 001a 0A20     		movs	r0, #10
+ 1308 001c FFF7FEFF 		bl	putchar
+ 1309              	.LVL122:
+ 333:../Core/Src/tx.c **** 			break;
+ 1310              		.loc 1 333 4 view .LVU294
+ 1311              	.L94:
+ 328:../Core/Src/tx.c **** 		switch(i) {
+ 1312              		.loc 1 328 32 discriminator 2 view .LVU295
+ 1313 0020 0136     		adds	r6, r6, #1
+ 1314              	.LVL123:
+ 1315              	.L90:
+ 328:../Core/Src/tx.c **** 		switch(i) {
+ 1316              		.loc 1 328 25 discriminator 1 view .LVU296
+ 1317 0022 032E     		cmp	r6, #3
+ 1318 0024 1DD8     		bhi	.L104
+ 329:../Core/Src/tx.c **** 		case 1:
+ 1319              		.loc 1 329 3 view .LVU297
+ 1320 0026 022E     		cmp	r6, #2
+ 1321 0028 05D0     		beq	.L91
+ 1322 002a 032E     		cmp	r6, #3
+ 1323 002c 17D0     		beq	.L98
+ 1324 002e 012E     		cmp	r6, #1
+ 1325 0030 F6D1     		bne	.L94
+ 1326 0032 0024     		movs	r4, #0
+ 1327 0034 EFE7     		b	.L93
+ 1328              	.L91:
+ 334:../Core/Src/tx.c **** 		case 2:
+ 335:../Core/Src/tx.c **** 			printf("%x ", outtx->scrlen);
+ 1329              		.loc 1 335 4 view .LVU298
+ 1330 0036 2979     		ldrb	r1, [r5, #4]	@ zero_extendqisi2
+ 1331 0038 0B48     		ldr	r0, .L105
+ 1332 003a FFF7FEFF 		bl	printf
+ 1333              	.LVL124:
+ 336:../Core/Src/tx.c **** 			putchar('\n');
+ARM GAS  Build/tx.s 			page 30
+
+
+ 1334              		.loc 1 336 4 view .LVU299
+ 1335 003e 0A20     		movs	r0, #10
+ 1336 0040 FFF7FEFF 		bl	putchar
+ 1337              	.LVL125:
+ 337:../Core/Src/tx.c **** 			break;
+ 1338              		.loc 1 337 4 view .LVU300
+ 1339 0044 ECE7     		b	.L94
+ 1340              	.LVL126:
+ 1341              	.L96:
+ 1342              	.LBB10:
+ 338:../Core/Src/tx.c **** 		case 3:
+ 339:../Core/Src/tx.c **** 			for (uint32_t j = 0; j < 25; j++) { printf("%x ", outtx->scrpubkey[j]); }
+ 1343              		.loc 1 339 40 discriminator 3 view .LVU301
+ 1344              		.loc 1 339 59 is_stmt 0 discriminator 3 view .LVU302
+ 1345 0046 AB68     		ldr	r3, [r5, #8]
+ 1346              		.loc 1 339 40 discriminator 3 view .LVU303
+ 1347 0048 195D     		ldrb	r1, [r3, r4]	@ zero_extendqisi2
+ 1348 004a 0748     		ldr	r0, .L105
+ 1349 004c FFF7FEFF 		bl	printf
+ 1350              	.LVL127:
+ 1351              		.loc 1 339 34 is_stmt 1 discriminator 3 view .LVU304
+ 1352 0050 0134     		adds	r4, r4, #1
+ 1353              	.LVL128:
+ 1354              	.L92:
+ 1355              		.loc 1 339 27 discriminator 1 view .LVU305
+ 1356 0052 182C     		cmp	r4, #24
+ 1357 0054 F7D9     		bls	.L96
+ 1358              	.LBE10:
+ 340:../Core/Src/tx.c **** 			putchar('\n');
+ 1359              		.loc 1 340 4 view .LVU306
+ 1360 0056 0A20     		movs	r0, #10
+ 1361 0058 FFF7FEFF 		bl	putchar
+ 1362              	.LVL129:
+ 341:../Core/Src/tx.c **** 			break;
+ 1363              		.loc 1 341 4 view .LVU307
+ 1364 005c E0E7     		b	.L94
+ 1365              	.LVL130:
+ 1366              	.L98:
+ 329:../Core/Src/tx.c **** 		case 1:
+ 1367              		.loc 1 329 3 is_stmt 0 view .LVU308
+ 1368 005e 0024     		movs	r4, #0
+ 1369 0060 F7E7     		b	.L92
+ 1370              	.L104:
+ 1371              	.LBE8:
+ 342:../Core/Src/tx.c **** 		}
+ 343:../Core/Src/tx.c **** 	}
+ 344:../Core/Src/tx.c **** }
+ 1372              		.loc 1 344 1 view .LVU309
+ 1373 0062 70BD     		pop	{r4, r5, r6, pc}
+ 1374              	.LVL131:
+ 1375              	.L101:
+ 1376              	.LCFI25:
+ 1377              		.cfi_def_cfa_offset 0
+ 1378              		.cfi_restore 4
+ 1379              		.cfi_restore 5
+ 1380              		.cfi_restore 6
+ 1381              		.cfi_restore 14
+ARM GAS  Build/tx.s 			page 31
+
+
+ 1382              		.loc 1 344 1 view .LVU310
+ 1383 0064 7047     		bx	lr
+ 1384              	.L106:
+ 1385 0066 00BF     		.align	2
+ 1386              	.L105:
+ 1387 0068 00000000 		.word	.LC1
+ 1388              		.cfi_endproc
+ 1389              	.LFE21:
+ 1391              		.section	.rodata.print_tx.str1.4,"aMS",%progbits,1
+ 1392              		.align	2
+ 1393              	.LC2:
+ 1394 0000 25780A00 		.ascii	"%x\012\000"
+ 1395              		.section	.text.print_tx,"ax",%progbits
+ 1396              		.align	1
+ 1397              		.global	print_tx
+ 1398              		.syntax unified
+ 1399              		.thumb
+ 1400              		.thumb_func
+ 1402              	print_tx:
+ 1403              	.LVL132:
+ 1404              	.LFB22:
+ 345:../Core/Src/tx.c **** 
+ 346:../Core/Src/tx.c **** void print_tx(TX tx)
+ 347:../Core/Src/tx.c **** {
+ 1405              		.loc 1 347 1 is_stmt 1 view -0
+ 1406              		.cfi_startproc
+ 1407              		@ args = 0, pretend = 0, frame = 0
+ 1408              		@ frame_needed = 0, uses_anonymous_args = 0
+ 348:../Core/Src/tx.c **** 	if (tx == NULL)
+ 1409              		.loc 1 348 2 view .LVU312
+ 1410              		.loc 1 348 5 is_stmt 0 view .LVU313
+ 1411 0000 0028     		cmp	r0, #0
+ 1412 0002 46D0     		beq	.L125
+ 347:../Core/Src/tx.c **** 	if (tx == NULL)
+ 1413              		.loc 1 347 1 view .LVU314
+ 1414 0004 70B5     		push	{r4, r5, r6, lr}
+ 1415              	.LCFI26:
+ 1416              		.cfi_def_cfa_offset 16
+ 1417              		.cfi_offset 4, -16
+ 1418              		.cfi_offset 5, -12
+ 1419              		.cfi_offset 6, -8
+ 1420              		.cfi_offset 14, -4
+ 1421 0006 0646     		mov	r6, r0
+ 1422              	.LBB11:
+ 349:../Core/Src/tx.c **** 		return;
+ 350:../Core/Src/tx.c **** 
+ 351:../Core/Src/tx.c **** 	for (uint32_t i = 1; i <= 6; i++) {
+ 1423              		.loc 1 351 16 view .LVU315
+ 1424 0008 0124     		movs	r4, #1
+ 1425 000a 0DE0     		b	.L109
+ 1426              	.LVL133:
+ 1427              	.L121:
+ 352:../Core/Src/tx.c **** 		switch(i) {
+ 1428              		.loc 1 352 3 view .LVU316
+ 1429 000c 0025     		movs	r5, #0
+ 1430              	.L117:
+ 1431              	.LVL134:
+ARM GAS  Build/tx.s 			page 32
+
+
+ 1432              	.LBB12:
+ 353:../Core/Src/tx.c **** 		case 1:
+ 354:../Core/Src/tx.c **** 			for (uint32_t j = 0; j < 4; j++) { printf("%x ", tx->version[j]);}
+ 1433              		.loc 1 354 27 is_stmt 1 discriminator 1 view .LVU317
+ 1434 000e 032D     		cmp	r5, #3
+ 1435 0010 06D8     		bhi	.L128
+ 1436              		.loc 1 354 39 discriminator 3 view .LVU318
+ 1437              		.loc 1 354 55 is_stmt 0 discriminator 3 view .LVU319
+ 1438 0012 3368     		ldr	r3, [r6]
+ 1439              		.loc 1 354 39 discriminator 3 view .LVU320
+ 1440 0014 595D     		ldrb	r1, [r3, r5]	@ zero_extendqisi2
+ 1441 0016 1F48     		ldr	r0, .L131
+ 1442 0018 FFF7FEFF 		bl	printf
+ 1443              	.LVL135:
+ 1444              		.loc 1 354 33 is_stmt 1 discriminator 3 view .LVU321
+ 1445 001c 0135     		adds	r5, r5, #1
+ 1446              	.LVL136:
+ 1447              		.loc 1 354 33 is_stmt 0 discriminator 3 view .LVU322
+ 1448 001e F6E7     		b	.L117
+ 1449              	.L128:
+ 1450              		.loc 1 354 33 discriminator 3 view .LVU323
+ 1451              	.LBE12:
+ 355:../Core/Src/tx.c **** 			putchar('\n');
+ 1452              		.loc 1 355 4 is_stmt 1 view .LVU324
+ 1453 0020 0A20     		movs	r0, #10
+ 1454 0022 FFF7FEFF 		bl	putchar
+ 1455              	.LVL137:
+ 356:../Core/Src/tx.c **** 			break;
+ 1456              		.loc 1 356 4 view .LVU325
+ 1457              	.L110:
+ 351:../Core/Src/tx.c **** 		switch(i) {
+ 1458              		.loc 1 351 32 discriminator 2 view .LVU326
+ 1459 0026 0134     		adds	r4, r4, #1
+ 1460              	.LVL138:
+ 1461              	.L109:
+ 351:../Core/Src/tx.c **** 		switch(i) {
+ 1462              		.loc 1 351 25 discriminator 1 view .LVU327
+ 1463 0028 062C     		cmp	r4, #6
+ 1464 002a 31D8     		bhi	.L129
+ 352:../Core/Src/tx.c **** 		case 1:
+ 1465              		.loc 1 352 3 view .LVU328
+ 1466 002c 631E     		subs	r3, r4, #1
+ 1467 002e 052B     		cmp	r3, #5
+ 1468 0030 F9D8     		bhi	.L110
+ 1469 0032 01A2     		adr	r2, .L112
+ 1470 0034 52F823F0 		ldr	pc, [r2, r3, lsl #2]
+ 1471              		.p2align 2
+ 1472              	.L112:
+ 1473 0038 0D000000 		.word	.L121+1
+ 1474 003c 51000000 		.word	.L116+1
+ 1475 0040 5B000000 		.word	.L115+1
+ 1476 0044 63000000 		.word	.L114+1
+ 1477 0048 6D000000 		.word	.L113+1
+ 1478 004c 75000000 		.word	.L122+1
+ 1479              		.p2align 1
+ 1480              	.L116:
+ 357:../Core/Src/tx.c **** 		case 2:
+ARM GAS  Build/tx.s 			page 33
+
+
+ 358:../Core/Src/tx.c **** 			printf("%x\n", tx->incount);
+ 1481              		.loc 1 358 4 view .LVU329
+ 1482 0050 3179     		ldrb	r1, [r6, #4]	@ zero_extendqisi2
+ 1483 0052 1148     		ldr	r0, .L131+4
+ 1484 0054 FFF7FEFF 		bl	printf
+ 1485              	.LVL139:
+ 359:../Core/Src/tx.c **** 			break;
+ 1486              		.loc 1 359 4 view .LVU330
+ 1487 0058 E5E7     		b	.L110
+ 1488              	.L115:
+ 360:../Core/Src/tx.c **** 		case 3:
+ 361:../Core/Src/tx.c **** 			print_intx(tx->inputtx);
+ 1489              		.loc 1 361 4 view .LVU331
+ 1490 005a B068     		ldr	r0, [r6, #8]
+ 1491 005c FFF7FEFF 		bl	print_intx
+ 1492              	.LVL140:
+ 362:../Core/Src/tx.c **** 			break;
+ 1493              		.loc 1 362 4 view .LVU332
+ 1494 0060 E1E7     		b	.L110
+ 1495              	.L114:
+ 363:../Core/Src/tx.c **** 		case 4:
+ 364:../Core/Src/tx.c **** 			printf("%x\n", tx->outcount);
+ 1496              		.loc 1 364 4 view .LVU333
+ 1497 0062 317B     		ldrb	r1, [r6, #12]	@ zero_extendqisi2
+ 1498 0064 0C48     		ldr	r0, .L131+4
+ 1499 0066 FFF7FEFF 		bl	printf
+ 1500              	.LVL141:
+ 365:../Core/Src/tx.c **** 			break;
+ 1501              		.loc 1 365 4 view .LVU334
+ 1502 006a DCE7     		b	.L110
+ 1503              	.L113:
+ 366:../Core/Src/tx.c **** 		case 5:
+ 367:../Core/Src/tx.c **** 			print_outtx(tx->outputtx);
+ 1504              		.loc 1 367 4 view .LVU335
+ 1505 006c 3069     		ldr	r0, [r6, #16]
+ 1506 006e FFF7FEFF 		bl	print_outtx
+ 1507              	.LVL142:
+ 368:../Core/Src/tx.c **** 			break;
+ 1508              		.loc 1 368 4 view .LVU336
+ 1509 0072 D8E7     		b	.L110
+ 1510              	.L122:
+ 352:../Core/Src/tx.c **** 		case 1:
+ 1511              		.loc 1 352 3 is_stmt 0 view .LVU337
+ 1512 0074 0025     		movs	r5, #0
+ 1513              	.L111:
+ 1514              	.LVL143:
+ 1515              	.LBB13:
+ 369:../Core/Src/tx.c **** 		case 6:
+ 370:../Core/Src/tx.c **** 			for (uint32_t j = 0; j < 4; j++) {printf("%x ", tx->lock[i]);}
+ 1516              		.loc 1 370 27 is_stmt 1 discriminator 1 view .LVU338
+ 1517 0076 032D     		cmp	r5, #3
+ 1518 0078 06D8     		bhi	.L130
+ 1519              		.loc 1 370 38 discriminator 3 view .LVU339
+ 1520              		.loc 1 370 54 is_stmt 0 discriminator 3 view .LVU340
+ 1521 007a 7369     		ldr	r3, [r6, #20]
+ 1522              		.loc 1 370 38 discriminator 3 view .LVU341
+ 1523 007c 195D     		ldrb	r1, [r3, r4]	@ zero_extendqisi2
+ARM GAS  Build/tx.s 			page 34
+
+
+ 1524 007e 0548     		ldr	r0, .L131
+ 1525 0080 FFF7FEFF 		bl	printf
+ 1526              	.LVL144:
+ 1527              		.loc 1 370 33 is_stmt 1 discriminator 3 view .LVU342
+ 1528 0084 0135     		adds	r5, r5, #1
+ 1529              	.LVL145:
+ 1530              		.loc 1 370 33 is_stmt 0 discriminator 3 view .LVU343
+ 1531 0086 F6E7     		b	.L111
+ 1532              	.L130:
+ 1533              		.loc 1 370 33 discriminator 3 view .LVU344
+ 1534              	.LBE13:
+ 371:../Core/Src/tx.c **** 			putchar('\n');
+ 1535              		.loc 1 371 4 is_stmt 1 view .LVU345
+ 1536 0088 0A20     		movs	r0, #10
+ 1537 008a FFF7FEFF 		bl	putchar
+ 1538              	.LVL146:
+ 372:../Core/Src/tx.c **** 			break;
+ 1539              		.loc 1 372 4 view .LVU346
+ 1540 008e CAE7     		b	.L110
+ 1541              	.LVL147:
+ 1542              	.L129:
+ 1543              		.loc 1 372 4 is_stmt 0 view .LVU347
+ 1544              	.LBE11:
+ 373:../Core/Src/tx.c **** 		}
+ 374:../Core/Src/tx.c **** 	}
+ 375:../Core/Src/tx.c **** }
+ 1545              		.loc 1 375 1 view .LVU348
+ 1546 0090 70BD     		pop	{r4, r5, r6, pc}
+ 1547              	.LVL148:
+ 1548              	.L125:
+ 1549              	.LCFI27:
+ 1550              		.cfi_def_cfa_offset 0
+ 1551              		.cfi_restore 4
+ 1552              		.cfi_restore 5
+ 1553              		.cfi_restore 6
+ 1554              		.cfi_restore 14
+ 1555              		.loc 1 375 1 view .LVU349
+ 1556 0092 7047     		bx	lr
+ 1557              	.L132:
+ 1558              		.align	2
+ 1559              	.L131:
+ 1560 0094 00000000 		.word	.LC1
+ 1561 0098 00000000 		.word	.LC2
+ 1562              		.cfi_endproc
+ 1563              	.LFE22:
+ 1565              		.section	.rodata.print_mem.str1.4,"aMS",%progbits,1
+ 1566              		.align	2
+ 1567              	.LC3:
+ 1568 0000 25303278 		.ascii	"%02x\012\000"
+ 1568      0A00
+ 1569              		.section	.text.print_mem,"ax",%progbits
+ 1570              		.align	1
+ 1571              		.global	print_mem
+ 1572              		.syntax unified
+ 1573              		.thumb
+ 1574              		.thumb_func
+ 1576              	print_mem:
+ARM GAS  Build/tx.s 			page 35
+
+
+ 1577              	.LVL149:
+ 1578              	.LFB23:
+ 376:../Core/Src/tx.c **** 
+ 377:../Core/Src/tx.c **** void print_mem(void const *vp, size_t n)
+ 378:../Core/Src/tx.c **** {
+ 1579              		.loc 1 378 1 is_stmt 1 view -0
+ 1580              		.cfi_startproc
+ 1581              		@ args = 0, pretend = 0, frame = 0
+ 1582              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1583              		.loc 1 378 1 is_stmt 0 view .LVU351
+ 1584 0000 70B5     		push	{r4, r5, r6, lr}
+ 1585              	.LCFI28:
+ 1586              		.cfi_def_cfa_offset 16
+ 1587              		.cfi_offset 4, -16
+ 1588              		.cfi_offset 5, -12
+ 1589              		.cfi_offset 6, -8
+ 1590              		.cfi_offset 14, -4
+ 1591 0002 0646     		mov	r6, r0
+ 1592 0004 0D46     		mov	r5, r1
+ 379:../Core/Src/tx.c ****     const uint8_t *p = vp;
+ 1593              		.loc 1 379 5 is_stmt 1 view .LVU352
+ 1594              	.LVL150:
+ 380:../Core/Src/tx.c ****     for (size_t i=0; i<n; i++)
+ 1595              		.loc 1 380 5 view .LVU353
+ 1596              	.LBB14:
+ 1597              		.loc 1 380 10 view .LVU354
+ 1598              		.loc 1 380 17 is_stmt 0 view .LVU355
+ 1599 0006 0024     		movs	r4, #0
+ 1600              		.loc 1 380 5 view .LVU356
+ 1601 0008 04E0     		b	.L134
+ 1602              	.LVL151:
+ 1603              	.L135:
+ 381:../Core/Src/tx.c ****         printf("%02x\n", p[i]);
+ 1604              		.loc 1 381 9 is_stmt 1 discriminator 3 view .LVU357
+ 1605 000a 315D     		ldrb	r1, [r6, r4]	@ zero_extendqisi2
+ 1606 000c 0448     		ldr	r0, .L137
+ 1607 000e FFF7FEFF 		bl	printf
+ 1608              	.LVL152:
+ 380:../Core/Src/tx.c ****     for (size_t i=0; i<n; i++)
+ 1609              		.loc 1 380 28 discriminator 3 view .LVU358
+ 1610 0012 0134     		adds	r4, r4, #1
+ 1611              	.LVL153:
+ 1612              	.L134:
+ 380:../Core/Src/tx.c ****     for (size_t i=0; i<n; i++)
+ 1613              		.loc 1 380 23 discriminator 1 view .LVU359
+ 1614 0014 AC42     		cmp	r4, r5
+ 1615 0016 F8D3     		bcc	.L135
+ 1616              	.LBE14:
+ 382:../Core/Src/tx.c ****     putchar('\n');
+ 1617              		.loc 1 382 5 view .LVU360
+ 1618 0018 0A20     		movs	r0, #10
+ 1619 001a FFF7FEFF 		bl	putchar
+ 1620              	.LVL154:
+ 383:../Core/Src/tx.c **** };
+ 1621              		.loc 1 383 1 is_stmt 0 view .LVU361
+ 1622 001e 70BD     		pop	{r4, r5, r6, pc}
+ 1623              	.LVL155:
+ARM GAS  Build/tx.s 			page 36
+
+
+ 1624              	.L138:
+ 1625              		.loc 1 383 1 view .LVU362
+ 1626              		.align	2
+ 1627              	.L137:
+ 1628 0020 00000000 		.word	.LC3
+ 1629              		.cfi_endproc
+ 1630              	.LFE23:
+ 1632              		.text
+ 1633              	.Letext0:
+ 1634              		.file 2 "/home/emanuele/st/stm32cubeide_1.15.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-
+ 1635              		.file 3 "/home/emanuele/st/stm32cubeide_1.15.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-
+ 1636              		.file 4 "/home/emanuele/st/stm32cubeide_1.15.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-
+ 1637              		.file 5 "../Core/Inc/tx.h"
+ 1638              		.file 6 "/home/emanuele/st/stm32cubeide_1.15.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-
+ 1639              		.file 7 "/home/emanuele/st/stm32cubeide_1.15.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-
+ 1640              		.file 8 "/home/emanuele/st/stm32cubeide_1.15.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-
+ 1641              		.file 9 "<built-in>"
+ARM GAS  Build/tx.s 			page 37
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 tx.c
+          Build/tx.s:19     .text.new_intx:00000000 $t
+          Build/tx.s:25     .text.new_intx:00000000 new_intx
+          Build/tx.s:162    .text.new_outtx:00000000 $t
+          Build/tx.s:168    .text.new_outtx:00000000 new_outtx
+          Build/tx.s:249    .text.new_tx:00000000 $t
+          Build/tx.s:255    .text.new_tx:00000000 new_tx
+          Build/tx.s:345    .text.new_txbuf:00000000 $t
+          Build/tx.s:351    .text.new_txbuf:00000000 new_txbuf
+          Build/tx.s:398    .text.free_intx:00000000 $t
+          Build/tx.s:404    .text.free_intx:00000000 free_intx
+          Build/tx.s:457    .text.free_outtx:00000000 $t
+          Build/tx.s:463    .text.free_outtx:00000000 free_outtx
+          Build/tx.s:508    .text.free_tx:00000000 $t
+          Build/tx.s:514    .text.free_tx:00000000 free_tx
+          Build/tx.s:567    .text.free_txbuf:00000000 $t
+          Build/tx.s:573    .text.free_txbuf:00000000 free_txbuf
+          Build/tx.s:614    .text.reserve_space:00000000 $t
+          Build/tx.s:620    .text.reserve_space:00000000 reserve_space
+          Build/tx.s:670    .text.serialize_bytestr:00000000 $t
+          Build/tx.s:676    .text.serialize_bytestr:00000000 serialize_bytestr
+          Build/tx.s:724    .text.serialize_intx:00000000 $t
+          Build/tx.s:730    .text.serialize_intx:00000000 serialize_intx
+          Build/tx.s:788    .text.serialize_outtx:00000000 $t
+          Build/tx.s:794    .text.serialize_outtx:00000000 serialize_outtx
+          Build/tx.s:841    .text.serialize_tx:00000000 $t
+          Build/tx.s:847    .text.serialize_tx:00000000 serialize_tx
+          Build/tx.s:910    .rodata.print_ser_bytes.str1.4:00000000 $d
+          Build/tx.s:914    .text.print_ser_bytes:00000000 $t
+          Build/tx.s:920    .text.print_ser_bytes:00000000 print_ser_bytes
+          Build/tx.s:976    .text.print_ser_bytes:00000024 $d
+          Build/tx.s:981    .text.get_txbuf_data:00000000 $t
+          Build/tx.s:987    .text.get_txbuf_data:00000000 get_txbuf_data
+          Build/tx.s:1005   .text.get_txbuf_size:00000000 $t
+          Build/tx.s:1011   .text.get_txbuf_size:00000000 get_txbuf_size
+          Build/tx.s:1029   .text.get_txbuf_next:00000000 $t
+          Build/tx.s:1035   .text.get_txbuf_next:00000000 get_txbuf_next
+          Build/tx.s:1053   .rodata.print_intx.str1.4:00000000 $d
+          Build/tx.s:1057   .text.print_intx:00000000 $t
+          Build/tx.s:1063   .text.print_intx:00000000 print_intx
+          Build/tx.s:1125   .text.print_intx:00000032 $d
+          Build/tx.s:1253   .text.print_intx:000000a4 $d
+          Build/tx.s:1258   .text.print_outtx:00000000 $t
+          Build/tx.s:1264   .text.print_outtx:00000000 print_outtx
+          Build/tx.s:1387   .text.print_outtx:00000068 $d
+          Build/tx.s:1392   .rodata.print_tx.str1.4:00000000 $d
+          Build/tx.s:1396   .text.print_tx:00000000 $t
+          Build/tx.s:1402   .text.print_tx:00000000 print_tx
+          Build/tx.s:1473   .text.print_tx:00000038 $d
+          Build/tx.s:1479   .text.print_tx:00000050 $t
+          Build/tx.s:1560   .text.print_tx:00000094 $d
+          Build/tx.s:1566   .rodata.print_mem.str1.4:00000000 $d
+          Build/tx.s:1570   .text.print_mem:00000000 $t
+          Build/tx.s:1576   .text.print_mem:00000000 print_mem
+          Build/tx.s:1628   .text.print_mem:00000020 $d
+          Build/tx.s:1130   .text.print_intx:00000037 $d
+ARM GAS  Build/tx.s 			page 38
+
+
+          Build/tx.s:1130   .text.print_intx:00000038 $t
+
+UNDEFINED SYMBOLS
+malloc
+free
+realloc
+memcpy
+printf
+putchar

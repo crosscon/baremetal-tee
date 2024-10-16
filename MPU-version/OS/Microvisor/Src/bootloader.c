@@ -2,7 +2,6 @@
 #include "memory_map.h"
 #include "virtual_IPSR.h"
 #include "stm32l475vg_mpu.h"
-#include "activator.h"
 #include "it.h"
 #include "wifi.h"
 #include "microvisor_config.h"
@@ -11,18 +10,128 @@
 #include "ota.h"
 #include "permanent_storage.h"
 #include "mbedtls_rng_wrapper.h"
+#include "internal_core_api.h"
 /* mbedtls library headers */
 #include "mbedtls/pk.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/entropy.h"
+#include "flash.h"
+#include "tee_common.h"
+
+#include <stdarg.h>
+#include <stdio.h>
 
 /*
 * bootloader file:
 * primary code unit of microvisor, is immediately called by Reset_Handler after board reboot.
-* Performs all necessary tasks (activation check, error reporting, update checking) 
+* Performs all necessary initialization tasks (UART, MPU, etc.) 
 * before transitioning to fortified application execution.
 */
 
+// Define the UART handle used to print messages to the console 
+// This variable is stored in the .TEE_TA_data section of the binary
+// that is accessible by both the TEE and the TAs 
+UART_HandleTypeDef __attribute__((section(".TEE_TA_data"))) puart; 
+
+// Define a custom putchar function to put characters on the UART interface
+__attribute__((section(".microvisor-nopri"))) int putchar(int ch)
+{
+	// Wait until the transmit data register is empty
+    while (!(USART1->ISR & USART_ISR_TXE));  // Wait for TXE (Transmit Data Register Empty)
+
+    USART1->TDR = ch;  // Send character
+
+    // Optionally wait for transmission to complete (if desired)
+    while (!(USART1->ISR & USART_ISR_TC));  // Wait for TC (Transmission Complete)
+
+    return ch;
+}
+
+// Define a custom printf function to print messages to the console
+// This function is stored in the .microvisor-nopri section of the binary 
+// in order to be accessible also by the TAs
+// The custom printf function was needed because the standard printf function
+// uses internal buffers and data structures that were difficult to control and manage
+__attribute__((section(".microvisor-nopri")))  int custom_printf(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    
+    for (const char *ptr = format; *ptr != '\0'; ++ptr) {
+        if (*ptr == '%') {
+            ++ptr;
+            switch (*ptr) {
+                case 'd': { // Decimal
+                    int num = va_arg(args, int);
+                    if (num < 0) {
+                        putchar('-');
+                        num = -num;
+                    }
+                    char buffer[10];
+                    int i = 0;
+                    do {
+                        buffer[i++] = (num % 10) + '0';
+                        num /= 10;
+                    } while (num);
+                    while (i > 0) {
+                        putchar(buffer[--i]);
+                    }
+                    break;
+                }
+                case 'x': { // Hexadecimal
+                    unsigned int num = va_arg(args, unsigned int);
+                    putchar('0');
+                    putchar('x');
+                    for (int i = (sizeof(unsigned int) * 2) - 1; i >= 0; --i) {
+                        int nibble = (num >> (i * 4)) & 0xF;
+                        putchar(nibble < 10 ? nibble + '0' : nibble - 10 + 'A');
+                    }
+                    break;
+                }
+                case 's': { // String
+                    const char *str = va_arg(args, const char*);
+                    while (*str) {
+                        putchar(*str++);
+                    }
+                    break;
+                }
+                case 'c': { // Single character
+                    char ch = (char)va_arg(args, int);
+                    putchar(ch);
+                    break;
+                }
+                default:
+                    putchar('%');
+                    putchar(*ptr);
+                    break;
+            }
+        } else {
+            putchar(*ptr);  // Print normal character
+        }
+    }
+
+    va_end(args);
+    return 0;
+}
+
+// Initialize the UART1 interface
+static void UART_Init(void)
+{
+  puart.Instance = USART1;
+  puart.Init.BaudRate = 115200;
+  puart.Init.WordLength = UART_WORDLENGTH_8B;
+  puart.Init.StopBits = UART_STOPBITS_1;
+  puart.Init.Parity = UART_PARITY_NONE;
+  puart.Init.Mode = UART_MODE_TX_RX;
+  puart.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  puart.Init.OverSampling = UART_OVERSAMPLING_16;
+  puart.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  puart.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&puart) != HAL_OK)
+  {
+	/* Initialization Error */
+	while (1);
+  }
+}
 
 /**
  * Disables privileges for code running in thread mode and begins executing
@@ -130,160 +239,22 @@ static void SystemClock_Config(void) {
  * 
  * Steps: 
  * - Performs all standard necessary tasks (HAL_Init, SystemClock_Config)
- * - Initializes the Wifi module
- * - Connects to the Wifi network
- * - If the board is not activated, performs the activation process by:
- *  	- creating a secure communication channel with the Activation Server
- * 		- exchanging the symmetric encryption key with the Activation Server
- * 		- shares the board UUID with the Activation Server
- * 		- receives the activation ACK from the Activation Server
- * - If the board is activated, performs the update process by:
- * 		- reporting errors to the Update Server
- * 		- updating the microvisor if necessary
- * 		- updating the user application if necessary 
  * - Transition to vector table with interrupt deprioritization
  * - Configures the MPU based on the custom map
  * - Initializes the Virtual IPSR
+ * - Erases the flash memory area dedicated to secure storage of the TAs
+ * - Erases and initializes the heap area for the RAM of TAs
  * - Clears Data and BSS segments from RAM
  * - Set the SP and PC for the fortified application and starts it
 */
 void boot(void) {
-	/* sec_comm layer data structures */
-	sec_comm_context ctx;
-
 	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 	HAL_Init();
 
 	/* Configure the system clock */
 	SystemClock_Config();
-
-	/* Initialize Wifi module */
-	if(WIFI_Init() ==  WIFI_STATUS_OK) {
-		/* Connect to Wifi network */
-		if( WIFI_Connect(SSID, PASSWORD, WIFI_ECN_WPA2_PSK) == WIFI_STATUS_OK) {
-			if(!activator_is_board_activated()) {
-				/* Activate board and perform first boot initialization operations */
-				/* Wipe permanent storage */
-				if(perma_storage_wipe() != PERMA_STORAGE_OK)
-					soft_reset();	//	Initialization error
-				/* Recompute fortified application size (if present) */
-				perma_storage_set_firmware_size(ota_compute_firmware_size());				
-				/* Initialize sec_comm layer */
-				if(SEC_COMM_OK != sec_comm_init(&ctx, 0))
-					goto activation_over;
-				
-				/* Start the connection */
-				if(SEC_COMM_OK != sec_comm_connect(&ctx, Activation_Server_IP, ACTIVATION_SERVER_PORT, LOCAL_PORT))
-					goto activation_over;
-				
-				/* Create symmetric encryption key */
-				if(HAL_OK != mbedtls_rng_init())	// initialize rng wrapper
-					goto activation_over;
-				uint8_t key[KEY_LEN];
-				uint32_t olen;
-				if(0 != mbedtls_rng_f_source(NULL, key, KEY_LEN, (size_t *) &olen))
-					goto activation_over;	// key generation failed
-				if(olen != KEY_LEN)
-					goto activation_over;	// key generation failed
-
-				/* Initialize mbedtls data structures */
-				mbedtls_pk_context pk_ctx;
-				mbedtls_ctr_drbg_context ctr_drbg_ctx;
-				mbedtls_entropy_context entropy_ctx;
-				mbedtls_pk_init(&pk_ctx);
-				mbedtls_ctr_drbg_init(&ctr_drbg_ctx);
-				mbedtls_entropy_init(&entropy_ctx);
-
-				/* Configure drbg and entropy layers */
-				if(0 != mbedtls_entropy_add_source(&entropy_ctx, mbedtls_rng_f_source, NULL, 1, MBEDTLS_ENTROPY_SOURCE_STRONG))
-					goto activation_over;	// configuration failed
-				if(0 != mbedtls_ctr_drbg_seed(&ctr_drbg_ctx, mbedtls_entropy_func, &entropy_ctx, (const unsigned char *) STM32L4XX_UID, STM32L4XX_UID_LEN))
-					goto activation_over;	// seeding failed
-				
-				/* Parse Activation Server public key */
-				if(0 != mbedtls_pk_parse_public_key(&pk_ctx, Activation_Server_PubKey, ACTIVATION_SERVER_PUBKEY_LEN))
-					goto activation_over;	// key parsing failed
-				
-				/* Encrypt symmetric key with Activation Server public key */
-				uint8_t encrypted_key[256];
-				uint32_t encrypted_key_len;
-				if(0 != mbedtls_pk_encrypt(&pk_ctx, key, KEY_LEN, encrypted_key, (size_t *) &encrypted_key_len, 256, mbedtls_ctr_drbg_random, &ctr_drbg_ctx))
-					goto activation_over;	// encryption failed
-				if(encrypted_key_len != 256)
-					goto activation_over;	// length of encrypted key does not match
-				
-				/* Send encrypted key length */
-				if(WIFI_STATUS_OK != wifi_wrapper_send_data(ctx.socket, (uint8_t *) &encrypted_key_len, 4))
-					goto activation_over;
-				/* Send encrypted key */
-				if(WIFI_STATUS_OK != wifi_wrapper_send_data(ctx.socket, encrypted_key, encrypted_key_len))
-					goto activation_over;
-				/* Read Activation Server ACK */
-				int32_t ack;
-				if(WIFI_STATUS_OK != wifi_wrapper_receive_data(ctx.socket, (uint8_t *) &ack, 4))
-					goto activation_over;
-				if(ack != 1)
-					goto activation_over;
-				
-				/* Set sec_comm encryption key */
-				if(SEC_COMM_OK != sec_comm_set_key(&ctx, key))
-					goto activation_over;	// setting symmetric encryption key failed
-				
-				/* Attempt to activate board */
-				if(activator_activate_board(&ctx) == ACTIVATOR_COMMUNICATION_ERROR)
-					goto activation_over;
-				
-				/* Free resources */
-				activation_over:
-				mbedtls_rng_deinit();
-				sec_comm_disconnect(&ctx);
-				sec_comm_deinit(&ctx);
-			}
-
-			/* Exchange information with Update Server if necessary */
-			/* [Re]Initialize sec_comm layer */
-			if(SEC_COMM_OK != sec_comm_init(&ctx, 0))
-					goto update_over;
-			/* Set symmetric encryption key */
-			if(SEC_COMM_OK != sec_comm_set_key(&ctx, Update_Server_Key))
-					goto update_over;
-			
-			/* Start the connection */
-			if(SEC_COMM_OK != sec_comm_connect(&ctx, Update_Server_IP, UPDATE_SERVER_PORT, LOCAL_PORT))
-					goto update_over;
-
-			/* Identify to server */
-			if(WIFI_STATUS_OK != wifi_wrapper_send_data(ctx.socket, (uint8_t *) STM32L4XX_UID, STM32L4XX_UID_LEN))	// send board UUID in clear
-				goto update_over;
-			int32_t identification;
-			if(WIFI_STATUS_OK != wifi_wrapper_receive_data(ctx.socket, (uint8_t *) &identification, 4))	// read identification result
-				goto update_over;
-			if(identification != 1)
-				goto update_over;
-
-			/* Report errors if necessary */
-			if(OTA_OK != ota_report_error(&ctx))
-				goto update_over;
-
-			/* Perform microvisor update if necessary */
-			if(OTA_OK != ota_update_microvisor(&ctx))
-				goto update_over;
-
-			/* Perform user application update if necessary */
-			if(OTA_UPDATE_FAIL == ota_update_firmware(&ctx))
-				soft_reset();	// update failed, reset board
-
-			/* Free resources */
-			update_over:
-			sec_comm_disconnect(&ctx);
-			sec_comm_deinit(&ctx);
-		}
-	}
-	/* Communication part over, transition to user application */
-
-	/* Verify board activation before transitioning */
-	if(!activator_is_board_activated())
-		soft_reset();
+	/* Initialize the UART interface */
+	UART_Init();
 
 	/* Disable used interrupts */
 	HAL_NVIC_DisableIRQ(EXTI1_IRQn);
@@ -294,15 +265,27 @@ void boot(void) {
 	/* Transition to vector table with interrupt deprioritization */
 	SCB->VTOR = (uint32_t) &__isr_vector_deprio_start__;
 
+	/* Configure MPU in order to execute the CA (Client Application) with only permissions in its dedicated areas */
 	Configure_MPU();
 	Disable_Exception_Integrity_Check();
 	Initialize_Virtual_IPSR();
 
+	// Erase both of the flash memory area dedicated to secure storage (?) of the TAs
+	flash_erase(1);
+	flash_erase(2);
+
+	// Erase and initialize the heap area for the RAM of TAs
+	heap_erase();
+
+	// Clear Data and BSS segments from RAM
+	Clear_Data_BSS();
+
+	// Set the SP and PC for the fortified application 
 	unsigned int* app_vector_table = &__flash_start__;
 	unsigned int app_sp = app_vector_table[0];
 	unsigned int app_entry = app_vector_table[1];
 
-	Clear_Data_BSS();
+	// Start the fortified application
 	start_app(app_sp, app_entry);
 }
 

@@ -9,6 +9,14 @@ extern unsigned int __flash_boot_nopri_size__;
 extern unsigned int __flash_start__;
 extern unsigned int __flash_size__;
 extern unsigned int __isr_vector_deprio_start__;
-extern uint32_t __ram_boot_start__;
+extern unsigned int __ram_boot_start__;
+extern unsigned int __flash_TA1_start__;
+extern unsigned int __flash_TA1_size__;
+extern unsigned int __flash_TA2_start__;
+extern unsigned int __flash_TA2_size__;
+extern unsigned int __flash_secure_TA1_start__;
+extern unsigned int __flash_secure_TA1_size__;
+extern unsigned int __flash_secure_TA2_start__;
+extern unsigned int __flash_secure_TA2_size__;
 
 #endif /* __MEMORY_MAP_H */
