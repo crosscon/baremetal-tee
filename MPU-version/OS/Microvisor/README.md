@@ -2,8 +2,7 @@
 
 It defines the main functionalities of MCU-Fortifier firmware. The main purpose of each file inside the folder is described in the following list. 
 
-* `activator`: implements MCU-Fortifier licensing system.
-* `bootloader`: primary code unit of microvisor, is immediately called after the board reboot. Performs all necessary tasks (activation check, error reporting, update checking) before transitioning to fortified application execution.
+* `bootloader`: primary code unit of microvisor, is immediately called after the board reboot. Performs all necessary tasks (error reporting, update checking, memory configuration) before transitioning to fortified application execution.
 * `error`: contains different error codes and length of data associated with each error.
 * `exception_manager`: includes the definition of the deprioritized exceptions handler an the functions to simulate and to return from them.
 * `it`: definition of the SVCall, HardFault and MemManage Handlers.
@@ -23,8 +22,9 @@ the rest of the system.
 * `stm32l4xx_it`: implements default system interrupts (provided by STM) used by microvisor before transitioning to fortified application execution and enforcing interrupt deprioritization.
 * `stm32l475vg_mpu`: MPU configuration for STM32L475 MCU.
 * `system_instruction_recovery`: includes functions for detecting the cause of an SVCall, the definition of the wrappers for the simulation of the system instructions (CPS, MSR and MRS) and their invocation.
-* `system_stm32l4xx`: system configuration of STM32L475 MCU provided
-by STMicroelectornics.
+* `tee_client_api`: Global Platform Client API that each TA should implement.
+* `tee_common`: constants, data structures and types used by the TEE to adhere to the Global Platform TEE stanrd. 
+* `tee_core_api`: Global Platform Core API that can be used by TAs.
 * `virtual_IPSR`: definition of the virtual IPSR (Interrupt Program Status Register), with its supporting functions.  
 * `wifi_wrapper`: interface layer abstracting specific characteristics of the Wi-Fi peripheral equipped on B-L475EIOT01A1 board. Used by the secure communication layer, allows to easily port implementation to devices using different communication peripherals.
 
@@ -59,9 +59,11 @@ Using this flow, the MCU Fortifier is in charge of executing and handling the Ha
 
 * Define of a custom `Microvisor_SVC_Handler()` in the `it.c` file: 
     * Check if the SVC was executed in order to simulate the usage of a system instruction (CPS, MRS, MSR) with privileges and, in that case, call the `Recover_System_Instruction(unsigned int* auto_frame, unsigned int* manual_frame)` function in the `system_instruction_recovery.c` file;
-    * Determine which one of the system instruction match, and call the appropriate simulation wrapper (e.g. `Simulate_CPS(unsigned int faulty_inst, unsigned int* auto_frame, unsigned int* manual_frame)`) defined in `system_instruction_recovery.c`;
-    * The wrapper simulate the instructions by calling the `Simulate_Faulty_Instruction(unsigned int* auto_frame, unsigned int* manual_frame, unsigned int inst_len)` function, which in turn, calls `Run_With_Context(unsigned int* address, unsigned int* auto_frame, unsigned int* manual_frame)`;
-    * Both the latter functions are defined in `simulator_common.c`.
-* Load of the custom `Microvisor_HardFault_Handler` in `startup_stm32f207xx.s` file during the microvisor startup;
+        * Determine which one of the system instruction match, and call the appropriate simulation wrapper (e.g. `Simulate_CPS(unsigned int faulty_inst, unsigned int* auto_frame, unsigned int* manual_frame)`) defined in `system_instruction_recovery.c`;
+        * The wrapper simulate the instructions by calling the `Simulate_Faulty_Instruction(unsigned int* auto_frame, unsigned int* manual_frame, unsigned int inst_len)` function, which in turn, calls `Run_With_Context(unsigned int* address, unsigned int* auto_frame, unsigned int* manual_frame)`;
+        * Both the latter functions are defined in `simulator_common.c`.
+    * If that is not the case, the SVC handler could have been called by either a client application to perform a Global Platform Client API call (SVC number is in the range 0-4, and in that case the TA API call is performed and the exception return is executed) or by a trusted application to perform a TEE Core API call (SVC number is in the range 5-50, and in that case the API call is performed and the execution is returned to the trusted application);
+    * In all the other cases, the original SVC_Handler is performed.
+* Load of the custom `Microvisor_SVC_Handler` in `startup_stm32f207xx.s` file during the microvisor startup;
 
 Using this flow, the MCU Fortifier is in charge of executing and handling the SVC caused by the simulation of the CPS, MRS and MSR instructions. 

@@ -457,6 +457,8 @@ To build a fortified application able to run on top of MCU Fortifier, the build 
 * A CA can use up to 352KB of FLASH memory for its code and libraries; 
 * A CA can use up to 16KB of RAM.
 
+**NOTE**: The Trusted Execution Environment (TEE) heavily relies on the Supervisor Call (SVC) mechanism to change the context, privileges level and call the appropriate GP API. While the SVC mechanism remains available to developers working of Client Application (CA), it's important to note that parameter values passed to SVC within the range of 0–50 are reserved for internal Global Platform API operations and will not trigger the CA's SVC handler. Values outside this range will behave normally. 
+
 #### Using Trusted Applications' functionalities from a Client (Fortified) Application
 
 In order to be able to use the security services offered by the Trusted Applications (and the Core Security Services of the TEE) the Global Platform client API should be used. To do that, it is required to insert in the codebase of the Fortified Application the following files provided in the repository, under the *app/sample_files* folder:
