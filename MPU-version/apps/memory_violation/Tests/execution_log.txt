@@ -1,0 +1,45 @@
+Trying to load data from: 0x10000000 (TEE reserved RAM memory address)
+ERROR INSIDE TEE: Microvisor/Private-Src/it.c:603:Microvisor_MemManage_Handler(): "MPU violation detected"
+
+Trying to load data from: 0x20000100 (TA1 reserved RAM memory address)
+ERROR INSIDE TEE: Microvisor/Private-Src/it.c:603:Microvisor_MemManage_Handler(): "MPU violation detected"
+
+Trying to copy some data from: 0x0809C000 (TA2 flash memory address)
+ERROR INSIDE TEE: Microvisor/Private-Src/it.c:603:Microvisor_MemManage_Handler(): "MPU violation detected"
+
+Trying to copy some data from: 0x08010000 (TEE flash memory address)
+ERROR INSIDE TEE: Microvisor/Private-Src/it.c:603:Microvisor_MemManage_Handler(): "MPU violation detected"
+
+Trying to execute a GP TEE Core API from the unsecure world
+ERROR INSIDE TEE: Microvisor/Private-Src/it.c:282:call_TEE(): "Unstrusted applications can not execure privileged TEE Core API directly, exiting"
+
+Trying to modify system registers and gain privileges from Client Application (unpriv: 1, priv: 0)
+Current value of nPRIV bit: 1
+Value of nPRIV bit after trying to gain privileges (set register to 0): 1
+
+Debug: TAs/ta1/ta1.c:87:TA_CreateEntryPoint1(): has been called
+Debug: TAs/ta1/ta1.c:102:TA_OpenSessionEntryPoint1(): has been called
+Debug: TAs/ta1/ta1.c:119:TA_InvokeCommandEntryPoint1(): has been called
+Info: TA_InvokeCommandEntryPoint1(): Command ID: 1
+Info: trigger_unpermitted_TA2_FLASH_access(): TA1 is trying to copy some data from: 0x0809C000 (TA2 flash memory address)
+ERROR INSIDE TEE: Microvisor/Private-Src/it.c:603:Microvisor_MemManage_Handler(): "MPU violation detected"
+
+Debug: TAs/ta1/ta1.c:87:TA_CreateEntryPoint1(): has been called
+Debug: TAs/ta1/ta1.c:102:TA_OpenSessionEntryPoint1(): has been called
+Debug: TAs/ta1/ta1.c:119:TA_InvokeCommandEntryPoint1(): has been called
+Info: TA_InvokeCommandEntryPoint1(): Command ID: 1
+Info: access_TEE_RAM(): TA1 is trying to load data from: 0x10000000 (TEE reserved RAM memory address)
+ERROR INSIDE TEE: Microvisor/Private-Src/it.c:603:Microvisor_MemManage_Handler(): "MPU violation detected"
+
+Debug: TAs/ta1/ta1.c:87:TA_CreateEntryPoint1(): has been called
+Debug: TAs/ta1/ta1.c:102:TA_OpenSessionEntryPoint1(): has been called
+Debug: TAs/ta1/ta1.c:119:TA_InvokeCommandEntryPoint1(): has been called
+Info: TA_InvokeCommandEntryPoint1(): Command ID: 1
+Info: escalate_priv(): TA1 Trying to modify system registers and gain privileges from the TA
+Info: escalate_priv(): Current value of nPRIV bit: 3
+Info: escalate_priv(): Value of nPRIV bit after trying to gain privileges (set register to 0): 3
+Debug: TAs/ta1/ta1.c:109:TA_CloseSessionEntryPoint1(): has been called
+Debug: TAs/ta1/ta1.c:93:TA_DestroyEntryPoint1(): has been called
+
+
+

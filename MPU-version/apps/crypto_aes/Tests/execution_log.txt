@@ -1,0 +1,13 @@
+Debug: TAs/aes-ta/aes-ta.c:139:TA_CreateEntryPoint1(): Entry point is created
+Debug: TAs/aes-ta/aes-ta.c:156:TA_OpenSessionEntryPoint1(): Session is opened
+CA wants to encrypt this message with AES: Secret-Message!
+Debug: TAs/aes-ta/aes-ta.c:22:ta_test_generateKey(): Generate key for AES
+Debug: TAs/aes-ta/aes-ta.c:51:ta_test_aesEncrypt(): AES encryption of the given buffer
+Encrypted message: ����:%("�a���l~@
+Debug: TAs/aes-ta/aes-ta.c:83:ta_test_aesDecrypt(): AES decryption of the given buffer
+Decrypted message: Secret-Message!
+Debug: TAs/aes-ta/aes-ta.c:114:ta_test_digest(): Digest the given buffer
+Digest of the message: V#�(��{Yr�5��lk+��,@FN�>!X$�If t
+Debug: TAs/aes-ta/aes-ta.c:45:ta_test_destroyKey(): Destroy key for AES
+Debug: TAs/aes-ta/aes-ta.c:163:TA_CloseSessionEntryPoint1(): Session is closed
+Debug: TAs/aes-ta/aes-ta.c:147:TA_DestroyEntryPoint1(): Entry point is destroyed

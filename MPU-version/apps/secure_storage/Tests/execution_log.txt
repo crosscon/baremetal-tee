@@ -1,0 +1,16 @@
+Debug: TAs/secure-storage/secure-storage.c:113:TA_CreateEntryPoint1(): Entry point is created
+Debug: TAs/secure-storage/secure-storage.c:130:TA_OpenSessionEntryPoint1(): Session is opened
+Info: ta_test_createPersistenObject(): Secure persistent object is created with id 5 and content ')#��(y(rr�hl���7����gf�ro���?�8*̡ތ��Ѝ�ۭ1��e[�ݽ�܇I�WY��.�¹ƙD��\�:g6�ݝ�_�T���#�>��
+ ������G�=�k.�nU#����r!�'
+Info: ta_test_readPersistenObject(): Secure persistent object with id 5 has ')#��(y(rr�hl���7����gf�ro���?�8*̡ތ��Ѝ�ۭ1��e[�ݽ�܇I�WY��.�¹ƙD��\�:g6�ݝ�_�T���#�>��
+                                                                                                                                                                  ������G�=�k.�nU#����r!�' as content
+ERROR INSIDE TEE: TAs/secure-storage/secure-storage.c:78:ta_test_updatePersistenObject(): "Open persistent object failed"
+Info: ta_test_updatePersistenObject(): The object with id 5 already exists and can not be overwritten
+Info: ta_test_readPersistenObject(): Secure persistent object with id 5 has ')#��(y(rr�hl���7����gf�ro���?�8*̡ތ��Ѝ�ۭ1��e[�ݽ�܇I�WY��.�¹ƙD��\�:g6�ݝ�_�T���#�>��
+                                                                                                                                                                  ������G�=�k.�nU#���' as content
+Info: ta_test_deletePersistentObject(): Secure persistent object with id 5 is deleted
+ERROR INSIDE TEE: TAs/secure-storage/secure-storage.c:45:ta_test_readPersistenObject(): "Open persistent object failed"
+Info: ta_test_readPersistenObject(): The object with id 5 does not exist
+Debug: TAs/secure-storage/secure-storage.c:137:TA_CloseSessionEntryPoint1(): Session is closed
+Debug: TAs/secure-storage/secure-storage.c:121:TA_DestroyEntryPoint1(): Entry point is destroyed
+

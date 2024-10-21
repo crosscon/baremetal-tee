@@ -1,0 +1,2150 @@
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 1
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"stm32l4xx_hal_rng.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c"
+  18              		.section	.text.HAL_RNG_MspInit,"ax",%progbits
+  19              		.align	1
+  20              		.weak	HAL_RNG_MspInit
+  21              		.syntax unified
+  22              		.thumb
+  23              		.thumb_func
+  25              	HAL_RNG_MspInit:
+  26              	.LVL0:
+  27              	.LFB76:
+   1:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+   2:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   ******************************************************************************
+   3:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @file    stm32l4xx_hal_rng.c
+   4:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @author  MCD Application Team
+   5:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief   RNG HAL module driver.
+   6:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *          This file provides firmware functions to manage the following
+   7:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *          functionalities of the Random Number Generator (RNG) peripheral:
+   8:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *           + Initialization and configuration functions
+   9:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *           + Peripheral Control functions
+  10:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *           + Peripheral State functions
+  11:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *
+  12:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   ******************************************************************************
+  13:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @attention
+  14:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *
+  15:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * Copyright (c) 2017 STMicroelectronics.
+  16:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * All rights reserved.
+  17:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *
+  18:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * This software is licensed under terms that can be found in the LICENSE file
+  19:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * in the root directory of this software component.
+  20:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * If no LICENSE file comes with this software, it is provided AS-IS.
+  21:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *
+  22:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   ******************************************************************************
+  23:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   @verbatim
+  24:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   ==============================================================================
+  25:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****                      ##### How to use this driver #####
+  26:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   ==============================================================================
+  27:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   [..]
+  28:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       The RNG HAL driver can be used as follows:
+  29:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+  30:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       (#) Enable the RNG controller clock using __HAL_RCC_RNG_CLK_ENABLE() macro
+  31:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****           in HAL_RNG_MspInit().
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 2
+
+
+  32:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       (#) Activate the RNG peripheral using HAL_RNG_Init() function.
+  33:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       (#) Wait until the 32 bit Random Number Generator contains a valid
+  34:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****           random data using (polling/interrupt) mode.
+  35:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       (#) Get the 32 bit random number using HAL_RNG_GenerateRandomNumber() function.
+  36:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+  37:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     ##### Callback registration #####
+  38:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     ==================================
+  39:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+  40:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     [..]
+  41:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     The compilation define USE_HAL_RNG_REGISTER_CALLBACKS when set to 1
+  42:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     allows the user to configure dynamically the driver callbacks.
+  43:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+  44:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     [..]
+  45:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     Use Function HAL_RNG_RegisterCallback() to register a user callback.
+  46:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     Function HAL_RNG_RegisterCallback() allows to register following callbacks:
+  47:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     (+) ErrorCallback             : RNG Error Callback.
+  48:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     (+) MspInitCallback           : RNG MspInit.
+  49:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     (+) MspDeInitCallback         : RNG MspDeInit.
+  50:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     This function takes as parameters the HAL peripheral handle, the Callback ID
+  51:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     and a pointer to the user callback function.
+  52:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+  53:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     [..]
+  54:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     Use function HAL_RNG_UnRegisterCallback() to reset a callback to the default
+  55:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     weak (overridden) function.
+  56:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     HAL_RNG_UnRegisterCallback() takes as parameters the HAL peripheral handle,
+  57:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     and the Callback ID.
+  58:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     This function allows to reset following callbacks:
+  59:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     (+) ErrorCallback             : RNG Error Callback.
+  60:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     (+) MspInitCallback           : RNG MspInit.
+  61:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     (+) MspDeInitCallback         : RNG MspDeInit.
+  62:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+  63:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     [..]
+  64:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     For specific callback ReadyDataCallback, use dedicated register callbacks:
+  65:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     respectively HAL_RNG_RegisterReadyDataCallback() , HAL_RNG_UnRegisterReadyDataCallback().
+  66:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+  67:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     [..]
+  68:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     By default, after the HAL_RNG_Init() and when the state is HAL_RNG_STATE_RESET
+  69:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     all callbacks are set to the corresponding weak (overridden) functions:
+  70:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     example HAL_RNG_ErrorCallback().
+  71:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     Exception done for MspInit and MspDeInit functions that are respectively
+  72:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     reset to the legacy weak (overridden) functions in the HAL_RNG_Init()
+  73:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     and HAL_RNG_DeInit() only when these callbacks are null (not registered beforehand).
+  74:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     If not, MspInit or MspDeInit are not null, the HAL_RNG_Init() and HAL_RNG_DeInit()
+  75:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     keep and use the user MspInit/MspDeInit callbacks (registered beforehand).
+  76:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+  77:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     [..]
+  78:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     Callbacks can be registered/unregistered in HAL_RNG_STATE_READY state only.
+  79:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     Exception done MspInit/MspDeInit that can be registered/unregistered
+  80:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     in HAL_RNG_STATE_READY or HAL_RNG_STATE_RESET state, thus registered (user)
+  81:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     MspInit/DeInit callbacks can be used during the Init/DeInit.
+  82:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     In that case first register the MspInit/MspDeInit user callbacks
+  83:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     using HAL_RNG_RegisterCallback() before calling HAL_RNG_DeInit()
+  84:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     or HAL_RNG_Init() function.
+  85:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+  86:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     [..]
+  87:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     When The compilation define USE_HAL_RNG_REGISTER_CALLBACKS is set to 0 or
+  88:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     not defined, the callback registration feature is not available
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 3
+
+
+  89:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     and weak (overridden) callbacks are used.
+  90:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+  91:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   @endverbatim
+  92:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   ******************************************************************************
+  93:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+  94:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+  95:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /* Includes ------------------------------------------------------------------*/
+  96:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #include "stm32l4xx_hal.h"
+  97:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+  98:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /** @addtogroup STM32L4xx_HAL_Driver
+  99:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @{
+ 100:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 101:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 102:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined (RNG)
+ 103:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 104:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /** @addtogroup RNG
+ 105:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief RNG HAL module driver.
+ 106:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @{
+ 107:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 108:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 109:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #ifdef HAL_RNG_MODULE_ENABLED
+ 110:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 111:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /* Private types -------------------------------------------------------------*/
+ 112:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /* Private defines -----------------------------------------------------------*/
+ 113:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /** @defgroup RNG_Private_Defines RNG Private Defines
+ 114:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @{
+ 115:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 116:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /*  Health test control register information to use in CCM algorithm */
+ 117:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #define RNG_HTCFG_1   0x17590ABCU /*!< Magic number */
+ 118:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_VER_3_1) || defined(RNG_VER_3_0)
+ 119:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #define RNG_HTCFG     0x000CAA74U /*!< Recommended value for NIST compliance, refer to application 
+ 120:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #else /* RNG_VER_3_2 */
+ 121:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #define RNG_HTCFG     0x00007274U /*!< Recommended value for NIST compliance, refer to application 
+ 122:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* RNG_VER_3_1 || RNG_VER_3_0 */
+ 123:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 124:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @}
+ 125:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 126:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /* Private variables ---------------------------------------------------------*/
+ 127:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /* Private constants ---------------------------------------------------------*/
+ 128:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /** @defgroup RNG_Private_Constants RNG Private Constants
+ 129:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @{
+ 130:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 131:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #define RNG_TIMEOUT_VALUE     2U
+ 132:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 133:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @}
+ 134:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 135:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /* Private macros ------------------------------------------------------------*/
+ 136:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /* Private functions prototypes ----------------------------------------------*/
+ 137:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /* Exported functions --------------------------------------------------------*/
+ 138:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 139:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /** @addtogroup RNG_Exported_Functions
+ 140:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @{
+ 141:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 142:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 143:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /** @addtogroup RNG_Exported_Functions_Group1
+ 144:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *  @brief   Initialization and configuration functions
+ 145:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 4
+
+
+ 146:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** @verbatim
+ 147:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****  ===============================================================================
+ 148:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****           ##### Initialization and configuration functions #####
+ 149:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****  ===============================================================================
+ 150:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     [..]  This section provides functions allowing to:
+ 151:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       (+) Initialize the RNG according to the specified parameters
+ 152:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****           in the RNG_InitTypeDef and create the associated handle
+ 153:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       (+) DeInitialize the RNG peripheral
+ 154:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       (+) Initialize the RNG MSP
+ 155:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       (+) DeInitialize RNG MSP
+ 156:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 157:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** @endverbatim
+ 158:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @{
+ 159:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 160:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 161:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 162:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief  Initializes the RNG peripheral and creates the associated handle.
+ 163:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  hrng pointer to a RNG_HandleTypeDef structure that contains
+ 164:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *                the configuration information for RNG.
+ 165:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @retval HAL status
+ 166:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 167:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** HAL_StatusTypeDef HAL_RNG_Init(RNG_HandleTypeDef *hrng)
+ 168:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** {
+ 169:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   uint32_t tickstart;
+ 170:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_CR_CONDRST)
+ 171:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   uint32_t cr_value;
+ 172:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif  /* RNG_CR_CONDRST */
+ 173:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Check the RNG handle allocation */
+ 174:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   if (hrng == NULL)
+ 175:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 176:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     return HAL_ERROR;
+ 177:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 178:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Check the parameters */
+ 179:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   assert_param(IS_RNG_ALL_INSTANCE(hrng->Instance));
+ 180:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_CR_CED)
+ 181:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   assert_param(IS_RNG_CED(hrng->Init.ClockErrorDetection));
+ 182:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* RNG_CR_CED */
+ 183:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 184:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if (USE_HAL_RNG_REGISTER_CALLBACKS == 1)
+ 185:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   if (hrng->State == HAL_RNG_STATE_RESET)
+ 186:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 187:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Allocate lock resource and initialize it */
+ 188:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->Lock = HAL_UNLOCKED;
+ 189:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 190:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->ReadyDataCallback  = HAL_RNG_ReadyDataCallback;  /* Legacy weak ReadyDataCallback  */
+ 191:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->ErrorCallback      = HAL_RNG_ErrorCallback;      /* Legacy weak ErrorCallback      */
+ 192:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 193:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     if (hrng->MspInitCallback == NULL)
+ 194:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 195:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       hrng->MspInitCallback = HAL_RNG_MspInit; /* Legacy weak MspInit  */
+ 196:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     }
+ 197:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 198:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Init the low level hardware */
+ 199:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->MspInitCallback(hrng);
+ 200:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 201:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #else
+ 202:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   if (hrng->State == HAL_RNG_STATE_RESET)
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 5
+
+
+ 203:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 204:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Allocate lock resource and initialize it */
+ 205:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->Lock = HAL_UNLOCKED;
+ 206:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 207:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Init the low level hardware */
+ 208:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     HAL_RNG_MspInit(hrng);
+ 209:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 210:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* USE_HAL_RNG_REGISTER_CALLBACKS */
+ 211:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 212:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Change RNG peripheral state */
+ 213:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   hrng->State = HAL_RNG_STATE_BUSY;
+ 214:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 215:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_CR_CONDRST)
+ 216:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Disable RNG */
+ 217:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   __HAL_RNG_DISABLE(hrng);
+ 218:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 219:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* RNG CR register configuration. Set value in CR register for CONFIG 1, CONFIG 2 and CONFIG 3 va
+ 220:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   cr_value = (uint32_t)(RNG_CR_CONFIG_VAL);
+ 221:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 222:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Configuration of
+ 223:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****      - Clock Error Detection
+ 224:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****      - CONFIG1, CONFIG2, CONFIG3 fields
+ 225:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****      when CONDRT bit is set to 1 */
+ 226:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   MODIFY_REG(hrng->Instance->CR, RNG_CR_CED | RNG_CR_CONDRST | RNG_CR_RNG_CONFIG1
+ 227:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****              | RNG_CR_RNG_CONFIG2 | RNG_CR_RNG_CONFIG3,
+ 228:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****              (uint32_t)(RNG_CR_CONDRST | hrng->Init.ClockErrorDetection | cr_value));
+ 229:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_VER_3_2) || defined(RNG_VER_3_1) || defined(RNG_VER_3_0)
+ 230:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /*!< magic number must be written immediately before to RNG_HTCRG */
+ 231:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   WRITE_REG(hrng->Instance->HTCR, RNG_HTCFG_1);
+ 232:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Recommended value for NIST compliance, refer to application note AN4230 */
+ 233:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   WRITE_REG(hrng->Instance->HTCR, RNG_HTCFG);
+ 234:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* RNG_VER_3_2 || RNG_VER_3_1 || RNG_VER_3_0 */
+ 235:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 236:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Writing bit CONDRST=0 */
+ 237:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   CLEAR_BIT(hrng->Instance->CR, RNG_CR_CONDRST);
+ 238:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 239:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Get tick */
+ 240:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   tickstart = HAL_GetTick();
+ 241:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 242:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Wait for conditioning reset process to be completed */
+ 243:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   while (HAL_IS_BIT_SET(hrng->Instance->CR, RNG_CR_CONDRST))
+ 244:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 245:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     if ((HAL_GetTick() - tickstart) > RNG_TIMEOUT_VALUE)
+ 246:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 247:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       /* New check to avoid false timeout detection in case of preemption */
+ 248:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       if (HAL_IS_BIT_SET(hrng->Instance->CR, RNG_CR_CONDRST))
+ 249:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       {
+ 250:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->State = HAL_RNG_STATE_READY;
+ 251:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->ErrorCode = HAL_RNG_ERROR_TIMEOUT;
+ 252:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         return HAL_ERROR;
+ 253:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       }
+ 254:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     }
+ 255:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 256:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #else
+ 257:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_CR_CED)
+ 258:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Clock Error Detection Configuration */
+ 259:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   MODIFY_REG(hrng->Instance->CR, RNG_CR_CED, hrng->Init.ClockErrorDetection);
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 6
+
+
+ 260:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* RNG_CR_CED */
+ 261:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* RNG_CR_CONDRST */
+ 262:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 263:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Enable the RNG Peripheral */
+ 264:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   __HAL_RNG_ENABLE(hrng);
+ 265:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 266:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* verify that no seed error */
+ 267:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   if (__HAL_RNG_GET_IT(hrng, RNG_IT_SEI) != RESET)
+ 268:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 269:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->State = HAL_RNG_STATE_ERROR;
+ 270:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     return HAL_ERROR;
+ 271:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 272:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Get tick */
+ 273:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   tickstart = HAL_GetTick();
+ 274:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Check if data register contains valid random data */
+ 275:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   while (__HAL_RNG_GET_FLAG(hrng, RNG_FLAG_DRDY) != SET)
+ 276:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 277:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     if ((HAL_GetTick() - tickstart) > RNG_TIMEOUT_VALUE)
+ 278:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 279:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       /* New check to avoid false timeout detection in case of preemption */
+ 280:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       if (__HAL_RNG_GET_FLAG(hrng, RNG_FLAG_DRDY) != SET)
+ 281:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       {
+ 282:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->State = HAL_RNG_STATE_ERROR;
+ 283:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->ErrorCode = HAL_RNG_ERROR_TIMEOUT;
+ 284:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         return HAL_ERROR;
+ 285:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       }
+ 286:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     }
+ 287:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 288:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 289:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Initialize the RNG state */
+ 290:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   hrng->State = HAL_RNG_STATE_READY;
+ 291:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 292:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Initialise the error code */
+ 293:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   hrng->ErrorCode = HAL_RNG_ERROR_NONE;
+ 294:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 295:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Return function status */
+ 296:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   return HAL_OK;
+ 297:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 298:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 299:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 300:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief  DeInitializes the RNG peripheral.
+ 301:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  hrng pointer to a RNG_HandleTypeDef structure that contains
+ 302:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *                the configuration information for RNG.
+ 303:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @retval HAL status
+ 304:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 305:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** HAL_StatusTypeDef HAL_RNG_DeInit(RNG_HandleTypeDef *hrng)
+ 306:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** {
+ 307:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_CR_CONDRST)
+ 308:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   uint32_t tickstart;
+ 309:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 310:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* RNG_CR_CONDRST */
+ 311:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Check the RNG handle allocation */
+ 312:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   if (hrng == NULL)
+ 313:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 314:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     return HAL_ERROR;
+ 315:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 316:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 7
+
+
+ 317:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_CR_CONDRST)
+ 318:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Clear Clock Error Detection bit when CONDRT bit is set to 1 */
+ 319:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   MODIFY_REG(hrng->Instance->CR, RNG_CR_CED | RNG_CR_CONDRST, RNG_CED_ENABLE | RNG_CR_CONDRST);
+ 320:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 321:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Writing bit CONDRST=0 */
+ 322:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   CLEAR_BIT(hrng->Instance->CR, RNG_CR_CONDRST);
+ 323:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 324:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Get tick */
+ 325:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   tickstart = HAL_GetTick();
+ 326:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 327:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Wait for conditioning reset process to be completed */
+ 328:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   while (HAL_IS_BIT_SET(hrng->Instance->CR, RNG_CR_CONDRST))
+ 329:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 330:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     if ((HAL_GetTick() - tickstart) > RNG_TIMEOUT_VALUE)
+ 331:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 332:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       /* New check to avoid false timeout detection in case of preemption */
+ 333:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       if (HAL_IS_BIT_SET(hrng->Instance->CR, RNG_CR_CONDRST))
+ 334:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       {
+ 335:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->State = HAL_RNG_STATE_READY;
+ 336:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->ErrorCode = HAL_RNG_ERROR_TIMEOUT;
+ 337:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         /* Process Unlocked */
+ 338:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         __HAL_UNLOCK(hrng);
+ 339:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         return HAL_ERROR;
+ 340:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       }
+ 341:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     }
+ 342:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 343:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 344:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #else
+ 345:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_CR_CED)
+ 346:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Clear Clock Error Detection bit */
+ 347:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   CLEAR_BIT(hrng->Instance->CR, RNG_CR_CED);
+ 348:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* RNG_CR_CED */
+ 349:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* RNG_CR_CONDRST */
+ 350:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Disable the RNG Peripheral */
+ 351:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   CLEAR_BIT(hrng->Instance->CR, RNG_CR_IE | RNG_CR_RNGEN);
+ 352:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 353:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Clear RNG interrupt status flags */
+ 354:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   CLEAR_BIT(hrng->Instance->SR, RNG_SR_CEIS | RNG_SR_SEIS);
+ 355:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 356:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if (USE_HAL_RNG_REGISTER_CALLBACKS == 1)
+ 357:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   if (hrng->MspDeInitCallback == NULL)
+ 358:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 359:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->MspDeInitCallback = HAL_RNG_MspDeInit; /* Legacy weak MspDeInit  */
+ 360:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 361:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 362:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* DeInit the low level hardware */
+ 363:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   hrng->MspDeInitCallback(hrng);
+ 364:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #else
+ 365:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* DeInit the low level hardware */
+ 366:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   HAL_RNG_MspDeInit(hrng);
+ 367:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* USE_HAL_RNG_REGISTER_CALLBACKS */
+ 368:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 369:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Update the RNG state */
+ 370:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   hrng->State = HAL_RNG_STATE_RESET;
+ 371:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 372:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Initialise the error code */
+ 373:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   hrng->ErrorCode = HAL_RNG_ERROR_NONE;
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 8
+
+
+ 374:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 375:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Release Lock */
+ 376:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   __HAL_UNLOCK(hrng);
+ 377:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 378:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Return the function status */
+ 379:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   return HAL_OK;
+ 380:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 381:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 382:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 383:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief  Initializes the RNG MSP.
+ 384:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  hrng pointer to a RNG_HandleTypeDef structure that contains
+ 385:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *                the configuration information for RNG.
+ 386:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @retval None
+ 387:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 388:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** __weak void HAL_RNG_MspInit(RNG_HandleTypeDef *hrng)
+ 389:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** {
+  28              		.loc 1 389 1 view -0
+  29              		.cfi_startproc
+  30              		@ args = 0, pretend = 0, frame = 0
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32              		@ link register save eliminated.
+ 390:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Prevent unused argument(s) compilation warning */
+ 391:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   UNUSED(hrng);
+  33              		.loc 1 391 3 view .LVU1
+ 392:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* NOTE : This function should not be modified. When the callback is needed,
+ 393:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****             function HAL_RNG_MspInit must be implemented in the user file.
+ 394:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****    */
+ 395:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+  34              		.loc 1 395 1 is_stmt 0 view .LVU2
+  35 0000 7047     		bx	lr
+  36              		.cfi_endproc
+  37              	.LFE76:
+  39              		.section	.text.HAL_RNG_Init,"ax",%progbits
+  40              		.align	1
+  41              		.global	HAL_RNG_Init
+  42              		.syntax unified
+  43              		.thumb
+  44              		.thumb_func
+  46              	HAL_RNG_Init:
+  47              	.LVL1:
+  48              	.LFB74:
+ 168:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   uint32_t tickstart;
+  49              		.loc 1 168 1 is_stmt 1 view -0
+  50              		.cfi_startproc
+  51              		@ args = 0, pretend = 0, frame = 0
+  52              		@ frame_needed = 0, uses_anonymous_args = 0
+ 169:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_CR_CONDRST)
+  53              		.loc 1 169 3 view .LVU4
+ 174:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+  54              		.loc 1 174 3 view .LVU5
+ 174:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+  55              		.loc 1 174 6 is_stmt 0 view .LVU6
+  56 0000 0028     		cmp	r0, #0
+  57 0002 34D0     		beq	.L8
+ 168:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   uint32_t tickstart;
+  58              		.loc 1 168 1 view .LVU7
+  59 0004 38B5     		push	{r3, r4, r5, lr}
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 9
+
+
+  60              	.LCFI0:
+  61              		.cfi_def_cfa_offset 16
+  62              		.cfi_offset 3, -16
+  63              		.cfi_offset 4, -12
+  64              		.cfi_offset 5, -8
+  65              		.cfi_offset 14, -4
+  66 0006 0446     		mov	r4, r0
+ 179:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_CR_CED)
+  67              		.loc 1 179 3 is_stmt 1 view .LVU8
+ 202:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+  68              		.loc 1 202 3 view .LVU9
+ 202:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+  69              		.loc 1 202 11 is_stmt 0 view .LVU10
+  70 0008 4379     		ldrb	r3, [r0, #5]	@ zero_extendqisi2
+ 202:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+  71              		.loc 1 202 6 view .LVU11
+  72 000a 7BB1     		cbz	r3, .L13
+  73              	.LVL2:
+  74              	.L4:
+ 213:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+  75              		.loc 1 213 3 is_stmt 1 view .LVU12
+ 213:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+  76              		.loc 1 213 15 is_stmt 0 view .LVU13
+  77 000c 0223     		movs	r3, #2
+  78 000e 6371     		strb	r3, [r4, #5]
+ 264:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+  79              		.loc 1 264 3 is_stmt 1 view .LVU14
+  80 0010 2268     		ldr	r2, [r4]
+  81 0012 1368     		ldr	r3, [r2]
+  82 0014 43F00403 		orr	r3, r3, #4
+  83 0018 1360     		str	r3, [r2]
+ 267:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+  84              		.loc 1 267 3 view .LVU15
+ 267:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+  85              		.loc 1 267 7 is_stmt 0 view .LVU16
+  86 001a 2368     		ldr	r3, [r4]
+  87 001c 5B68     		ldr	r3, [r3, #4]
+ 267:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+  88              		.loc 1 267 6 view .LVU17
+  89 001e 13F0400F 		tst	r3, #64
+  90 0022 07D0     		beq	.L5
+ 269:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     return HAL_ERROR;
+  91              		.loc 1 269 5 is_stmt 1 view .LVU18
+ 269:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     return HAL_ERROR;
+  92              		.loc 1 269 17 is_stmt 0 view .LVU19
+  93 0024 0423     		movs	r3, #4
+  94 0026 6371     		strb	r3, [r4, #5]
+ 270:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+  95              		.loc 1 270 5 is_stmt 1 view .LVU20
+ 270:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+  96              		.loc 1 270 12 is_stmt 0 view .LVU21
+  97 0028 0120     		movs	r0, #1
+  98              	.L3:
+ 297:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+  99              		.loc 1 297 1 view .LVU22
+ 100 002a 38BD     		pop	{r3, r4, r5, pc}
+ 101              	.LVL3:
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 10
+
+
+ 102              	.L13:
+ 205:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 103              		.loc 1 205 5 is_stmt 1 view .LVU23
+ 205:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 104              		.loc 1 205 16 is_stmt 0 view .LVU24
+ 105 002c 0371     		strb	r3, [r0, #4]
+ 208:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 106              		.loc 1 208 5 is_stmt 1 view .LVU25
+ 107 002e FFF7FEFF 		bl	HAL_RNG_MspInit
+ 108              	.LVL4:
+ 208:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 109              		.loc 1 208 5 is_stmt 0 view .LVU26
+ 110 0032 EBE7     		b	.L4
+ 111              	.L5:
+ 273:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Check if data register contains valid random data */
+ 112              		.loc 1 273 3 is_stmt 1 view .LVU27
+ 273:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Check if data register contains valid random data */
+ 113              		.loc 1 273 15 is_stmt 0 view .LVU28
+ 114 0034 FFF7FEFF 		bl	HAL_GetTick
+ 115              	.LVL5:
+ 116 0038 0546     		mov	r5, r0
+ 117              	.LVL6:
+ 275:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 118              		.loc 1 275 3 is_stmt 1 view .LVU29
+ 119              	.L6:
+ 275:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 120              		.loc 1 275 50 view .LVU30
+ 275:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 121              		.loc 1 275 10 is_stmt 0 view .LVU31
+ 122 003a 2368     		ldr	r3, [r4]
+ 123 003c 5B68     		ldr	r3, [r3, #4]
+ 275:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 124              		.loc 1 275 50 view .LVU32
+ 125 003e 13F0010F 		tst	r3, #1
+ 126 0042 0FD1     		bne	.L14
+ 277:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 127              		.loc 1 277 5 is_stmt 1 view .LVU33
+ 277:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 128              		.loc 1 277 10 is_stmt 0 view .LVU34
+ 129 0044 FFF7FEFF 		bl	HAL_GetTick
+ 130              	.LVL7:
+ 277:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 131              		.loc 1 277 24 view .LVU35
+ 132 0048 401B     		subs	r0, r0, r5
+ 277:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 133              		.loc 1 277 8 view .LVU36
+ 134 004a 0228     		cmp	r0, #2
+ 135 004c F5D9     		bls	.L6
+ 280:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       {
+ 136              		.loc 1 280 7 is_stmt 1 view .LVU37
+ 280:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       {
+ 137              		.loc 1 280 11 is_stmt 0 view .LVU38
+ 138 004e 2368     		ldr	r3, [r4]
+ 139 0050 5B68     		ldr	r3, [r3, #4]
+ 280:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       {
+ 140              		.loc 1 280 10 view .LVU39
+ 141 0052 13F0010F 		tst	r3, #1
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 11
+
+
+ 142 0056 F0D1     		bne	.L6
+ 282:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->ErrorCode = HAL_RNG_ERROR_TIMEOUT;
+ 143              		.loc 1 282 9 is_stmt 1 view .LVU40
+ 282:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->ErrorCode = HAL_RNG_ERROR_TIMEOUT;
+ 144              		.loc 1 282 21 is_stmt 0 view .LVU41
+ 145 0058 0423     		movs	r3, #4
+ 146 005a 6371     		strb	r3, [r4, #5]
+ 283:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         return HAL_ERROR;
+ 147              		.loc 1 283 9 is_stmt 1 view .LVU42
+ 283:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         return HAL_ERROR;
+ 148              		.loc 1 283 25 is_stmt 0 view .LVU43
+ 149 005c 0223     		movs	r3, #2
+ 150 005e A360     		str	r3, [r4, #8]
+ 284:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       }
+ 151              		.loc 1 284 9 is_stmt 1 view .LVU44
+ 284:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       }
+ 152              		.loc 1 284 16 is_stmt 0 view .LVU45
+ 153 0060 0120     		movs	r0, #1
+ 154 0062 E2E7     		b	.L3
+ 155              	.L14:
+ 290:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 156              		.loc 1 290 3 is_stmt 1 view .LVU46
+ 290:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 157              		.loc 1 290 15 is_stmt 0 view .LVU47
+ 158 0064 0123     		movs	r3, #1
+ 159 0066 6371     		strb	r3, [r4, #5]
+ 293:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 160              		.loc 1 293 3 is_stmt 1 view .LVU48
+ 293:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 161              		.loc 1 293 19 is_stmt 0 view .LVU49
+ 162 0068 0020     		movs	r0, #0
+ 163 006a A060     		str	r0, [r4, #8]
+ 296:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 164              		.loc 1 296 3 is_stmt 1 view .LVU50
+ 296:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 165              		.loc 1 296 10 is_stmt 0 view .LVU51
+ 166 006c DDE7     		b	.L3
+ 167              	.LVL8:
+ 168              	.L8:
+ 169              	.LCFI1:
+ 170              		.cfi_def_cfa_offset 0
+ 171              		.cfi_restore 3
+ 172              		.cfi_restore 4
+ 173              		.cfi_restore 5
+ 174              		.cfi_restore 14
+ 176:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 175              		.loc 1 176 12 view .LVU52
+ 176 006e 0120     		movs	r0, #1
+ 177              	.LVL9:
+ 297:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 178              		.loc 1 297 1 view .LVU53
+ 179 0070 7047     		bx	lr
+ 180              		.cfi_endproc
+ 181              	.LFE74:
+ 183              		.section	.text.HAL_RNG_MspDeInit,"ax",%progbits
+ 184              		.align	1
+ 185              		.weak	HAL_RNG_MspDeInit
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 12
+
+
+ 186              		.syntax unified
+ 187              		.thumb
+ 188              		.thumb_func
+ 190              	HAL_RNG_MspDeInit:
+ 191              	.LVL10:
+ 192              	.LFB77:
+ 396:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 397:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 398:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief  DeInitializes the RNG MSP.
+ 399:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  hrng pointer to a RNG_HandleTypeDef structure that contains
+ 400:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *                the configuration information for RNG.
+ 401:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @retval None
+ 402:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 403:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** __weak void HAL_RNG_MspDeInit(RNG_HandleTypeDef *hrng)
+ 404:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** {
+ 193              		.loc 1 404 1 is_stmt 1 view -0
+ 194              		.cfi_startproc
+ 195              		@ args = 0, pretend = 0, frame = 0
+ 196              		@ frame_needed = 0, uses_anonymous_args = 0
+ 197              		@ link register save eliminated.
+ 405:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Prevent unused argument(s) compilation warning */
+ 406:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   UNUSED(hrng);
+ 198              		.loc 1 406 3 view .LVU55
+ 407:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* NOTE : This function should not be modified. When the callback is needed,
+ 408:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****             function HAL_RNG_MspDeInit must be implemented in the user file.
+ 409:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****    */
+ 410:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 199              		.loc 1 410 1 is_stmt 0 view .LVU56
+ 200 0000 7047     		bx	lr
+ 201              		.cfi_endproc
+ 202              	.LFE77:
+ 204              		.section	.text.HAL_RNG_DeInit,"ax",%progbits
+ 205              		.align	1
+ 206              		.global	HAL_RNG_DeInit
+ 207              		.syntax unified
+ 208              		.thumb
+ 209              		.thumb_func
+ 211              	HAL_RNG_DeInit:
+ 212              	.LVL11:
+ 213              	.LFB75:
+ 306:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_CR_CONDRST)
+ 214              		.loc 1 306 1 is_stmt 1 view -0
+ 215              		.cfi_startproc
+ 216              		@ args = 0, pretend = 0, frame = 0
+ 217              		@ frame_needed = 0, uses_anonymous_args = 0
+ 312:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 218              		.loc 1 312 3 view .LVU58
+ 312:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 219              		.loc 1 312 6 is_stmt 0 view .LVU59
+ 220 0000 90B1     		cbz	r0, .L18
+ 306:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_CR_CONDRST)
+ 221              		.loc 1 306 1 view .LVU60
+ 222 0002 10B5     		push	{r4, lr}
+ 223              	.LCFI2:
+ 224              		.cfi_def_cfa_offset 8
+ 225              		.cfi_offset 4, -8
+ 226              		.cfi_offset 14, -4
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 13
+
+
+ 227 0004 0446     		mov	r4, r0
+ 351:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 228              		.loc 1 351 3 is_stmt 1 view .LVU61
+ 229 0006 0268     		ldr	r2, [r0]
+ 230 0008 1368     		ldr	r3, [r2]
+ 231 000a 23F00C03 		bic	r3, r3, #12
+ 232 000e 1360     		str	r3, [r2]
+ 354:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 233              		.loc 1 354 3 view .LVU62
+ 234 0010 0268     		ldr	r2, [r0]
+ 235 0012 5368     		ldr	r3, [r2, #4]
+ 236 0014 23F06003 		bic	r3, r3, #96
+ 237 0018 5360     		str	r3, [r2, #4]
+ 366:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* USE_HAL_RNG_REGISTER_CALLBACKS */
+ 238              		.loc 1 366 3 view .LVU63
+ 239 001a FFF7FEFF 		bl	HAL_RNG_MspDeInit
+ 240              	.LVL12:
+ 370:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 241              		.loc 1 370 3 view .LVU64
+ 370:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 242              		.loc 1 370 15 is_stmt 0 view .LVU65
+ 243 001e 0020     		movs	r0, #0
+ 244 0020 6071     		strb	r0, [r4, #5]
+ 373:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 245              		.loc 1 373 3 is_stmt 1 view .LVU66
+ 373:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 246              		.loc 1 373 19 is_stmt 0 view .LVU67
+ 247 0022 A060     		str	r0, [r4, #8]
+ 376:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 248              		.loc 1 376 3 is_stmt 1 view .LVU68
+ 376:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 249              		.loc 1 376 3 view .LVU69
+ 250 0024 2071     		strb	r0, [r4, #4]
+ 376:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 251              		.loc 1 376 3 view .LVU70
+ 379:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 252              		.loc 1 379 3 view .LVU71
+ 380:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 253              		.loc 1 380 1 is_stmt 0 view .LVU72
+ 254 0026 10BD     		pop	{r4, pc}
+ 255              	.LVL13:
+ 256              	.L18:
+ 257              	.LCFI3:
+ 258              		.cfi_def_cfa_offset 0
+ 259              		.cfi_restore 4
+ 260              		.cfi_restore 14
+ 314:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 261              		.loc 1 314 12 view .LVU73
+ 262 0028 0120     		movs	r0, #1
+ 263              	.LVL14:
+ 380:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 264              		.loc 1 380 1 view .LVU74
+ 265 002a 7047     		bx	lr
+ 266              		.cfi_endproc
+ 267              	.LFE75:
+ 269              		.section	.text.HAL_RNG_GenerateRandomNumber,"ax",%progbits
+ 270              		.align	1
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 14
+
+
+ 271              		.global	HAL_RNG_GenerateRandomNumber
+ 272              		.syntax unified
+ 273              		.thumb
+ 274              		.thumb_func
+ 276              	HAL_RNG_GenerateRandomNumber:
+ 277              	.LVL15:
+ 278              	.LFB78:
+ 411:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 412:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if (USE_HAL_RNG_REGISTER_CALLBACKS == 1)
+ 413:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 414:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief  Register a User RNG Callback
+ 415:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         To be used instead of the weak predefined callback
+ 416:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  hrng RNG handle
+ 417:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  CallbackID ID of the callback to be registered
+ 418:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         This parameter can be one of the following values:
+ 419:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *          @arg @ref HAL_RNG_ERROR_CB_ID Error callback ID
+ 420:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *          @arg @ref HAL_RNG_MSPINIT_CB_ID MspInit callback ID
+ 421:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *          @arg @ref HAL_RNG_MSPDEINIT_CB_ID MspDeInit callback ID
+ 422:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  pCallback pointer to the Callback function
+ 423:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @retval HAL status
+ 424:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 425:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** HAL_StatusTypeDef HAL_RNG_RegisterCallback(RNG_HandleTypeDef *hrng, HAL_RNG_CallbackIDTypeDef Callb
+ 426:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****                                            pRNG_CallbackTypeDef pCallback)
+ 427:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** {
+ 428:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   HAL_StatusTypeDef status = HAL_OK;
+ 429:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 430:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   if (pCallback == NULL)
+ 431:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 432:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Update the error code */
+ 433:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->ErrorCode = HAL_RNG_ERROR_INVALID_CALLBACK;
+ 434:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     return HAL_ERROR;
+ 435:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 436:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 437:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   if (HAL_RNG_STATE_READY == hrng->State)
+ 438:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 439:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     switch (CallbackID)
+ 440:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 441:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       case HAL_RNG_ERROR_CB_ID :
+ 442:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->ErrorCallback = pCallback;
+ 443:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         break;
+ 444:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 445:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       case HAL_RNG_MSPINIT_CB_ID :
+ 446:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->MspInitCallback = pCallback;
+ 447:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         break;
+ 448:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 449:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       case HAL_RNG_MSPDEINIT_CB_ID :
+ 450:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->MspDeInitCallback = pCallback;
+ 451:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         break;
+ 452:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 453:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       default :
+ 454:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         /* Update the error code */
+ 455:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->ErrorCode = HAL_RNG_ERROR_INVALID_CALLBACK;
+ 456:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         /* Return error status */
+ 457:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         status =  HAL_ERROR;
+ 458:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         break;
+ 459:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     }
+ 460:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 15
+
+
+ 461:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   else if (HAL_RNG_STATE_RESET == hrng->State)
+ 462:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 463:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     switch (CallbackID)
+ 464:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 465:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       case HAL_RNG_MSPINIT_CB_ID :
+ 466:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->MspInitCallback = pCallback;
+ 467:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         break;
+ 468:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 469:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       case HAL_RNG_MSPDEINIT_CB_ID :
+ 470:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->MspDeInitCallback = pCallback;
+ 471:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         break;
+ 472:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 473:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       default :
+ 474:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         /* Update the error code */
+ 475:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->ErrorCode = HAL_RNG_ERROR_INVALID_CALLBACK;
+ 476:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         /* Return error status */
+ 477:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         status =  HAL_ERROR;
+ 478:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         break;
+ 479:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     }
+ 480:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 481:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   else
+ 482:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 483:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Update the error code */
+ 484:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->ErrorCode = HAL_RNG_ERROR_INVALID_CALLBACK;
+ 485:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Return error status */
+ 486:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     status =  HAL_ERROR;
+ 487:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 488:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 489:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   return status;
+ 490:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 491:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 492:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 493:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief  Unregister an RNG Callback
+ 494:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         RNG callback is redirected to the weak predefined callback
+ 495:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  hrng RNG handle
+ 496:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  CallbackID ID of the callback to be unregistered
+ 497:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         This parameter can be one of the following values:
+ 498:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *          @arg @ref HAL_RNG_ERROR_CB_ID Error callback ID
+ 499:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *          @arg @ref HAL_RNG_MSPINIT_CB_ID MspInit callback ID
+ 500:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *          @arg @ref HAL_RNG_MSPDEINIT_CB_ID MspDeInit callback ID
+ 501:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @retval HAL status
+ 502:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 503:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** HAL_StatusTypeDef HAL_RNG_UnRegisterCallback(RNG_HandleTypeDef *hrng, HAL_RNG_CallbackIDTypeDef Cal
+ 504:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** {
+ 505:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   HAL_StatusTypeDef status = HAL_OK;
+ 506:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 507:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 508:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   if (HAL_RNG_STATE_READY == hrng->State)
+ 509:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 510:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     switch (CallbackID)
+ 511:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 512:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       case HAL_RNG_ERROR_CB_ID :
+ 513:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->ErrorCallback = HAL_RNG_ErrorCallback;          /* Legacy weak ErrorCallback  */
+ 514:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         break;
+ 515:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 516:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       case HAL_RNG_MSPINIT_CB_ID :
+ 517:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->MspInitCallback = HAL_RNG_MspInit;              /* Legacy weak MspInit  */
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 16
+
+
+ 518:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         break;
+ 519:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 520:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       case HAL_RNG_MSPDEINIT_CB_ID :
+ 521:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->MspDeInitCallback = HAL_RNG_MspDeInit;          /* Legacy weak MspDeInit  */
+ 522:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         break;
+ 523:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 524:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       default :
+ 525:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         /* Update the error code */
+ 526:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->ErrorCode = HAL_RNG_ERROR_INVALID_CALLBACK;
+ 527:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         /* Return error status */
+ 528:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         status =  HAL_ERROR;
+ 529:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         break;
+ 530:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     }
+ 531:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 532:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   else if (HAL_RNG_STATE_RESET == hrng->State)
+ 533:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 534:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     switch (CallbackID)
+ 535:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 536:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       case HAL_RNG_MSPINIT_CB_ID :
+ 537:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->MspInitCallback = HAL_RNG_MspInit;              /* Legacy weak MspInit  */
+ 538:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         break;
+ 539:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 540:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       case HAL_RNG_MSPDEINIT_CB_ID :
+ 541:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->MspDeInitCallback = HAL_RNG_MspDeInit;          /* Legacy weak MspInit  */
+ 542:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         break;
+ 543:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 544:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       default :
+ 545:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         /* Update the error code */
+ 546:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         hrng->ErrorCode = HAL_RNG_ERROR_INVALID_CALLBACK;
+ 547:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         /* Return error status */
+ 548:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         status =  HAL_ERROR;
+ 549:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         break;
+ 550:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     }
+ 551:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 552:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   else
+ 553:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 554:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Update the error code */
+ 555:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->ErrorCode = HAL_RNG_ERROR_INVALID_CALLBACK;
+ 556:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Return error status */
+ 557:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     status =  HAL_ERROR;
+ 558:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 559:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 560:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   return status;
+ 561:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 562:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 563:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 564:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief  Register Data Ready RNG Callback
+ 565:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         To be used instead of the weak HAL_RNG_ReadyDataCallback() predefined callback
+ 566:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  hrng RNG handle
+ 567:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  pCallback pointer to the Data Ready Callback function
+ 568:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @retval HAL status
+ 569:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 570:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** HAL_StatusTypeDef HAL_RNG_RegisterReadyDataCallback(RNG_HandleTypeDef *hrng, pRNG_ReadyDataCallback
+ 571:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** {
+ 572:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   HAL_StatusTypeDef status = HAL_OK;
+ 573:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 574:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   if (pCallback == NULL)
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 17
+
+
+ 575:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 576:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Update the error code */
+ 577:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->ErrorCode = HAL_RNG_ERROR_INVALID_CALLBACK;
+ 578:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     return HAL_ERROR;
+ 579:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 580:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Process locked */
+ 581:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   __HAL_LOCK(hrng);
+ 582:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 583:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   if (HAL_RNG_STATE_READY == hrng->State)
+ 584:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 585:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->ReadyDataCallback = pCallback;
+ 586:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 587:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   else
+ 588:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 589:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Update the error code */
+ 590:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->ErrorCode = HAL_RNG_ERROR_INVALID_CALLBACK;
+ 591:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Return error status */
+ 592:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     status =  HAL_ERROR;
+ 593:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 594:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 595:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Release Lock */
+ 596:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   __HAL_UNLOCK(hrng);
+ 597:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   return status;
+ 598:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 599:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 600:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 601:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief  UnRegister the Data Ready RNG Callback
+ 602:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         Data Ready RNG Callback is redirected to the weak HAL_RNG_ReadyDataCallback() predefine
+ 603:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  hrng RNG handle
+ 604:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @retval HAL status
+ 605:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 606:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** HAL_StatusTypeDef HAL_RNG_UnRegisterReadyDataCallback(RNG_HandleTypeDef *hrng)
+ 607:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** {
+ 608:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   HAL_StatusTypeDef status = HAL_OK;
+ 609:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 610:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Process locked */
+ 611:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   __HAL_LOCK(hrng);
+ 612:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 613:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   if (HAL_RNG_STATE_READY == hrng->State)
+ 614:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 615:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->ReadyDataCallback = HAL_RNG_ReadyDataCallback; /* Legacy weak ReadyDataCallback  */
+ 616:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 617:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   else
+ 618:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 619:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Update the error code */
+ 620:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->ErrorCode = HAL_RNG_ERROR_INVALID_CALLBACK;
+ 621:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Return error status */
+ 622:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     status =  HAL_ERROR;
+ 623:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 624:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 625:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Release Lock */
+ 626:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   __HAL_UNLOCK(hrng);
+ 627:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   return status;
+ 628:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 629:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 630:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* USE_HAL_RNG_REGISTER_CALLBACKS */
+ 631:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 18
+
+
+ 632:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 633:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @}
+ 634:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 635:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 636:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /** @addtogroup RNG_Exported_Functions_Group2
+ 637:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *  @brief   Peripheral Control functions
+ 638:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *
+ 639:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** @verbatim
+ 640:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****  ===============================================================================
+ 641:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****                       ##### Peripheral Control functions #####
+ 642:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****  ===============================================================================
+ 643:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     [..]  This section provides functions allowing to:
+ 644:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       (+) Get the 32 bit Random number
+ 645:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       (+) Get the 32 bit Random number with interrupt enabled
+ 646:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       (+) Handle RNG interrupt request
+ 647:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 648:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** @endverbatim
+ 649:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @{
+ 650:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 651:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 652:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 653:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief  Generates a 32-bit random number.
+ 654:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @note   When several random data are output at the same time in an output buffer,
+ 655:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         this function checks value of RNG_FLAG_DRDY flag to know if valid
+ 656:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         random number is available in the DR register (RNG_FLAG_DRDY flag set
+ 657:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         whenever a random number is available through the RNG_DR register).
+ 658:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         After transitioning from 0 to 1 (random number available),
+ 659:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         RNG_FLAG_DRDY flag remains high until output buffer becomes empty after reading
+ 660:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         four words from the RNG_DR register, i.e. further function calls
+ 661:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         will immediately return a new u32 random number (additional words are
+ 662:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         available and can be read by the application, till RNG_FLAG_DRDY flag remains high).
+ 663:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         When no more random number data is available in DR register, RNG_FLAG_DRDY
+ 664:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         flag is automatically cleared.
+ 665:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         When random number are out on a single sample basis, each time the random
+ 666:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         number data is read the RNG_FLAG_DRDY flag is automatically cleared.
+ 667:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  hrng pointer to a RNG_HandleTypeDef structure that contains
+ 668:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *                the configuration information for RNG.
+ 669:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  random32bit pointer to generated random number variable if successful.
+ 670:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @retval HAL status
+ 671:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 672:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 673:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** HAL_StatusTypeDef HAL_RNG_GenerateRandomNumber(RNG_HandleTypeDef *hrng, uint32_t *random32bit)
+ 674:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** {
+ 279              		.loc 1 674 1 is_stmt 1 view -0
+ 280              		.cfi_startproc
+ 281              		@ args = 0, pretend = 0, frame = 0
+ 282              		@ frame_needed = 0, uses_anonymous_args = 0
+ 283              		.loc 1 674 1 is_stmt 0 view .LVU76
+ 284 0000 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 285              	.LCFI4:
+ 286              		.cfi_def_cfa_offset 24
+ 287              		.cfi_offset 3, -24
+ 288              		.cfi_offset 4, -20
+ 289              		.cfi_offset 5, -16
+ 290              		.cfi_offset 6, -12
+ 291              		.cfi_offset 7, -8
+ 292              		.cfi_offset 14, -4
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 19
+
+
+ 675:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   uint32_t tickstart;
+ 293              		.loc 1 675 3 is_stmt 1 view .LVU77
+ 676:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   HAL_StatusTypeDef status = HAL_OK;
+ 294              		.loc 1 676 3 view .LVU78
+ 295              	.LVL16:
+ 677:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 678:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Process Locked */
+ 679:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   __HAL_LOCK(hrng);
+ 296              		.loc 1 679 3 view .LVU79
+ 297              		.loc 1 679 3 view .LVU80
+ 298 0002 0379     		ldrb	r3, [r0, #4]	@ zero_extendqisi2
+ 299 0004 012B     		cmp	r3, #1
+ 300 0006 30D0     		beq	.L29
+ 301 0008 0446     		mov	r4, r0
+ 302 000a 0E46     		mov	r6, r1
+ 303              		.loc 1 679 3 discriminator 2 view .LVU81
+ 304 000c 0123     		movs	r3, #1
+ 305 000e 0371     		strb	r3, [r0, #4]
+ 306              		.loc 1 679 3 discriminator 2 view .LVU82
+ 680:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 681:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Check RNG peripheral state */
+ 682:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   if (hrng->State == HAL_RNG_STATE_READY)
+ 307              		.loc 1 682 3 discriminator 2 view .LVU83
+ 308              		.loc 1 682 11 is_stmt 0 discriminator 2 view .LVU84
+ 309 0010 4579     		ldrb	r5, [r0, #5]	@ zero_extendqisi2
+ 310 0012 EDB2     		uxtb	r5, r5
+ 311              		.loc 1 682 6 discriminator 2 view .LVU85
+ 312 0014 9D42     		cmp	r5, r3
+ 313 0016 06D0     		beq	.L31
+ 683:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 684:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Change RNG peripheral state */
+ 685:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->State = HAL_RNG_STATE_BUSY;
+ 686:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_CR_CONDRST)
+ 687:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Check if there is a seed error */
+ 688:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     if (__HAL_RNG_GET_IT(hrng, RNG_IT_SEI) != RESET)
+ 689:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 690:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       /* Update the error code */
+ 691:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       hrng->ErrorCode = HAL_RNG_ERROR_SEED;
+ 692:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       /* Reset from seed error */
+ 693:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       status = RNG_RecoverSeedError(hrng);
+ 694:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       if (status == HAL_ERROR)
+ 695:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       {
+ 696:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         return status;
+ 697:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       }
+ 698:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     }
+ 699:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* RNG_CR_CONDRST */
+ 700:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 701:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Get tick */
+ 702:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     tickstart = HAL_GetTick();
+ 703:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 704:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Check if data register contains valid random data */
+ 705:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     while (__HAL_RNG_GET_FLAG(hrng, RNG_FLAG_DRDY) == RESET)
+ 706:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 707:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       if ((HAL_GetTick() - tickstart) > RNG_TIMEOUT_VALUE)
+ 708:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       {
+ 709:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         /* New check to avoid false timeout detection in case of preemption */
+ 710:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         if (__HAL_RNG_GET_FLAG(hrng, RNG_FLAG_DRDY) == RESET)
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 20
+
+
+ 711:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         {
+ 712:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****           hrng->State = HAL_RNG_STATE_READY;
+ 713:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****           hrng->ErrorCode = HAL_RNG_ERROR_TIMEOUT;
+ 714:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****           /* Process Unlocked */
+ 715:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****           __HAL_UNLOCK(hrng);
+ 716:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****           return HAL_ERROR;
+ 717:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         }
+ 718:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       }
+ 719:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     }
+ 720:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 721:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Get a 32bit Random number */
+ 722:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->RandomNumber = hrng->Instance->DR;
+ 723:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_CR_CONDRST)
+ 724:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* In case of seed error, the value available in the RNG_DR register must not
+ 725:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****        be used as it may not have enough entropy */
+ 726:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     if (__HAL_RNG_GET_IT(hrng, RNG_IT_SEI) != RESET)
+ 727:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 728:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       /* Update the error code and status */
+ 729:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       hrng->ErrorCode = HAL_RNG_ERROR_SEED;
+ 730:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       status = HAL_ERROR;
+ 731:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     }
+ 732:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     else /* No seed error */
+ 733:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 734:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       *random32bit = hrng->RandomNumber;
+ 735:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     }
+ 736:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #else
+ 737:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     *random32bit = hrng->RandomNumber;
+ 738:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 739:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* RNG_CR_CONDRST */
+ 740:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->State = HAL_RNG_STATE_READY;
+ 741:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 742:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   else
+ 743:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 744:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->ErrorCode = HAL_RNG_ERROR_BUSY;
+ 314              		.loc 1 744 5 is_stmt 1 view .LVU86
+ 315              		.loc 1 744 21 is_stmt 0 view .LVU87
+ 316 0018 0423     		movs	r3, #4
+ 317 001a 8360     		str	r3, [r0, #8]
+ 745:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     status = HAL_ERROR;
+ 318              		.loc 1 745 5 is_stmt 1 view .LVU88
+ 319              	.LVL17:
+ 320              		.loc 1 745 12 is_stmt 0 view .LVU89
+ 321 001c 0125     		movs	r5, #1
+ 322              	.LVL18:
+ 323              	.L28:
+ 746:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 747:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 748:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Process Unlocked */
+ 749:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   __HAL_UNLOCK(hrng);
+ 324              		.loc 1 749 3 is_stmt 1 view .LVU90
+ 325              		.loc 1 749 3 view .LVU91
+ 326 001e 0023     		movs	r3, #0
+ 327 0020 2371     		strb	r3, [r4, #4]
+ 328              		.loc 1 749 3 view .LVU92
+ 750:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 751:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   return status;
+ 329              		.loc 1 751 3 view .LVU93
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 21
+
+
+ 330              	.LVL19:
+ 331              	.L24:
+ 752:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 332              		.loc 1 752 1 is_stmt 0 view .LVU94
+ 333 0022 2846     		mov	r0, r5
+ 334 0024 F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 335              	.LVL20:
+ 336              	.L31:
+ 685:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_CR_CONDRST)
+ 337              		.loc 1 685 5 is_stmt 1 view .LVU95
+ 685:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_CR_CONDRST)
+ 338              		.loc 1 685 17 is_stmt 0 view .LVU96
+ 339 0026 0223     		movs	r3, #2
+ 340 0028 4371     		strb	r3, [r0, #5]
+ 702:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 341              		.loc 1 702 5 is_stmt 1 view .LVU97
+ 702:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 342              		.loc 1 702 17 is_stmt 0 view .LVU98
+ 343 002a FFF7FEFF 		bl	HAL_GetTick
+ 344              	.LVL21:
+ 702:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 345              		.loc 1 702 17 view .LVU99
+ 346 002e 0746     		mov	r7, r0
+ 347              	.LVL22:
+ 705:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 348              		.loc 1 705 5 is_stmt 1 view .LVU100
+ 349              	.L26:
+ 705:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 350              		.loc 1 705 52 view .LVU101
+ 705:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 351              		.loc 1 705 12 is_stmt 0 view .LVU102
+ 352 0030 2368     		ldr	r3, [r4]
+ 353 0032 5A68     		ldr	r2, [r3, #4]
+ 705:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 354              		.loc 1 705 52 view .LVU103
+ 355 0034 12F0010F 		tst	r2, #1
+ 356 0038 10D1     		bne	.L32
+ 707:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       {
+ 357              		.loc 1 707 7 is_stmt 1 view .LVU104
+ 707:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       {
+ 358              		.loc 1 707 12 is_stmt 0 view .LVU105
+ 359 003a FFF7FEFF 		bl	HAL_GetTick
+ 360              	.LVL23:
+ 707:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       {
+ 361              		.loc 1 707 26 view .LVU106
+ 362 003e C01B     		subs	r0, r0, r7
+ 707:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       {
+ 363              		.loc 1 707 10 view .LVU107
+ 364 0040 0228     		cmp	r0, #2
+ 365 0042 F5D9     		bls	.L26
+ 710:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         {
+ 366              		.loc 1 710 9 is_stmt 1 view .LVU108
+ 710:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         {
+ 367              		.loc 1 710 13 is_stmt 0 view .LVU109
+ 368 0044 2368     		ldr	r3, [r4]
+ 369 0046 5B68     		ldr	r3, [r3, #4]
+ 710:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         {
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 22
+
+
+ 370              		.loc 1 710 12 view .LVU110
+ 371 0048 13F0010F 		tst	r3, #1
+ 372 004c F0D1     		bne	.L26
+ 712:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****           hrng->ErrorCode = HAL_RNG_ERROR_TIMEOUT;
+ 373              		.loc 1 712 11 is_stmt 1 view .LVU111
+ 712:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****           hrng->ErrorCode = HAL_RNG_ERROR_TIMEOUT;
+ 374              		.loc 1 712 23 is_stmt 0 view .LVU112
+ 375 004e 0123     		movs	r3, #1
+ 376 0050 6371     		strb	r3, [r4, #5]
+ 713:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****           /* Process Unlocked */
+ 377              		.loc 1 713 11 is_stmt 1 view .LVU113
+ 713:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****           /* Process Unlocked */
+ 378              		.loc 1 713 27 is_stmt 0 view .LVU114
+ 379 0052 0223     		movs	r3, #2
+ 380 0054 A360     		str	r3, [r4, #8]
+ 715:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****           return HAL_ERROR;
+ 381              		.loc 1 715 11 is_stmt 1 view .LVU115
+ 715:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****           return HAL_ERROR;
+ 382              		.loc 1 715 11 view .LVU116
+ 383 0056 0023     		movs	r3, #0
+ 384 0058 2371     		strb	r3, [r4, #4]
+ 715:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****           return HAL_ERROR;
+ 385              		.loc 1 715 11 view .LVU117
+ 716:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         }
+ 386              		.loc 1 716 11 view .LVU118
+ 716:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****         }
+ 387              		.loc 1 716 18 is_stmt 0 view .LVU119
+ 388 005a E2E7     		b	.L24
+ 389              	.L32:
+ 722:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_CR_CONDRST)
+ 390              		.loc 1 722 5 is_stmt 1 view .LVU120
+ 722:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_CR_CONDRST)
+ 391              		.loc 1 722 40 is_stmt 0 view .LVU121
+ 392 005c 9B68     		ldr	r3, [r3, #8]
+ 722:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if defined(RNG_CR_CONDRST)
+ 393              		.loc 1 722 24 view .LVU122
+ 394 005e E360     		str	r3, [r4, #12]
+ 737:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 395              		.loc 1 737 5 is_stmt 1 view .LVU123
+ 737:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 396              		.loc 1 737 18 is_stmt 0 view .LVU124
+ 397 0060 3360     		str	r3, [r6]
+ 740:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 398              		.loc 1 740 5 is_stmt 1 view .LVU125
+ 740:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 399              		.loc 1 740 17 is_stmt 0 view .LVU126
+ 400 0062 0123     		movs	r3, #1
+ 401 0064 6371     		strb	r3, [r4, #5]
+ 676:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 402              		.loc 1 676 21 view .LVU127
+ 403 0066 0025     		movs	r5, #0
+ 404 0068 D9E7     		b	.L28
+ 405              	.LVL24:
+ 406              	.L29:
+ 679:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 407              		.loc 1 679 3 view .LVU128
+ 408 006a 0225     		movs	r5, #2
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 23
+
+
+ 409 006c D9E7     		b	.L24
+ 410              		.cfi_endproc
+ 411              	.LFE78:
+ 413              		.section	.text.HAL_RNG_GenerateRandomNumber_IT,"ax",%progbits
+ 414              		.align	1
+ 415              		.global	HAL_RNG_GenerateRandomNumber_IT
+ 416              		.syntax unified
+ 417              		.thumb
+ 418              		.thumb_func
+ 420              	HAL_RNG_GenerateRandomNumber_IT:
+ 421              	.LVL25:
+ 422              	.LFB79:
+ 753:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 754:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 755:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief  Generates a 32-bit random number in interrupt mode.
+ 756:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  hrng pointer to a RNG_HandleTypeDef structure that contains
+ 757:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *                the configuration information for RNG.
+ 758:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @retval HAL status
+ 759:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 760:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** HAL_StatusTypeDef HAL_RNG_GenerateRandomNumber_IT(RNG_HandleTypeDef *hrng)
+ 761:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** {
+ 423              		.loc 1 761 1 is_stmt 1 view -0
+ 424              		.cfi_startproc
+ 425              		@ args = 0, pretend = 0, frame = 0
+ 426              		@ frame_needed = 0, uses_anonymous_args = 0
+ 427              		@ link register save eliminated.
+ 762:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   HAL_StatusTypeDef status = HAL_OK;
+ 428              		.loc 1 762 3 view .LVU130
+ 763:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 764:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Process Locked */
+ 765:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   __HAL_LOCK(hrng);
+ 429              		.loc 1 765 3 view .LVU131
+ 430              		.loc 1 765 3 view .LVU132
+ 431 0000 0379     		ldrb	r3, [r0, #4]	@ zero_extendqisi2
+ 432 0002 012B     		cmp	r3, #1
+ 433 0004 14D0     		beq	.L36
+ 434              		.loc 1 765 3 discriminator 2 view .LVU133
+ 435 0006 0123     		movs	r3, #1
+ 436 0008 0371     		strb	r3, [r0, #4]
+ 437              		.loc 1 765 3 discriminator 2 view .LVU134
+ 766:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 767:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Check RNG peripheral state */
+ 768:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   if (hrng->State == HAL_RNG_STATE_READY)
+ 438              		.loc 1 768 3 discriminator 2 view .LVU135
+ 439              		.loc 1 768 11 is_stmt 0 discriminator 2 view .LVU136
+ 440 000a 4379     		ldrb	r3, [r0, #5]	@ zero_extendqisi2
+ 441 000c DBB2     		uxtb	r3, r3
+ 442              		.loc 1 768 6 discriminator 2 view .LVU137
+ 443 000e 012B     		cmp	r3, #1
+ 444 0010 05D0     		beq	.L37
+ 769:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 770:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Change RNG peripheral state */
+ 771:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->State = HAL_RNG_STATE_BUSY;
+ 772:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 773:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Enable the RNG Interrupts: Data Ready, Clock error, Seed error */
+ 774:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     __HAL_RNG_ENABLE_IT(hrng);
+ 775:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 24
+
+
+ 776:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   else
+ 777:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 778:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Process Unlocked */
+ 779:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     __HAL_UNLOCK(hrng);
+ 445              		.loc 1 779 5 is_stmt 1 view .LVU138
+ 446              		.loc 1 779 5 view .LVU139
+ 447 0012 0023     		movs	r3, #0
+ 448 0014 0371     		strb	r3, [r0, #4]
+ 449              		.loc 1 779 5 view .LVU140
+ 780:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 781:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->ErrorCode = HAL_RNG_ERROR_BUSY;
+ 450              		.loc 1 781 5 view .LVU141
+ 451              		.loc 1 781 21 is_stmt 0 view .LVU142
+ 452 0016 0423     		movs	r3, #4
+ 453 0018 8360     		str	r3, [r0, #8]
+ 782:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     status = HAL_ERROR;
+ 454              		.loc 1 782 5 is_stmt 1 view .LVU143
+ 455              	.LVL26:
+ 456              		.loc 1 782 12 is_stmt 0 view .LVU144
+ 457 001a 0120     		movs	r0, #1
+ 458              	.LVL27:
+ 459              		.loc 1 782 12 view .LVU145
+ 460 001c 7047     		bx	lr
+ 461              	.LVL28:
+ 462              	.L37:
+ 771:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 463              		.loc 1 771 5 is_stmt 1 view .LVU146
+ 771:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 464              		.loc 1 771 17 is_stmt 0 view .LVU147
+ 465 001e 0223     		movs	r3, #2
+ 466 0020 4371     		strb	r3, [r0, #5]
+ 774:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 467              		.loc 1 774 5 is_stmt 1 view .LVU148
+ 468 0022 0268     		ldr	r2, [r0]
+ 469 0024 1368     		ldr	r3, [r2]
+ 470 0026 43F00803 		orr	r3, r3, #8
+ 471 002a 1360     		str	r3, [r2]
+ 762:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 472              		.loc 1 762 21 is_stmt 0 view .LVU149
+ 473 002c 0020     		movs	r0, #0
+ 474              	.LVL29:
+ 762:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 475              		.loc 1 762 21 view .LVU150
+ 476 002e 7047     		bx	lr
+ 477              	.LVL30:
+ 478              	.L36:
+ 765:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 479              		.loc 1 765 3 view .LVU151
+ 480 0030 0220     		movs	r0, #2
+ 481              	.LVL31:
+ 783:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 784:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 785:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   return status;
+ 786:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 482              		.loc 1 786 1 view .LVU152
+ 483 0032 7047     		bx	lr
+ 484              		.cfi_endproc
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 25
+
+
+ 485              	.LFE79:
+ 487              		.section	.text.HAL_RNG_GetRandomNumber,"ax",%progbits
+ 488              		.align	1
+ 489              		.global	HAL_RNG_GetRandomNumber
+ 490              		.syntax unified
+ 491              		.thumb
+ 492              		.thumb_func
+ 494              	HAL_RNG_GetRandomNumber:
+ 495              	.LVL32:
+ 496              	.LFB80:
+ 787:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 788:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 789:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief  Returns generated random number in polling mode (Obsolete)
+ 790:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         Use HAL_RNG_GenerateRandomNumber() API instead.
+ 791:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  hrng pointer to a RNG_HandleTypeDef structure that contains
+ 792:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *                the configuration information for RNG.
+ 793:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @retval Random value
+ 794:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 795:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** uint32_t HAL_RNG_GetRandomNumber(RNG_HandleTypeDef *hrng)
+ 796:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** {
+ 497              		.loc 1 796 1 is_stmt 1 view -0
+ 498              		.cfi_startproc
+ 499              		@ args = 0, pretend = 0, frame = 0
+ 500              		@ frame_needed = 0, uses_anonymous_args = 0
+ 501              		.loc 1 796 1 is_stmt 0 view .LVU154
+ 502 0000 10B5     		push	{r4, lr}
+ 503              	.LCFI5:
+ 504              		.cfi_def_cfa_offset 8
+ 505              		.cfi_offset 4, -8
+ 506              		.cfi_offset 14, -4
+ 507 0002 0446     		mov	r4, r0
+ 797:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   if (HAL_RNG_GenerateRandomNumber(hrng, &(hrng->RandomNumber)) == HAL_OK)
+ 508              		.loc 1 797 3 is_stmt 1 view .LVU155
+ 509              		.loc 1 797 7 is_stmt 0 view .LVU156
+ 510 0004 00F10C01 		add	r1, r0, #12
+ 511 0008 FFF7FEFF 		bl	HAL_RNG_GenerateRandomNumber
+ 512              	.LVL33:
+ 513              		.loc 1 797 6 view .LVU157
+ 514 000c 08B9     		cbnz	r0, .L40
+ 798:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 799:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     return hrng->RandomNumber;
+ 515              		.loc 1 799 5 is_stmt 1 view .LVU158
+ 516              		.loc 1 799 16 is_stmt 0 view .LVU159
+ 517 000e E068     		ldr	r0, [r4, #12]
+ 518              	.L38:
+ 800:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 801:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   else
+ 802:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 803:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     return 0U;
+ 804:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 805:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 519              		.loc 1 805 1 view .LVU160
+ 520 0010 10BD     		pop	{r4, pc}
+ 521              	.LVL34:
+ 522              	.L40:
+ 803:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 523              		.loc 1 803 12 view .LVU161
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 26
+
+
+ 524 0012 0020     		movs	r0, #0
+ 525 0014 FCE7     		b	.L38
+ 526              		.cfi_endproc
+ 527              	.LFE80:
+ 529              		.section	.text.HAL_RNG_GetRandomNumber_IT,"ax",%progbits
+ 530              		.align	1
+ 531              		.global	HAL_RNG_GetRandomNumber_IT
+ 532              		.syntax unified
+ 533              		.thumb
+ 534              		.thumb_func
+ 536              	HAL_RNG_GetRandomNumber_IT:
+ 537              	.LVL35:
+ 538              	.LFB81:
+ 806:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 807:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 808:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief  Returns a 32-bit random number with interrupt enabled (Obsolete),
+ 809:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         Use HAL_RNG_GenerateRandomNumber_IT() API instead.
+ 810:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  hrng pointer to a RNG_HandleTypeDef structure that contains
+ 811:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *                the configuration information for RNG.
+ 812:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @retval 32-bit random number
+ 813:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 814:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** uint32_t HAL_RNG_GetRandomNumber_IT(RNG_HandleTypeDef *hrng)
+ 815:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** {
+ 539              		.loc 1 815 1 is_stmt 1 view -0
+ 540              		.cfi_startproc
+ 541              		@ args = 0, pretend = 0, frame = 0
+ 542              		@ frame_needed = 0, uses_anonymous_args = 0
+ 543              		@ link register save eliminated.
+ 816:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   uint32_t random32bit = 0U;
+ 544              		.loc 1 816 3 view .LVU163
+ 817:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 818:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Process locked */
+ 819:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   __HAL_LOCK(hrng);
+ 545              		.loc 1 819 3 view .LVU164
+ 546              		.loc 1 819 3 view .LVU165
+ 547 0000 0379     		ldrb	r3, [r0, #4]	@ zero_extendqisi2
+ 548 0002 012B     		cmp	r3, #1
+ 549 0004 0AD0     		beq	.L44
+ 550              		.loc 1 819 3 discriminator 2 view .LVU166
+ 551 0006 0123     		movs	r3, #1
+ 552 0008 0371     		strb	r3, [r0, #4]
+ 553              		.loc 1 819 3 discriminator 2 view .LVU167
+ 820:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 821:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Change RNG peripheral state */
+ 822:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   hrng->State = HAL_RNG_STATE_BUSY;
+ 554              		.loc 1 822 3 discriminator 2 view .LVU168
+ 555              		.loc 1 822 15 is_stmt 0 discriminator 2 view .LVU169
+ 556 000a 0223     		movs	r3, #2
+ 557 000c 4371     		strb	r3, [r0, #5]
+ 823:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 824:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Get a 32bit Random number */
+ 825:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   random32bit = hrng->Instance->DR;
+ 558              		.loc 1 825 3 is_stmt 1 discriminator 2 view .LVU170
+ 559              		.loc 1 825 21 is_stmt 0 discriminator 2 view .LVU171
+ 560 000e 0368     		ldr	r3, [r0]
+ 561              		.loc 1 825 15 discriminator 2 view .LVU172
+ 562 0010 9868     		ldr	r0, [r3, #8]
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 27
+
+
+ 563              	.LVL36:
+ 826:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 827:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Enable the RNG Interrupts: Data Ready, Clock error, Seed error */
+ 828:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   __HAL_RNG_ENABLE_IT(hrng);
+ 564              		.loc 1 828 3 is_stmt 1 discriminator 2 view .LVU173
+ 565 0012 1A68     		ldr	r2, [r3]
+ 566 0014 42F00802 		orr	r2, r2, #8
+ 567 0018 1A60     		str	r2, [r3]
+ 829:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 830:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Return the 32 bit random number */
+ 831:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   return random32bit;
+ 568              		.loc 1 831 3 discriminator 2 view .LVU174
+ 569              		.loc 1 831 10 is_stmt 0 discriminator 2 view .LVU175
+ 570 001a 7047     		bx	lr
+ 571              	.LVL37:
+ 572              	.L44:
+ 819:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 573              		.loc 1 819 3 view .LVU176
+ 574 001c 0220     		movs	r0, #2
+ 575              	.LVL38:
+ 832:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 576              		.loc 1 832 1 view .LVU177
+ 577 001e 7047     		bx	lr
+ 578              		.cfi_endproc
+ 579              	.LFE81:
+ 581              		.section	.text.HAL_RNG_ReadLastRandomNumber,"ax",%progbits
+ 582              		.align	1
+ 583              		.global	HAL_RNG_ReadLastRandomNumber
+ 584              		.syntax unified
+ 585              		.thumb
+ 586              		.thumb_func
+ 588              	HAL_RNG_ReadLastRandomNumber:
+ 589              	.LVL39:
+ 590              	.LFB83:
+ 833:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 834:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 835:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief  Handles RNG interrupt request.
+ 836:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @note   In the case of a clock error, the RNG is no more able to generate
+ 837:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         random numbers because the PLL48CLK clock is not correct. User has
+ 838:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         to check that the clock controller is correctly configured to provide
+ 839:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         the RNG clock and clear the CEIS bit using __HAL_RNG_CLEAR_IT().
+ 840:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         The clock error has no impact on the previously generated
+ 841:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         random numbers, and the RNG_DR register contents can be used.
+ 842:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @note   In the case of a seed error, the generation of random numbers is
+ 843:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         interrupted as long as the SECS bit is '1'. If a number is
+ 844:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         available in the RNG_DR register, it must not be used because it may
+ 845:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         not have enough entropy. In this case, it is recommended to clear the
+ 846:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         SEIS bit using __HAL_RNG_CLEAR_IT(), then disable and enable
+ 847:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         the RNG peripheral to reinitialize and restart the RNG.
+ 848:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @note   User-written HAL_RNG_ErrorCallback() API is called once whether SEIS
+ 849:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         or CEIS are set.
+ 850:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  hrng pointer to a RNG_HandleTypeDef structure that contains
+ 851:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *                the configuration information for RNG.
+ 852:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @retval None
+ 853:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 854:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 855:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** void HAL_RNG_IRQHandler(RNG_HandleTypeDef *hrng)
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 28
+
+
+ 856:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** {
+ 857:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   uint32_t rngclockerror = 0U;
+ 858:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   uint32_t itflag   = hrng->Instance->SR;
+ 859:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 860:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* RNG clock error interrupt occurred */
+ 861:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   if ((itflag & RNG_IT_CEI) == RNG_IT_CEI)
+ 862:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 863:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Update the error code */
+ 864:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->ErrorCode = HAL_RNG_ERROR_CLOCK;
+ 865:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     rngclockerror = 1U;
+ 866:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 867:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   else if ((itflag & RNG_IT_SEI) == RNG_IT_SEI)
+ 868:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 869:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Check if Seed Error Current Status (SECS) is set */
+ 870:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     if ((itflag & RNG_FLAG_SECS) != RNG_FLAG_SECS)
+ 871:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 872:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       /* RNG IP performed the reset automatically (auto-reset) */
+ 873:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       /* Clear bit SEIS */
+ 874:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       CLEAR_BIT(hrng->Instance->SR, RNG_IT_SEI);
+ 875:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     }
+ 876:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     else
+ 877:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 878:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       /* Seed Error has not been recovered : Update the error code */
+ 879:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       hrng->ErrorCode = HAL_RNG_ERROR_SEED;
+ 880:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       rngclockerror = 1U;
+ 881:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       /* Disable the IT */
+ 882:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       __HAL_RNG_DISABLE_IT(hrng);
+ 883:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     }
+ 884:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 885:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   else
+ 886:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 887:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Nothing to do */
+ 888:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 889:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 890:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   if (rngclockerror == 1U)
+ 891:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 892:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Change RNG peripheral state */
+ 893:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->State = HAL_RNG_STATE_ERROR;
+ 894:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 895:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if (USE_HAL_RNG_REGISTER_CALLBACKS == 1)
+ 896:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Call registered Error callback */
+ 897:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->ErrorCallback(hrng);
+ 898:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #else
+ 899:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Call legacy weak Error callback */
+ 900:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     HAL_RNG_ErrorCallback(hrng);
+ 901:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* USE_HAL_RNG_REGISTER_CALLBACKS */
+ 902:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 903:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Clear the clock error flag */
+ 904:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     __HAL_RNG_CLEAR_IT(hrng, RNG_IT_CEI | RNG_IT_SEI);
+ 905:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 906:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     return;
+ 907:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 908:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 909:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Check RNG data ready interrupt occurred */
+ 910:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   if ((itflag & RNG_IT_DRDY) == RNG_IT_DRDY)
+ 911:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 912:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Generate random number once, so disable the IT */
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 29
+
+
+ 913:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     __HAL_RNG_DISABLE_IT(hrng);
+ 914:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 915:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     /* Get the 32bit Random number (DRDY flag automatically cleared) */
+ 916:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     hrng->RandomNumber = hrng->Instance->DR;
+ 917:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 918:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     if (hrng->State != HAL_RNG_STATE_ERROR)
+ 919:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 920:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       /* Change RNG peripheral state */
+ 921:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       hrng->State = HAL_RNG_STATE_READY;
+ 922:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       /* Process Unlocked */
+ 923:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       __HAL_UNLOCK(hrng);
+ 924:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 925:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #if (USE_HAL_RNG_REGISTER_CALLBACKS == 1)
+ 926:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       /* Call registered Data Ready callback */
+ 927:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       hrng->ReadyDataCallback(hrng, hrng->RandomNumber);
+ 928:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #else
+ 929:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       /* Call legacy weak Data Ready callback */
+ 930:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       HAL_RNG_ReadyDataCallback(hrng, hrng->RandomNumber);
+ 931:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* USE_HAL_RNG_REGISTER_CALLBACKS */
+ 932:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     }
+ 933:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 934:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 935:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 936:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 937:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief  Read latest generated random number.
+ 938:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  hrng pointer to a RNG_HandleTypeDef structure that contains
+ 939:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *                the configuration information for RNG.
+ 940:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @retval random value
+ 941:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 942:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** uint32_t HAL_RNG_ReadLastRandomNumber(const RNG_HandleTypeDef *hrng)
+ 943:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** {
+ 591              		.loc 1 943 1 is_stmt 1 view -0
+ 592              		.cfi_startproc
+ 593              		@ args = 0, pretend = 0, frame = 0
+ 594              		@ frame_needed = 0, uses_anonymous_args = 0
+ 595              		@ link register save eliminated.
+ 944:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   return (hrng->RandomNumber);
+ 596              		.loc 1 944 3 view .LVU179
+ 945:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 597              		.loc 1 945 1 is_stmt 0 view .LVU180
+ 598 0000 C068     		ldr	r0, [r0, #12]
+ 599              	.LVL40:
+ 600              		.loc 1 945 1 view .LVU181
+ 601 0002 7047     		bx	lr
+ 602              		.cfi_endproc
+ 603              	.LFE83:
+ 605              		.section	.text.HAL_RNG_ReadyDataCallback,"ax",%progbits
+ 606              		.align	1
+ 607              		.weak	HAL_RNG_ReadyDataCallback
+ 608              		.syntax unified
+ 609              		.thumb
+ 610              		.thumb_func
+ 612              	HAL_RNG_ReadyDataCallback:
+ 613              	.LVL41:
+ 614              	.LFB84:
+ 946:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 947:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 30
+
+
+ 948:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief  Data Ready callback in non-blocking mode.
+ 949:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @note   When several random data are output at the same time in an output buffer,
+ 950:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         When RNG_FLAG_DRDY flag value is set, first random number has been read
+ 951:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         from DR register in IRQ Handler and is provided as callback parameter.
+ 952:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         Depending on valid data available in the conditioning output buffer,
+ 953:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         additional words can be read by the application from DR register till
+ 954:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *         DRDY bit remains high.
+ 955:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  hrng pointer to a RNG_HandleTypeDef structure that contains
+ 956:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *                the configuration information for RNG.
+ 957:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  random32bit generated random number.
+ 958:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @retval None
+ 959:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 960:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** __weak void HAL_RNG_ReadyDataCallback(RNG_HandleTypeDef *hrng, uint32_t random32bit)
+ 961:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** {
+ 615              		.loc 1 961 1 is_stmt 1 view -0
+ 616              		.cfi_startproc
+ 617              		@ args = 0, pretend = 0, frame = 0
+ 618              		@ frame_needed = 0, uses_anonymous_args = 0
+ 619              		@ link register save eliminated.
+ 962:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Prevent unused argument(s) compilation warning */
+ 963:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   UNUSED(hrng);
+ 620              		.loc 1 963 3 view .LVU183
+ 964:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   UNUSED(random32bit);
+ 621              		.loc 1 964 3 view .LVU184
+ 965:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* NOTE : This function should not be modified. When the callback is needed,
+ 966:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****             function HAL_RNG_ReadyDataCallback must be implemented in the user file.
+ 967:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****    */
+ 968:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 622              		.loc 1 968 1 is_stmt 0 view .LVU185
+ 623 0000 7047     		bx	lr
+ 624              		.cfi_endproc
+ 625              	.LFE84:
+ 627              		.section	.text.HAL_RNG_ErrorCallback,"ax",%progbits
+ 628              		.align	1
+ 629              		.weak	HAL_RNG_ErrorCallback
+ 630              		.syntax unified
+ 631              		.thumb
+ 632              		.thumb_func
+ 634              	HAL_RNG_ErrorCallback:
+ 635              	.LVL42:
+ 636              	.LFB85:
+ 969:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 970:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 971:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief  RNG error callbacks.
+ 972:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  hrng pointer to a RNG_HandleTypeDef structure that contains
+ 973:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *                the configuration information for RNG.
+ 974:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @retval None
+ 975:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 976:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** __weak void HAL_RNG_ErrorCallback(RNG_HandleTypeDef *hrng)
+ 977:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** {
+ 637              		.loc 1 977 1 is_stmt 1 view -0
+ 638              		.cfi_startproc
+ 639              		@ args = 0, pretend = 0, frame = 0
+ 640              		@ frame_needed = 0, uses_anonymous_args = 0
+ 641              		@ link register save eliminated.
+ 978:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Prevent unused argument(s) compilation warning */
+ 979:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   UNUSED(hrng);
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 31
+
+
+ 642              		.loc 1 979 3 view .LVU187
+ 980:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* NOTE : This function should not be modified. When the callback is needed,
+ 981:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****             function HAL_RNG_ErrorCallback must be implemented in the user file.
+ 982:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****    */
+ 983:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 643              		.loc 1 983 1 is_stmt 0 view .LVU188
+ 644 0000 7047     		bx	lr
+ 645              		.cfi_endproc
+ 646              	.LFE85:
+ 648              		.section	.text.HAL_RNG_IRQHandler,"ax",%progbits
+ 649              		.align	1
+ 650              		.global	HAL_RNG_IRQHandler
+ 651              		.syntax unified
+ 652              		.thumb
+ 653              		.thumb_func
+ 655              	HAL_RNG_IRQHandler:
+ 656              	.LVL43:
+ 657              	.LFB82:
+ 856:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   uint32_t rngclockerror = 0U;
+ 658              		.loc 1 856 1 is_stmt 1 view -0
+ 659              		.cfi_startproc
+ 660              		@ args = 0, pretend = 0, frame = 0
+ 661              		@ frame_needed = 0, uses_anonymous_args = 0
+ 856:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   uint32_t rngclockerror = 0U;
+ 662              		.loc 1 856 1 is_stmt 0 view .LVU190
+ 663 0000 10B5     		push	{r4, lr}
+ 664              	.LCFI6:
+ 665              		.cfi_def_cfa_offset 8
+ 666              		.cfi_offset 4, -8
+ 667              		.cfi_offset 14, -4
+ 668 0002 0446     		mov	r4, r0
+ 857:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   uint32_t itflag   = hrng->Instance->SR;
+ 669              		.loc 1 857 3 is_stmt 1 view .LVU191
+ 670              	.LVL44:
+ 858:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 671              		.loc 1 858 3 view .LVU192
+ 858:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 672              		.loc 1 858 27 is_stmt 0 view .LVU193
+ 673 0004 0268     		ldr	r2, [r0]
+ 858:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 674              		.loc 1 858 12 view .LVU194
+ 675 0006 5368     		ldr	r3, [r2, #4]
+ 676              	.LVL45:
+ 861:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 677              		.loc 1 861 3 is_stmt 1 view .LVU195
+ 861:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 678              		.loc 1 861 6 is_stmt 0 view .LVU196
+ 679 0008 13F0200F 		tst	r3, #32
+ 680 000c 20D1     		bne	.L55
+ 867:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 681              		.loc 1 867 8 is_stmt 1 view .LVU197
+ 867:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 682              		.loc 1 867 11 is_stmt 0 view .LVU198
+ 683 000e 13F0400F 		tst	r3, #64
+ 684 0012 06D0     		beq	.L51
+ 870:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 685              		.loc 1 870 5 is_stmt 1 view .LVU199
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 32
+
+
+ 870:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 686              		.loc 1 870 8 is_stmt 0 view .LVU200
+ 687 0014 13F0040F 		tst	r3, #4
+ 688 0018 26D1     		bne	.L52
+ 874:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     }
+ 689              		.loc 1 874 7 is_stmt 1 view .LVU201
+ 690 001a 5168     		ldr	r1, [r2, #4]
+ 691 001c 21F04001 		bic	r1, r1, #64
+ 692 0020 5160     		str	r1, [r2, #4]
+ 888:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 693              		.loc 1 888 3 view .LVU202
+ 890:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 694              		.loc 1 890 3 view .LVU203
+ 695              	.L51:
+ 696              	.LVL46:
+ 910:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 697              		.loc 1 910 3 view .LVU204
+ 910:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 698              		.loc 1 910 6 is_stmt 0 view .LVU205
+ 699 0022 13F0010F 		tst	r3, #1
+ 700 0026 1ED0     		beq	.L48
+ 913:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 701              		.loc 1 913 5 is_stmt 1 view .LVU206
+ 702 0028 2268     		ldr	r2, [r4]
+ 703 002a 1368     		ldr	r3, [r2]
+ 704              	.LVL47:
+ 913:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 705              		.loc 1 913 5 is_stmt 0 view .LVU207
+ 706 002c 23F00803 		bic	r3, r3, #8
+ 707 0030 1360     		str	r3, [r2]
+ 916:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 708              		.loc 1 916 5 is_stmt 1 view .LVU208
+ 916:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 709              		.loc 1 916 30 is_stmt 0 view .LVU209
+ 710 0032 2368     		ldr	r3, [r4]
+ 916:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 711              		.loc 1 916 40 view .LVU210
+ 712 0034 9968     		ldr	r1, [r3, #8]
+ 916:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 713              		.loc 1 916 24 view .LVU211
+ 714 0036 E160     		str	r1, [r4, #12]
+ 918:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 715              		.loc 1 918 5 is_stmt 1 view .LVU212
+ 918:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 716              		.loc 1 918 13 is_stmt 0 view .LVU213
+ 717 0038 6379     		ldrb	r3, [r4, #5]	@ zero_extendqisi2
+ 718 003a DBB2     		uxtb	r3, r3
+ 918:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     {
+ 719              		.loc 1 918 8 view .LVU214
+ 720 003c 042B     		cmp	r3, #4
+ 721 003e 12D0     		beq	.L48
+ 921:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       /* Process Unlocked */
+ 722              		.loc 1 921 7 is_stmt 1 view .LVU215
+ 921:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       /* Process Unlocked */
+ 723              		.loc 1 921 19 is_stmt 0 view .LVU216
+ 724 0040 0123     		movs	r3, #1
+ 725 0042 6371     		strb	r3, [r4, #5]
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 33
+
+
+ 923:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 726              		.loc 1 923 7 is_stmt 1 view .LVU217
+ 923:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 727              		.loc 1 923 7 view .LVU218
+ 728 0044 0023     		movs	r3, #0
+ 729 0046 2371     		strb	r3, [r4, #4]
+ 923:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 730              		.loc 1 923 7 view .LVU219
+ 930:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* USE_HAL_RNG_REGISTER_CALLBACKS */
+ 731              		.loc 1 930 7 view .LVU220
+ 732 0048 2046     		mov	r0, r4
+ 733              	.LVL48:
+ 930:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* USE_HAL_RNG_REGISTER_CALLBACKS */
+ 734              		.loc 1 930 7 is_stmt 0 view .LVU221
+ 735 004a FFF7FEFF 		bl	HAL_RNG_ReadyDataCallback
+ 736              	.LVL49:
+ 737 004e 0AE0     		b	.L48
+ 738              	.LVL50:
+ 739              	.L55:
+ 864:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     rngclockerror = 1U;
+ 740              		.loc 1 864 5 is_stmt 1 view .LVU222
+ 864:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     rngclockerror = 1U;
+ 741              		.loc 1 864 21 is_stmt 0 view .LVU223
+ 742 0050 1023     		movs	r3, #16
+ 743              	.LVL51:
+ 864:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     rngclockerror = 1U;
+ 744              		.loc 1 864 21 view .LVU224
+ 745 0052 8360     		str	r3, [r0, #8]
+ 865:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 746              		.loc 1 865 5 is_stmt 1 view .LVU225
+ 747              	.LVL52:
+ 888:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 748              		.loc 1 888 3 view .LVU226
+ 890:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 749              		.loc 1 890 3 view .LVU227
+ 750              	.L50:
+ 893:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 751              		.loc 1 893 5 view .LVU228
+ 893:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 752              		.loc 1 893 17 is_stmt 0 view .LVU229
+ 753 0054 0423     		movs	r3, #4
+ 754 0056 6371     		strb	r3, [r4, #5]
+ 900:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* USE_HAL_RNG_REGISTER_CALLBACKS */
+ 755              		.loc 1 900 5 is_stmt 1 view .LVU230
+ 756 0058 2046     		mov	r0, r4
+ 757              	.LVL53:
+ 900:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** #endif /* USE_HAL_RNG_REGISTER_CALLBACKS */
+ 758              		.loc 1 900 5 is_stmt 0 view .LVU231
+ 759 005a FFF7FEFF 		bl	HAL_RNG_ErrorCallback
+ 760              	.LVL54:
+ 904:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 761              		.loc 1 904 5 is_stmt 1 view .LVU232
+ 762 005e 2368     		ldr	r3, [r4]
+ 763 0060 6FF06002 		mvn	r2, #96
+ 764 0064 5A60     		str	r2, [r3, #4]
+ 906:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   }
+ 765              		.loc 1 906 5 view .LVU233
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 34
+
+
+ 766              	.LVL55:
+ 767              	.L48:
+ 934:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 768              		.loc 1 934 1 is_stmt 0 view .LVU234
+ 769 0066 10BD     		pop	{r4, pc}
+ 770              	.LVL56:
+ 771              	.L52:
+ 879:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       rngclockerror = 1U;
+ 772              		.loc 1 879 7 is_stmt 1 view .LVU235
+ 879:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       rngclockerror = 1U;
+ 773              		.loc 1 879 23 is_stmt 0 view .LVU236
+ 774 0068 0823     		movs	r3, #8
+ 775              	.LVL57:
+ 879:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       rngclockerror = 1U;
+ 776              		.loc 1 879 23 view .LVU237
+ 777 006a 8360     		str	r3, [r0, #8]
+ 880:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****       /* Disable the IT */
+ 778              		.loc 1 880 7 is_stmt 1 view .LVU238
+ 779              	.LVL58:
+ 882:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     }
+ 780              		.loc 1 882 7 view .LVU239
+ 781 006c 1368     		ldr	r3, [r2]
+ 782 006e 23F00803 		bic	r3, r3, #8
+ 783 0072 1360     		str	r3, [r2]
+ 888:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 784              		.loc 1 888 3 view .LVU240
+ 890:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   {
+ 785              		.loc 1 890 3 view .LVU241
+ 786 0074 EEE7     		b	.L50
+ 787              		.cfi_endproc
+ 788              	.LFE82:
+ 790              		.section	.text.HAL_RNG_GetState,"ax",%progbits
+ 791              		.align	1
+ 792              		.global	HAL_RNG_GetState
+ 793              		.syntax unified
+ 794              		.thumb
+ 795              		.thumb_func
+ 797              	HAL_RNG_GetState:
+ 798              	.LVL59:
+ 799              	.LFB86:
+ 984:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+ 985:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @}
+ 986:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+ 987:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 988:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+ 989:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /** @addtogroup RNG_Exported_Functions_Group3
+ 990:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *  @brief   Peripheral State functions
+ 991:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *
+ 992:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** @verbatim
+ 993:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****  ===============================================================================
+ 994:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****                       ##### Peripheral State functions #####
+ 995:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****  ===============================================================================
+ 996:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     [..]
+ 997:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     This subsection permits to get in run-time the status of the peripheral
+ 998:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****     and the data flow.
+ 999:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+1000:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** @endverbatim
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 35
+
+
+1001:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @{
+1002:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+1003:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+1004:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+1005:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief  Returns the RNG state.
+1006:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  hrng pointer to a RNG_HandleTypeDef structure that contains
+1007:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   *                the configuration information for RNG.
+1008:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @retval HAL state
+1009:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+1010:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** HAL_RNG_StateTypeDef HAL_RNG_GetState(const RNG_HandleTypeDef *hrng)
+1011:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** {
+ 800              		.loc 1 1011 1 view -0
+ 801              		.cfi_startproc
+ 802              		@ args = 0, pretend = 0, frame = 0
+ 803              		@ frame_needed = 0, uses_anonymous_args = 0
+ 804              		@ link register save eliminated.
+1012:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   return hrng->State;
+ 805              		.loc 1 1012 3 view .LVU243
+ 806              		.loc 1 1012 14 is_stmt 0 view .LVU244
+ 807 0000 4079     		ldrb	r0, [r0, #5]	@ zero_extendqisi2
+ 808              	.LVL60:
+1013:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 809              		.loc 1 1013 1 view .LVU245
+ 810 0002 7047     		bx	lr
+ 811              		.cfi_endproc
+ 812              	.LFE86:
+ 814              		.section	.text.HAL_RNG_GetError,"ax",%progbits
+ 815              		.align	1
+ 816              		.global	HAL_RNG_GetError
+ 817              		.syntax unified
+ 818              		.thumb
+ 819              		.thumb_func
+ 821              	HAL_RNG_GetError:
+ 822              	.LVL61:
+ 823              	.LFB87:
+1014:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** 
+1015:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** /**
+1016:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @brief  Return the RNG handle error code.
+1017:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @param  hrng: pointer to a RNG_HandleTypeDef structure.
+1018:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   * @retval RNG Error Code
+1019:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   */
+1020:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** uint32_t HAL_RNG_GetError(const RNG_HandleTypeDef *hrng)
+1021:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** {
+ 824              		.loc 1 1021 1 is_stmt 1 view -0
+ 825              		.cfi_startproc
+ 826              		@ args = 0, pretend = 0, frame = 0
+ 827              		@ frame_needed = 0, uses_anonymous_args = 0
+ 828              		@ link register save eliminated.
+1022:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   /* Return RNG Error Code */
+1023:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c ****   return hrng->ErrorCode;
+ 829              		.loc 1 1023 3 view .LVU247
+ 830              		.loc 1 1023 14 is_stmt 0 view .LVU248
+ 831 0000 8068     		ldr	r0, [r0, #8]
+ 832              	.LVL62:
+1024:../Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal_rng.c **** }
+ 833              		.loc 1 1024 1 view .LVU249
+ 834 0002 7047     		bx	lr
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 36
+
+
+ 835              		.cfi_endproc
+ 836              	.LFE87:
+ 838              		.text
+ 839              	.Letext0:
+ 840              		.file 2 "/home/emanuele/st/stm32cubeide_1.15.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-
+ 841              		.file 3 "/home/emanuele/st/stm32cubeide_1.15.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-
+ 842              		.file 4 "../Drivers/CMSIS/Device/ST/STM32L4xx/Include/stm32l475xx.h"
+ 843              		.file 5 "../Drivers/CMSIS/Device/ST/STM32L4xx/Include/stm32l4xx.h"
+ 844              		.file 6 "../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_def.h"
+ 845              		.file 7 "../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_rng.h"
+ 846              		.file 8 "../Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h"
+ARM GAS  Build/stm32l4xx_hal_rng.s 			page 37
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 stm32l4xx_hal_rng.c
+Build/stm32l4xx_hal_rng.s:19     .text.HAL_RNG_MspInit:00000000 $t
+Build/stm32l4xx_hal_rng.s:25     .text.HAL_RNG_MspInit:00000000 HAL_RNG_MspInit
+Build/stm32l4xx_hal_rng.s:40     .text.HAL_RNG_Init:00000000 $t
+Build/stm32l4xx_hal_rng.s:46     .text.HAL_RNG_Init:00000000 HAL_RNG_Init
+Build/stm32l4xx_hal_rng.s:184    .text.HAL_RNG_MspDeInit:00000000 $t
+Build/stm32l4xx_hal_rng.s:190    .text.HAL_RNG_MspDeInit:00000000 HAL_RNG_MspDeInit
+Build/stm32l4xx_hal_rng.s:205    .text.HAL_RNG_DeInit:00000000 $t
+Build/stm32l4xx_hal_rng.s:211    .text.HAL_RNG_DeInit:00000000 HAL_RNG_DeInit
+Build/stm32l4xx_hal_rng.s:270    .text.HAL_RNG_GenerateRandomNumber:00000000 $t
+Build/stm32l4xx_hal_rng.s:276    .text.HAL_RNG_GenerateRandomNumber:00000000 HAL_RNG_GenerateRandomNumber
+Build/stm32l4xx_hal_rng.s:414    .text.HAL_RNG_GenerateRandomNumber_IT:00000000 $t
+Build/stm32l4xx_hal_rng.s:420    .text.HAL_RNG_GenerateRandomNumber_IT:00000000 HAL_RNG_GenerateRandomNumber_IT
+Build/stm32l4xx_hal_rng.s:488    .text.HAL_RNG_GetRandomNumber:00000000 $t
+Build/stm32l4xx_hal_rng.s:494    .text.HAL_RNG_GetRandomNumber:00000000 HAL_RNG_GetRandomNumber
+Build/stm32l4xx_hal_rng.s:530    .text.HAL_RNG_GetRandomNumber_IT:00000000 $t
+Build/stm32l4xx_hal_rng.s:536    .text.HAL_RNG_GetRandomNumber_IT:00000000 HAL_RNG_GetRandomNumber_IT
+Build/stm32l4xx_hal_rng.s:582    .text.HAL_RNG_ReadLastRandomNumber:00000000 $t
+Build/stm32l4xx_hal_rng.s:588    .text.HAL_RNG_ReadLastRandomNumber:00000000 HAL_RNG_ReadLastRandomNumber
+Build/stm32l4xx_hal_rng.s:606    .text.HAL_RNG_ReadyDataCallback:00000000 $t
+Build/stm32l4xx_hal_rng.s:612    .text.HAL_RNG_ReadyDataCallback:00000000 HAL_RNG_ReadyDataCallback
+Build/stm32l4xx_hal_rng.s:628    .text.HAL_RNG_ErrorCallback:00000000 $t
+Build/stm32l4xx_hal_rng.s:634    .text.HAL_RNG_ErrorCallback:00000000 HAL_RNG_ErrorCallback
+Build/stm32l4xx_hal_rng.s:649    .text.HAL_RNG_IRQHandler:00000000 $t
+Build/stm32l4xx_hal_rng.s:655    .text.HAL_RNG_IRQHandler:00000000 HAL_RNG_IRQHandler
+Build/stm32l4xx_hal_rng.s:791    .text.HAL_RNG_GetState:00000000 $t
+Build/stm32l4xx_hal_rng.s:797    .text.HAL_RNG_GetState:00000000 HAL_RNG_GetState
+Build/stm32l4xx_hal_rng.s:815    .text.HAL_RNG_GetError:00000000 $t
+Build/stm32l4xx_hal_rng.s:821    .text.HAL_RNG_GetError:00000000 HAL_RNG_GetError
+
+UNDEFINED SYMBOLS
+HAL_GetTick

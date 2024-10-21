@@ -279,6 +279,7 @@ void call_TEE(unsigned int* auto_frame, unsigned int* manual_frame) {
 	// This is done to ensure that only TAs can call TEE Core API 
 	// that run in the secure world with privileged access
 	if (sp_value < TA1_MEMORY_START_ADDR || sp_value > TA2_MEMORY_END_ADDR) {
+		ERR_MSG("Unstrusted applications can not execure privileged TEE Core API directly, exiting");
 		ret_val = TEE_FAILED;
 		return;
 	}
@@ -599,6 +600,7 @@ void Microvisor_SVC_Handler() {
  *  Detect if the fault is caused by an MPU violation and execute the MPU violation handler
  */
 void Microvisor_MemManage_Handler() {
+	ERR_MSG("MPU violation detected");
 	__asm__(
 		/* Move pre-exception entry SP to R0 */
 		"tst lr, #4\n" // check which stack pointer is in use

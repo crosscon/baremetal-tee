@@ -14,11 +14,13 @@
 
 TEE_Result  TA_CreateEntryPoint(void)
 {   
+	DMSG("has been called");
     return TEE_SUCCESS;
 }
 
 void TA_DestroyEntryPoint(void)
 {
+	DMSG("has been called");
 	return;
 }
 
@@ -27,12 +29,14 @@ TEE_Result TA_OpenSessionEntryPoint(uint32_t param_types,
 									TEE_Param params[4], 
 									void **sessionContext)
 {
+	DMSG("has been called");
     return TEE_SUCCESS;
 }
 
 
 void TA_CloseSessionEntryPoint(void* sessionContext)
 {
+	DMSG("has been called");
 	return; 
 }
 
@@ -42,6 +46,10 @@ TEE_Result TA_InvokeCommandEntryPoint(void* sessionContext,
 									uint32_t paramTypes,
 									TEE_Param params[4])
 {
+
+	DMSG("has been called");
+
+	IMSG("Command ID: %d", commandID);
 
 	//int res = TEE_SUCCESS;
 

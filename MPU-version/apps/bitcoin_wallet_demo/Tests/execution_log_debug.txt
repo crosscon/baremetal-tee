@@ -1,0 +1,299 @@
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:39:TA_CreateEntryPoint1(): has been called
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:53:TA_OpenSessionEntryPoint1(): has been called
+Info: TA_OpenSessionEntryPoint1(): Hello Bitcoin Wallet!
+
+Generating new master key...
+Info: TA_InvokeCommandEntryPoint1(): Choice from NW: 2
+
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:141:generate_new_masterkey(): has been called
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:157:generate_new_masterkey(): Mnemonic generated.
+ERROR INSIDE TEE: Microvisor/Private-Src/internal_core_api.c:507:internal_TEE_CloseObject(): "Object does not exists"
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:431:from_mnemonic_to_masterkey(): Seed Generated
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:438:from_mnemonic_to_masterkey(): Generate master key success
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:449:from_mnemonic_to_masterkey(): Store master key success
+
+##########################
+                          Mnemonic: sight pipe rebuild reunion wait awake bless awkward desk mad man affair
+                                                                                                           71
+                                                                                                             Seed: 0x000000ED0x000000610x000000200x000000530x000000260x000000A40x000000920x000000240x0000002F0x000000A30x000000D50x000000F90x000000890x000000380x000000210x000000020x000000600x000000A50x0000008E0x000000BC0x0000001D0x000000210x0000002D0x000000AE0x000000740x000000C00x0000005C0x000000B40x000000C50x000000820x000000770x0000009B0x000000FF0x000000540x000000020x0000001F0x000000DC0x000000370x000000110x000000250x000000C60x0000009B0x0000006E0x000000AE0x000000F60x000000C30x000000850x0000002B0x000000360x000000AE0x000000A70x000000F30x0000001C0x0000006E0x000000460x000000A30x000000880x0000002C0x000000DF0x000000430x000000C30x000000C20x000000090x00000077
+		Master Key: 0x000000690x0000006D0x000000F10x0000003E0x0000003A0x000000780x0000002C0x0000008B0x0000002A0x000000850x000000270x000000B40x000000960x0000001D0x000000380x0000002E0x000000810x000000B90x000000200x000000260x0000000F0x000000AB0x000000BB0x000000240x000000040x000000550x0000006E0x0000005D0x000000710x000000B00x0000007C0x000000F7
+                                                                                                                                                                                 Master Chaincode: 0x000000A60x000000A70x0000000F0x000000920x000000580x000000710x000000350x000000650x000000200x0000008A0x000000E10x000000420x000000E70x0000004E0x000000E40x000000600x000000500x0000001E0x000000FA0x000000310x000000F30x000000C80x0000009A0x000000150x000000640x000000840x000000820x000000410x000000C70x0000003A0x000000EC0x00000045
+                                                                                                                                                       ##########################
+
+Here's your wallet mnemonic!
+*sight pipe rebuild reunion wait awake bless awkward desk mad man affair*
+
+Check if there's a existing master key...
+Info: TA_InvokeCommandEntryPoint1(): Choice from NW: 1
+
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:102:check_masterkey(): has been called
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:116:check_masterkey(): Master Key exists
+Master key exists
+Deriving master key from your mnemonic...
+Info: TA_InvokeCommandEntryPoint1(): Choice from NW: 3
+
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:178:mnemonic_to_masterkey(): has been called
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:431:from_mnemonic_to_masterkey(): Seed Generated
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:438:from_mnemonic_to_masterkey(): Generate master key success
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:449:from_mnemonic_to_masterkey(): Store master key success
+
+##########################
+                          Mnemonic: Hello world from Trento!
+                                                            24
+                                                              Seed: 0x0000009C0x000000810x000000BD0x000000B10x000000D80x000000530x000000530x000000A50x000000DA0x000000EC0x000000EB0x000000AB0x000000990x0000006A0x000000170x000000460x000000C00x0000000C0x000000F00x0000007A0x000000C90x0000002F0x000000C30x0000009A0x000000430x000000230x000000660x000000DE0x000000F20x000000910x000000790x0000007F0x0000009C0x000000870x000000AE0x000000280x0000006E0x0000006B0x000000900x000000770x000000870x000000FD0x000000E70x0000006F0x000000C00x000000500x000000A00x000000AA0x000000810x0000000E0x000000040x000000350x000000A80x0000006F0x000000830x000000A80x000000A70x000000DA0x000000780x000000A10x000000B60x000000F20x000000390x00000024
+                                                                                                                                                                  Master Key: 0x000000C30x000000B10x0000007C0x000000890x0000008A0x000000810x000000DE0x0000005A0x000000570x000000FA0x000000530x0000002C0x000000800x000000FC0x0000007B0x0000007F0x000000C30x000000790x000000930x000000510x000000730x0000002D0x000000C70x000000910x000000B60x000000AC0x0000005E0x000000DC0x000000580x000000250x0000009F0x00000018
+                                                                                                                                  Master Chaincode: 0x000000C90x0000004A0x000000D30x000000850x000000180x000000500x000000630x000000DA0x000000AB0x000000E80x000000EE0x000000530x000000040x000000320x000000FD0x0000004F0x0000007D0x0000004C0x000000F70x000000C90x000000D00x000000850x000000480x0000003E0x000000C70x000000440x000000210x000000020x000000790x000000590x000000550x00000031
+                                                                                                        ##########################
+
+                                                                                                                                  Success!
+Sending transaction for signing.
+                                Attempt to issue transactions from 0 child account...
+                                                                                     Info: TA_InvokeCommandEntryPoint1(): Choice from NW: 5
+
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:276:sign_transaction(): has been called
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000001
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000000
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000000
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000000
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000001
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000DF
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000000B
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000006A
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000FA
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000F0
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000DE
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000CD
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000000
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000027
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000080
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000B2
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000091
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000016
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000003C
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000AD
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000DB
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000076
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000057
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000005F
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000F5
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000005F
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000062
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000B1
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000019
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000A2
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000000F
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000DA
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000007
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000002F
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000002C
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000047
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000B9
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000001
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000000
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000000
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000000
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000019
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000076
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000A9
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000046
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000002C
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000022
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000002C
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000BA
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000AC
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000040
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000009F
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000077
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000003B
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000004C
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000000E
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000CA
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000099
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000019
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000004
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000C2
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000BB
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000020
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000073
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000088
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000008
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000DF
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000FF
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000FF
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000FF
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000FF
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000001
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000B3
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000015
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000000
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000000
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000000
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000000
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000000
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000000
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000019
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000076
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000A9
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000046
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000002C
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000022
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000002C
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000BA
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000AC
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000040
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000009F
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000077
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000003B
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000004C
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x0000000E
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000CA
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000099
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000019
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000004
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000C2
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000BB
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000020
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000073
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000088
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000008
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x000000DF
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000000
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000000
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000000
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:290:sign_transaction(): 0x00000000
+
+before sign raw tx
+
+                  Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:327:get_child_privatekey(): Opening masterkey success
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:335:get_child_privatekey(): Reading masterkey success
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:347:get_child_privatekey(): success
+0
+ %u
+   Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:374:get_child_publickey(): Opening masterkey success
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:382:get_child_publickey(): Reading masterkey success
+
+Child_sk:0x000000A10x0000001E0x000000E60x000000B80x0000006B0x000000220x000000F50x000000280x000000E40x000000370x000000780x000000510x000000850x000000B20x000000FC0x0000005A0x000000640x0000007D0x000000CD0x000000230x0000008C0x000000CD0x000000850x000000960x000000E90x000000EA0x0000006A0x000000790x000000410x000000160x000000E90x00000025
+                                                                                                                                                   Child_cc:0x000000CA0x0000003A0x0000004C0x000000380x000000300x000000460x000000E30x0000004B0x000000C10x000000790x000000720x000000890x000000D50x000000240x000000670x000000E80x000000CF0x0000009F0x000000780x000000380x000000640x000000130x000000FD0x000000DF0x0000001E0x000000D10x000000B00x000000DC0x0000002C0x000000AA0x000000490x00000063
+
+                                                                                                                Child_pk_x:0x000000900x000000C40x000000430x000000140x000000B70x0000001C0x000000FF0x000000CB0x000000DA0x000000F20x0000008C0x000000ED0x000000CE0x000000CB0x000000C10x000000A50x0000004E0x000000430x000000300x000000C30x000000EA0x000000590x000000CC0x000000030x0000000C0x000000720x000000350x000000730x000000420x000000540x0000000E0x0000003C
+                                                                               Child_pk_y:0x000000EB0x000000080x000000570x000000890x000000CA0x0000003A0x000000400x000000E40x000000150x000000400x000000D10x0000005D0x000000730x000000A50x000000540x000000360x0000001E0x000000020x000000010x000000090x000000D60x000000B90x000000750x000000F20x000000BE0x000000CD0x0000000B0x0000006C0x000000D70x000000320x000000CA0x000000D8
+
+                                              Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:394:get_child_publickey(): success
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:496:sign_raw_tx(): Key retrieved
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:501:sign_raw_tx(): Allocation success
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:509:sign_raw_tx(): Key has been set!
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:517:sign_raw_tx(): Sign complete!
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000030
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000046
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000002
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000021
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000000
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000BF
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000006
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000F8
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000F0
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000086
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000CA
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x0000007C
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x0000008B
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000CC
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x0000004A
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000AF
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000049
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000062
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x0000000E
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000008
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000F9
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000CB
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x0000004B
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000CF
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000BA
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x0000000A
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000B2
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000A9
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000AC
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000ED
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000F4
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000E4
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000065
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000010
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x0000009F
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000026
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000E9
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000002
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000021
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000000
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x0000009B
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000E1
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x0000002A
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x0000003B
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x0000001C
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000EA
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x0000005D
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000001
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x0000002C
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000AC
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000D6
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000D8
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x0000007E
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000FE
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000011
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000B3
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000058
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x0000008F
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000024
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x0000002B
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000084
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000053
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x0000007F
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000058
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000A6
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x0000008D
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000FF
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000088
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000E6
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000010
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x00000013
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:521:sign_raw_tx(): 0x000000D0
+
+after sign raw tx
+
+                 Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:297:sign_transaction(): Transaction has been succefully signed.
+Retrieved signed transaction
+                            3046022100bf06f8f086ca7c8bcc4aaf49620e08f9cb4bcfba0ab2a9acedf4e465109f26e90221009be12a3b1cea5d012cacd6d87efe11b3588f242b84537f58a68dff88e61013d0
+                                                                                                                                                                            Getting bitcoin address...
+                Info: TA_InvokeCommandEntryPoint1(): Choice from NW: 6
+
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:242:get_bitcoin_address(): has been called
+0
+ 0
+  %u
+    Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:374:get_child_publickey(): Opening masterkey success
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:382:get_child_publickey(): Reading masterkey success
+
+Child_sk:0x000000A10x0000001E0x000000E60x000000B80x0000006B0x000000220x000000F50x000000280x000000E40x000000370x000000780x000000510x000000850x000000B20x000000FC0x0000005A0x000000640x0000007D0x000000CD0x000000230x0000008C0x000000CD0x000000850x000000960x000000E90x000000EA0x0000006A0x000000790x000000410x000000160x000000E90x00000025
+                                                                                                                                                   Child_cc:0x000000CA0x0000003A0x0000004C0x000000380x000000300x000000460x000000E30x0000004B0x000000C10x000000790x000000720x000000890x000000D50x000000240x000000670x000000E80x000000CF0x0000009F0x000000780x000000380x000000640x000000130x000000FD0x000000DF0x0000001E0x000000D10x000000B00x000000DC0x0000002C0x000000AA0x000000490x00000063
+
+                                                                                                                Child_pk_x:0x000000900x000000C40x000000430x000000140x000000B70x0000001C0x000000FF0x000000CB0x000000DA0x000000F20x0000008C0x000000ED0x000000CE0x000000CB0x000000C10x000000A50x0000004E0x000000430x000000300x000000C30x000000EA0x000000590x000000CC0x000000030x0000000C0x000000720x000000350x000000730x000000420x000000540x0000000E0x0000003C
+                                                                               Child_pk_y:0x000000EB0x000000080x000000570x000000890x000000CA0x0000003A0x000000400x000000E40x000000150x000000400x000000D10x0000005D0x000000730x000000A50x000000540x000000360x0000001E0x000000020x000000010x000000090x000000D60x000000B90x000000750x000000F20x000000BE0x000000CD0x0000000B0x0000006C0x000000D70x000000320x000000CA0x000000D8
+
+                                              Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:394:get_child_publickey(): success
+536919756
+         0x0000008C0x0000003A0x000000930x0000009D0x000000120x0000005C0x000000290x000000DD0x0000002F0x000000520x000000E90x000000EE0x0000004E0x000000560x000000390x000000150x000000D10x000000DC0x000000EB0x000000930x000000200x000000000x000000000x000000000x000000200x000000000x000000000x000000000x000000680x000000310x000000000x00000010
+                                                                                                                                                   Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:703:base58(): 1
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:705:base58(): Bitcoin base58 format 1
+
+get_bitcoin_address
+                   0x000000310x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x00000000
+                                                                                       0x000000310x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x000000000x00000000
+                                                                                                                                                           31000000000000000000000000
+                                                                                                                                                                                     Check if there's a existing master key...
+Info: TA_InvokeCommandEntryPoint1(): Choice from NW: 4
+
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:207:erase_masterkey(): has been called
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:221:erase_masterkey(): Master Key exists
+Master key exists, erase success
+Info: TA_CloseSessionEntryPoint1(): Goodbye!
+
+Debug: TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c:44:TA_DestroyEntryPoint1(): has been called                                                                                                                                                   
+

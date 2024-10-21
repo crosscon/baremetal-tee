@@ -1,0 +1,16 @@
+Debug: TAs/ta1/ta1.c:12:TA_CreateEntryPoint1(): has been called
+Debug: TAs/ta1/ta1.c:27:TA_OpenSessionEntryPoint1(): has been called
+Debug: TAs/ta2/ta2.c:17:TA_CreateEntryPoint2(): has been called
+Debug: TAs/ta2/ta2.c:32:TA_OpenSessionEntryPoint2(): has been called
+Debug: TAs/ta1/ta1.c:44:TA_InvokeCommandEntryPoint1(): has been called
+Info: TA_InvokeCommandEntryPoint1(): Command ID: 1
+Debug: TAs/ta2/ta2.c:50:TA_InvokeCommandEntryPoint2(): has been called
+Info: TA_InvokeCommandEntryPoint2(): Command ID: 5
+Debug: TAs/ta2/ta2.c:50:TA_InvokeCommandEntryPoint2(): has been called
+Info: TA_InvokeCommandEntryPoint2(): Command ID: 1
+Debug: TAs/ta1/ta1.c:44:TA_InvokeCommandEntryPoint1(): has been called
+Info: TA_InvokeCommandEntryPoint1(): Command ID: 2
+Debug: TAs/ta1/ta1.c:34:TA_CloseSessionEntryPoint1(): has been called
+Debug: TAs/ta1/ta1.c:18:TA_DestroyEntryPoint1(): has been called
+Debug: TAs/ta2/ta2.c:39:TA_CloseSessionEntryPoint2(): has been called
+Debug: TAs/ta2/ta2.c:23:TA_DestroyEntryPoint2(): has been called

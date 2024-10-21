@@ -1,0 +1,2130 @@
+ARM GAS  Build/tee_client_api.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 1
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"tee_client_api.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "../Core/Src/tee_client_api.c"
+  18              		.section	.rodata.check_context.str1.4,"aMS",%progbits,1
+  19              		.align	2
+  20              	.LC0:
+  21 0000 2E2E2F43 		.ascii	"../Core/Src/tee_client_api.c\000"
+  21      6F72652F 
+  21      5372632F 
+  21      7465655F 
+  21      636C6965 
+  22 001d 000000   		.align	2
+  23              	.LC1:
+  24 0020 1B5B303B 		.ascii	"\033[0;31mERROR: %s:%d:%s(): \"Context is null\"\015"
+  24      33316D45 
+  24      52524F52 
+  24      3A202573 
+  24      3A25643A 
+  25 004c 0A00     		.ascii	"\012\000"
+  26 004e 0000     		.align	2
+  27              	.LC2:
+  28 0050 1B5B303B 		.ascii	"\033[0;31mERROR: %s:%d:%s(): \"Invalid context id\""
+  28      33316D45 
+  28      52524F52 
+  28      3A202573 
+  28      3A25643A 
+  29 007e 0D0A00   		.ascii	"\015\012\000"
+  30              		.section	.text.check_context,"ax",%progbits
+  31              		.align	1
+  32              		.syntax unified
+  33              		.thumb
+  34              		.thumb_func
+  36              	check_context:
+  37              	.LVL0:
+  38              	.LFB78:
+   1:../Core/Src/tee_client_api.c **** /*
+   2:../Core/Src/tee_client_api.c ****  * tee_client_api.c
+   3:../Core/Src/tee_client_api.c ****  *
+   4:../Core/Src/tee_client_api.c ****  *  Author: Emanuele Beozzo
+   5:../Core/Src/tee_client_api.c ****  */
+   6:../Core/Src/tee_client_api.c **** 
+   7:../Core/Src/tee_client_api.c **** 
+   8:../Core/Src/tee_client_api.c **** #include "tee_client_api.h"
+ARM GAS  Build/tee_client_api.s 			page 2
+
+
+   9:../Core/Src/tee_client_api.c **** #include "main.h"
+  10:../Core/Src/tee_client_api.c **** 
+  11:../Core/Src/tee_client_api.c **** // Notes on PARAMETER PASSING CONVENTION FOR SVC:
+  12:../Core/Src/tee_client_api.c **** // - use registers from r4 to r11 to pass parameters to SVC 
+  13:../Core/Src/tee_client_api.c **** // - save the current value of the registers used in a temporary variable before overwriting them
+  14:../Core/Src/tee_client_api.c **** // - restore the value of the registers after the SVC call
+  15:../Core/Src/tee_client_api.c **** // - use r4 to get the return value of the SVC invocation
+  16:../Core/Src/tee_client_api.c **** 
+  17:../Core/Src/tee_client_api.c **** // Define the structure of internal operation used to pass the parameters to TA
+  18:../Core/Src/tee_client_api.c **** // and to keep track of the different elements of the client application
+  19:../Core/Src/tee_client_api.c **** // The index can be 0 or 1, and it store all the clients currently opened
+  20:../Core/Src/tee_client_api.c **** // The index 0 is used for the first client, the index 1 is used for the second client (the positio
+  21:../Core/Src/tee_client_api.c **** // NOTE: each TA can have only one client at a time
+  22:../Core/Src/tee_client_api.c **** internal_operation_t *internal_op[NUMBER_OF_TA] = {0};
+  23:../Core/Src/tee_client_api.c **** // Keep track of the used shared memory
+  24:../Core/Src/tee_client_api.c **** static size_t used_shm_size = 0; 
+  25:../Core/Src/tee_client_api.c **** 
+  26:../Core/Src/tee_client_api.c **** /**
+  27:../Core/Src/tee_client_api.c ****  * @brief Support function to get the internal operation from the id number
+  28:../Core/Src/tee_client_api.c ****  *
+  29:../Core/Src/tee_client_api.c ****  * @param id the id of the internal operation
+  30:../Core/Src/tee_client_api.c ****  *
+  31:../Core/Src/tee_client_api.c ****  * @return the internal operation
+  32:../Core/Src/tee_client_api.c **** */
+  33:../Core/Src/tee_client_api.c **** internal_operation_t* get_internalOperation(uint32_t id)
+  34:../Core/Src/tee_client_api.c **** {
+  35:../Core/Src/tee_client_api.c ****     // If the id is greater than the number of TA, return NULL as the id is invalid
+  36:../Core/Src/tee_client_api.c ****     if(id > NUMBER_OF_TA) 
+  37:../Core/Src/tee_client_api.c ****         return NULL;
+  38:../Core/Src/tee_client_api.c **** 
+  39:../Core/Src/tee_client_api.c ****     // If the internal operation is not initialized for a given id, return NULL
+  40:../Core/Src/tee_client_api.c ****     if(!internal_op[id])
+  41:../Core/Src/tee_client_api.c ****         return NULL;
+  42:../Core/Src/tee_client_api.c **** 
+  43:../Core/Src/tee_client_api.c ****     return internal_op[id];
+  44:../Core/Src/tee_client_api.c **** }
+  45:../Core/Src/tee_client_api.c **** 
+  46:../Core/Src/tee_client_api.c **** /**
+  47:../Core/Src/tee_client_api.c ****  * @brief Supporting function used to chek the contex parameter ( if it null or has invalid id).
+  48:../Core/Src/tee_client_api.c ****  *
+  49:../Core/Src/tee_client_api.c ****  * @param ctx  TEEC_Context type struct
+  50:../Core/Src/tee_client_api.c ****  *
+  51:../Core/Src/tee_client_api.c ****  * @return if it is success return TEEC_SUCCESS, else TEEC_FAILED
+  52:../Core/Src/tee_client_api.c **** */
+  53:../Core/Src/tee_client_api.c **** static TEEC_Result check_context(TEEC_Context* ctx)
+  54:../Core/Src/tee_client_api.c **** {
+  39              		.loc 1 54 1 view -0
+  40              		.cfi_startproc
+  41              		@ args = 0, pretend = 0, frame = 0
+  42              		@ frame_needed = 0, uses_anonymous_args = 0
+  43              		.loc 1 54 1 is_stmt 0 view .LVU1
+  44 0000 08B5     		push	{r3, lr}
+  45              	.LCFI0:
+  46              		.cfi_def_cfa_offset 8
+  47              		.cfi_offset 3, -8
+  48              		.cfi_offset 14, -4
+  55:../Core/Src/tee_client_api.c ****     // NULL checking
+ARM GAS  Build/tee_client_api.s 			page 3
+
+
+  56:../Core/Src/tee_client_api.c ****     if(!ctx)
+  49              		.loc 1 56 5 is_stmt 1 view .LVU2
+  50              		.loc 1 56 7 is_stmt 0 view .LVU3
+  51 0002 20B1     		cbz	r0, .L6
+  57:../Core/Src/tee_client_api.c ****     {
+  58:../Core/Src/tee_client_api.c ****         ERR_MSG("Context is null");
+  59:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+  60:../Core/Src/tee_client_api.c ****     }
+  61:../Core/Src/tee_client_api.c **** 
+  62:../Core/Src/tee_client_api.c ****     // check context id if it's valid or not
+  63:../Core/Src/tee_client_api.c ****     if(ctx->id < 0 || ctx->id > NUMBER_OF_TA)
+  52              		.loc 1 63 5 is_stmt 1 view .LVU4
+  53              		.loc 1 63 26 is_stmt 0 view .LVU5
+  54 0004 0368     		ldr	r3, [r0]
+  55              		.loc 1 63 7 view .LVU6
+  56 0006 022B     		cmp	r3, #2
+  57 0008 09D8     		bhi	.L7
+  64:../Core/Src/tee_client_api.c ****     {
+  65:../Core/Src/tee_client_api.c ****         // TEE Connection err, can not open session
+  66:../Core/Src/tee_client_api.c ****         ERR_MSG("Invalid context id");
+  67:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+  68:../Core/Src/tee_client_api.c ****     }
+  69:../Core/Src/tee_client_api.c **** 
+  70:../Core/Src/tee_client_api.c ****     return TEEC_SUCCESS;
+  58              		.loc 1 70 12 view .LVU7
+  59 000a 0020     		movs	r0, #0
+  60              	.LVL1:
+  61              	.L1:
+  71:../Core/Src/tee_client_api.c **** }
+  62              		.loc 1 71 1 view .LVU8
+  63 000c 08BD     		pop	{r3, pc}
+  64              	.LVL2:
+  65              	.L6:
+  58:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+  66              		.loc 1 58 9 is_stmt 1 view .LVU9
+  58:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+  67              		.loc 1 58 9 view .LVU10
+  68 000e 084B     		ldr	r3, .L8
+  69 0010 3A22     		movs	r2, #58
+  70 0012 0849     		ldr	r1, .L8+4
+  71 0014 0848     		ldr	r0, .L8+8
+  72              	.LVL3:
+  58:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+  73              		.loc 1 58 9 is_stmt 0 view .LVU11
+  74 0016 FFF7FEFF 		bl	printf
+  75              	.LVL4:
+  58:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+  76              		.loc 1 58 9 is_stmt 1 view .LVU12
+  58:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+  77              		.loc 1 58 35 view .LVU13
+  59:../Core/Src/tee_client_api.c ****     }
+  78              		.loc 1 59 9 view .LVU14
+  59:../Core/Src/tee_client_api.c ****     }
+  79              		.loc 1 59 16 is_stmt 0 view .LVU15
+  80 001a 0120     		movs	r0, #1
+  81 001c F6E7     		b	.L1
+  82              	.LVL5:
+ARM GAS  Build/tee_client_api.s 			page 4
+
+
+  83              	.L7:
+  66:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+  84              		.loc 1 66 9 is_stmt 1 view .LVU16
+  66:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+  85              		.loc 1 66 9 view .LVU17
+  86 001e 044B     		ldr	r3, .L8
+  87 0020 4222     		movs	r2, #66
+  88 0022 0449     		ldr	r1, .L8+4
+  89 0024 0548     		ldr	r0, .L8+12
+  90              	.LVL6:
+  66:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+  91              		.loc 1 66 9 is_stmt 0 view .LVU18
+  92 0026 FFF7FEFF 		bl	printf
+  93              	.LVL7:
+  66:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+  94              		.loc 1 66 9 is_stmt 1 view .LVU19
+  66:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+  95              		.loc 1 66 38 view .LVU20
+  67:../Core/Src/tee_client_api.c ****     }
+  96              		.loc 1 67 9 view .LVU21
+  67:../Core/Src/tee_client_api.c ****     }
+  97              		.loc 1 67 16 is_stmt 0 view .LVU22
+  98 002a 0120     		movs	r0, #1
+  99 002c EEE7     		b	.L1
+ 100              	.L9:
+ 101 002e 00BF     		.align	2
+ 102              	.L8:
+ 103 0030 00000000 		.word	__func__.3
+ 104 0034 00000000 		.word	.LC0
+ 105 0038 20000000 		.word	.LC1
+ 106 003c 50000000 		.word	.LC2
+ 107              		.cfi_endproc
+ 108              	.LFE78:
+ 110              		.section	.text.get_internalOperation,"ax",%progbits
+ 111              		.align	1
+ 112              		.global	get_internalOperation
+ 113              		.syntax unified
+ 114              		.thumb
+ 115              		.thumb_func
+ 117              	get_internalOperation:
+ 118              	.LVL8:
+ 119              	.LFB77:
+  34:../Core/Src/tee_client_api.c ****     // If the id is greater than the number of TA, return NULL as the id is invalid
+ 120              		.loc 1 34 1 is_stmt 1 view -0
+ 121              		.cfi_startproc
+ 122              		@ args = 0, pretend = 0, frame = 0
+ 123              		@ frame_needed = 0, uses_anonymous_args = 0
+ 124              		@ link register save eliminated.
+  36:../Core/Src/tee_client_api.c ****         return NULL;
+ 125              		.loc 1 36 5 view .LVU24
+  36:../Core/Src/tee_client_api.c ****         return NULL;
+ 126              		.loc 1 36 7 is_stmt 0 view .LVU25
+ 127 0000 0228     		cmp	r0, #2
+ 128 0002 03D8     		bhi	.L12
+  40:../Core/Src/tee_client_api.c ****         return NULL;
+ 129              		.loc 1 40 5 is_stmt 1 view .LVU26
+  40:../Core/Src/tee_client_api.c ****         return NULL;
+ARM GAS  Build/tee_client_api.s 			page 5
+
+
+ 130              		.loc 1 40 20 is_stmt 0 view .LVU27
+ 131 0004 024B     		ldr	r3, .L13
+ 132 0006 53F82000 		ldr	r0, [r3, r0, lsl #2]
+ 133              	.LVL9:
+  40:../Core/Src/tee_client_api.c ****         return NULL;
+ 134              		.loc 1 40 20 view .LVU28
+ 135 000a 7047     		bx	lr
+ 136              	.LVL10:
+ 137              	.L12:
+  37:../Core/Src/tee_client_api.c **** 
+ 138              		.loc 1 37 16 view .LVU29
+ 139 000c 0020     		movs	r0, #0
+ 140              	.LVL11:
+  44:../Core/Src/tee_client_api.c **** 
+ 141              		.loc 1 44 1 view .LVU30
+ 142 000e 7047     		bx	lr
+ 143              	.L14:
+ 144              		.align	2
+ 145              	.L13:
+ 146 0010 00000000 		.word	internal_op
+ 147              		.cfi_endproc
+ 148              	.LFE77:
+ 150              		.section	.rodata.TEEC_InitializeContext.str1.4,"aMS",%progbits,1
+ 151              		.align	2
+ 152              	.LC3:
+ 153 0000 1B5B303B 		.ascii	"\033[0;31mERROR: %s:%d:%s(): \"Memory allocation is"
+ 153      33316D45 
+ 153      52524F52 
+ 153      3A202573 
+ 153      3A25643A 
+ 154 002f 20666169 		.ascii	" failed\"\015\012\000"
+ 154      6C656422 
+ 154      0D0A00
+ 155              		.section	.text.TEEC_InitializeContext,"ax",%progbits
+ 156              		.align	1
+ 157              		.global	TEEC_InitializeContext
+ 158              		.syntax unified
+ 159              		.thumb
+ 160              		.thumb_func
+ 162              	TEEC_InitializeContext:
+ 163              	.LVL12:
+ 164              	.LFB79:
+  72:../Core/Src/tee_client_api.c **** 
+  73:../Core/Src/tee_client_api.c **** 
+  74:../Core/Src/tee_client_api.c **** /**
+  75:../Core/Src/tee_client_api.c ****  * @brief Gobal Platform standars function, more information on page 30 of Client API documentation
+  76:../Core/Src/tee_client_api.c ****  *
+  77:../Core/Src/tee_client_api.c ****  * @param name
+  78:../Core/Src/tee_client_api.c ****  * @param ctx TEEC_Context type struct
+  79:../Core/Src/tee_client_api.c ****  *
+  80:../Core/Src/tee_client_api.c ****  * @return if it is success, return TEEC_SUCCESS(0) else TEEC_FAILED(1)
+  81:../Core/Src/tee_client_api.c **** */
+  82:../Core/Src/tee_client_api.c **** TEEC_Result TEEC_InitializeContext(const char* name,
+  83:../Core/Src/tee_client_api.c ****                                     TEEC_Context* ctx)
+  84:../Core/Src/tee_client_api.c **** {
+ 165              		.loc 1 84 1 is_stmt 1 view -0
+ 166              		.cfi_startproc
+ARM GAS  Build/tee_client_api.s 			page 6
+
+
+ 167              		@ args = 0, pretend = 0, frame = 0
+ 168              		@ frame_needed = 0, uses_anonymous_args = 0
+ 169              		.loc 1 84 1 is_stmt 0 view .LVU32
+ 170 0000 38B5     		push	{r3, r4, r5, lr}
+ 171              	.LCFI1:
+ 172              		.cfi_def_cfa_offset 16
+ 173              		.cfi_offset 3, -16
+ 174              		.cfi_offset 4, -12
+ 175              		.cfi_offset 5, -8
+ 176              		.cfi_offset 14, -4
+ 177 0002 0D46     		mov	r5, r1
+  85:../Core/Src/tee_client_api.c ****     int ret_val = TEEC_FAILED;
+ 178              		.loc 1 85 5 is_stmt 1 view .LVU33
+ 179              	.LVL13:
+  86:../Core/Src/tee_client_api.c **** 
+  87:../Core/Src/tee_client_api.c ****     // Name is not used in this implementation
+  88:../Core/Src/tee_client_api.c ****     /*if(!name)
+  89:../Core/Src/tee_client_api.c ****     {
+  90:../Core/Src/tee_client_api.c ****         ERR_MSG("Context name is not given");
+  91:../Core/Src/tee_client_api.c ****         return TEE_FAILED;
+  92:../Core/Src/tee_client_api.c ****     } */
+  93:../Core/Src/tee_client_api.c **** 
+  94:../Core/Src/tee_client_api.c ****     // Initialize the internal operation array with the given context on the first empty slot
+  95:../Core/Src/tee_client_api.c ****     for(int i=0; i<NUMBER_OF_TA; i++)
+ 180              		.loc 1 95 5 view .LVU34
+ 181              	.LBB2:
+ 182              		.loc 1 95 9 view .LVU35
+ 183              		.loc 1 95 13 is_stmt 0 view .LVU36
+ 184 0004 0024     		movs	r4, #0
+ 185              	.LVL14:
+ 186              	.L16:
+ 187              		.loc 1 95 19 is_stmt 1 discriminator 1 view .LVU37
+ 188 0006 012C     		cmp	r4, #1
+ 189 0008 10DC     		bgt	.L20
+  96:../Core/Src/tee_client_api.c ****     {
+  97:../Core/Src/tee_client_api.c ****         // Check if internal_op[i] is not null: in that case the slot is used by another CA and con
+  98:../Core/Src/tee_client_api.c ****         // and it was initialized before
+  99:../Core/Src/tee_client_api.c ****         if(internal_op[i]){
+ 190              		.loc 1 99 9 view .LVU38
+ 191              		.loc 1 99 23 is_stmt 0 view .LVU39
+ 192 000a 134B     		ldr	r3, .L26
+ 193 000c 53F82430 		ldr	r3, [r3, r4, lsl #2]
+ 194              		.loc 1 99 11 view .LVU40
+ 195 0010 0BB1     		cbz	r3, .L17
+ 100:../Core/Src/tee_client_api.c ****             continue;
+ 196              		.loc 1 100 13 is_stmt 1 discriminator 1 view .LVU41
+  95:../Core/Src/tee_client_api.c ****     {
+ 197              		.loc 1 95 35 discriminator 1 view .LVU42
+ 198 0012 0134     		adds	r4, r4, #1
+ 199              	.LVL15:
+  95:../Core/Src/tee_client_api.c ****     {
+ 200              		.loc 1 95 35 is_stmt 0 discriminator 1 view .LVU43
+ 201 0014 F7E7     		b	.L16
+ 202              	.L17:
+ 101:../Core/Src/tee_client_api.c ****         }
+ 102:../Core/Src/tee_client_api.c **** 
+ 103:../Core/Src/tee_client_api.c ****         // Allocate memory for new internal_op
+ARM GAS  Build/tee_client_api.s 			page 7
+
+
+ 104:../Core/Src/tee_client_api.c ****         internal_op[i] = (internal_operation_t*)calloc(1, sizeof(internal_operation_t));
+ 203              		.loc 1 104 9 is_stmt 1 view .LVU44
+ 204              		.loc 1 104 49 is_stmt 0 view .LVU45
+ 205 0016 1C21     		movs	r1, #28
+ 206              	.LVL16:
+ 207              		.loc 1 104 49 view .LVU46
+ 208 0018 0120     		movs	r0, #1
+ 209              	.LVL17:
+ 210              		.loc 1 104 49 view .LVU47
+ 211 001a FFF7FEFF 		bl	calloc
+ 212              	.LVL18:
+ 213              		.loc 1 104 24 view .LVU48
+ 214 001e 0E4B     		ldr	r3, .L26
+ 215 0020 43F82400 		str	r0, [r3, r4, lsl #2]
+ 105:../Core/Src/tee_client_api.c ****         if(!internal_op[i]){ // Memory allocation error
+ 216              		.loc 1 105 9 is_stmt 1 view .LVU49
+ 217              		.loc 1 105 11 is_stmt 0 view .LVU50
+ 218 0024 70B1     		cbz	r0, .L24
+ 106:../Core/Src/tee_client_api.c ****             ERR_MSG("Memory allocation is failed");
+ 107:../Core/Src/tee_client_api.c ****             return TEEC_FAILED;
+ 108:../Core/Src/tee_client_api.c ****         }
+ 109:../Core/Src/tee_client_api.c **** 
+ 110:../Core/Src/tee_client_api.c ****         // The id is equal to either 1 or 2, based on the index of the internal operation
+ 111:../Core/Src/tee_client_api.c ****         // The id is used to identify the TA and it is assegned based on the order of the call to t
+ 112:../Core/Src/tee_client_api.c ****         internal_op[i]->id = i + 1; // Id assignment for TA
+ 219              		.loc 1 112 9 is_stmt 1 view .LVU51
+ 220              		.loc 1 112 32 is_stmt 0 view .LVU52
+ 221 0026 0134     		adds	r4, r4, #1
+ 222              	.LVL19:
+ 223              		.loc 1 112 28 view .LVU53
+ 224 0028 8461     		str	r4, [r0, #24]
+ 113:../Core/Src/tee_client_api.c ****         ctx->id = i + 1; // Id assignment for context (same as internal_op)
+ 225              		.loc 1 113 9 is_stmt 1 view .LVU54
+ 226              		.loc 1 113 17 is_stmt 0 view .LVU55
+ 227 002a 2C60     		str	r4, [r5]
+ 114:../Core/Src/tee_client_api.c ****         break;
+ 228              		.loc 1 114 9 is_stmt 1 view .LVU56
+ 229              	.LVL20:
+ 230              	.L20:
+ 231              		.loc 1 114 9 is_stmt 0 view .LVU57
+ 232              	.LBE2:
+ 115:../Core/Src/tee_client_api.c ****     }
+ 116:../Core/Src/tee_client_api.c **** 
+ 117:../Core/Src/tee_client_api.c ****     // Variable used to temporary store the value of r4 register (used to pass the parameter to the
+ 118:../Core/Src/tee_client_api.c ****     uint32_t temp_val = 0;
+ 233              		.loc 1 118 5 is_stmt 1 view .LVU58
+ 119:../Core/Src/tee_client_api.c ****     // Get the address of the internal operation containing the context, parameters and info about 
+ 120:../Core/Src/tee_client_api.c ****     uint32_t *param_addr = (uint32_t*)(internal_op[ctx->id -1]);
+ 234              		.loc 1 120 5 view .LVU59
+ 235              		.loc 1 120 55 is_stmt 0 view .LVU60
+ 236 002c 2B68     		ldr	r3, [r5]
+ 237              		.loc 1 120 60 view .LVU61
+ 238 002e 013B     		subs	r3, r3, #1
+ 239              		.loc 1 120 15 view .LVU62
+ 240 0030 094A     		ldr	r2, .L26
+ 241 0032 52F82320 		ldr	r2, [r2, r3, lsl #2]
+ 242              	.LVL21:
+ARM GAS  Build/tee_client_api.s 			page 8
+
+
+ 121:../Core/Src/tee_client_api.c **** 
+ 122:../Core/Src/tee_client_api.c ****     // Store r4 in the temporary variable and pass the address of the internal operation in the r4 
+ 123:../Core/Src/tee_client_api.c ****     __asm__("MOV %0, r4" : "=r" (temp_val) : : "r4");
+ 243              		.loc 1 123 5 is_stmt 1 view .LVU63
+ 244              		.syntax unified
+ 245              	@ 123 "../Core/Src/tee_client_api.c" 1
+ 246 0036 2346     		MOV r3, r4
+ 247              	@ 0 "" 2
+ 248              	.LVL22:
+ 124:../Core/Src/tee_client_api.c ****     __asm__("MOV R4, %[param_addr]\n": : [param_addr] "r" (param_addr): "r4");
+ 249              		.loc 1 124 5 view .LVU64
+ 250              	@ 124 "../Core/Src/tee_client_api.c" 1
+ 251 0038 1446     		MOV R4, r2
+ 252              	
+ 253              	@ 0 "" 2
+ 125:../Core/Src/tee_client_api.c **** 
+ 126:../Core/Src/tee_client_api.c ****     // Call the SVC to pass the context to the TA
+ 127:../Core/Src/tee_client_api.c ****     INVOKE_SVC(FUNCTION_INIT_CONTEXT);
+ 254              		.loc 1 127 5 view .LVU65
+ 255              	@ 127 "../Core/Src/tee_client_api.c" 1
+ 256 003a 00DF     		svc #0
+ 257              	@ 0 "" 2
+ 128:../Core/Src/tee_client_api.c **** 
+ 129:../Core/Src/tee_client_api.c ****     // Get the return value of the SVC call from the r4 register and restore the value of r4
+ 130:../Core/Src/tee_client_api.c ****     __asm__("MOV %[ret_val], R4\n" : [ret_val] "=r" (ret_val));
+ 258              		.loc 1 130 5 view .LVU66
+ 259              	@ 130 "../Core/Src/tee_client_api.c" 1
+ 260 003c 2046     		MOV r0, R4
+ 261              	
+ 262              	@ 0 "" 2
+ 263              	.LVL23:
+ 131:../Core/Src/tee_client_api.c ****     __asm__("MOV R4, %[temp_val]\n": : [temp_val] "r" (temp_val): "r4");
+ 264              		.loc 1 131 5 view .LVU67
+ 265              	@ 131 "../Core/Src/tee_client_api.c" 1
+ 266 003e 1C46     		MOV R4, r3
+ 267              	
+ 268              	@ 0 "" 2
+ 132:../Core/Src/tee_client_api.c **** 
+ 133:../Core/Src/tee_client_api.c ****     // If the return value is different from TEE_SUCCESS, return TEE_FAILED
+ 134:../Core/Src/tee_client_api.c ****     if(ret_val != TEEC_SUCCESS)
+ 269              		.loc 1 134 5 view .LVU68
+ 270              		.loc 1 134 7 is_stmt 0 view .LVU69
+ 271              		.thumb
+ 272              		.syntax unified
+ 273 0040 40B9     		cbnz	r0, .L25
+ 274              	.LVL24:
+ 275              	.L15:
+ 135:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 136:../Core/Src/tee_client_api.c **** 
+ 137:../Core/Src/tee_client_api.c ****     return TEEC_SUCCESS;
+ 138:../Core/Src/tee_client_api.c **** }
+ 276              		.loc 1 138 1 view .LVU70
+ 277 0042 38BD     		pop	{r3, r4, r5, pc}
+ 278              	.LVL25:
+ 279              	.L24:
+ 280              	.LBB3:
+ 106:../Core/Src/tee_client_api.c ****             return TEEC_FAILED;
+ARM GAS  Build/tee_client_api.s 			page 9
+
+
+ 281              		.loc 1 106 13 is_stmt 1 view .LVU71
+ 106:../Core/Src/tee_client_api.c ****             return TEEC_FAILED;
+ 282              		.loc 1 106 13 view .LVU72
+ 283 0044 054B     		ldr	r3, .L26+4
+ 284 0046 6A22     		movs	r2, #106
+ 285 0048 0549     		ldr	r1, .L26+8
+ 286 004a 0648     		ldr	r0, .L26+12
+ 287 004c FFF7FEFF 		bl	printf
+ 288              	.LVL26:
+ 106:../Core/Src/tee_client_api.c ****             return TEEC_FAILED;
+ 289              		.loc 1 106 13 view .LVU73
+ 106:../Core/Src/tee_client_api.c ****             return TEEC_FAILED;
+ 290              		.loc 1 106 51 view .LVU74
+ 107:../Core/Src/tee_client_api.c ****         }
+ 291              		.loc 1 107 13 view .LVU75
+ 107:../Core/Src/tee_client_api.c ****         }
+ 292              		.loc 1 107 20 is_stmt 0 view .LVU76
+ 293 0050 0120     		movs	r0, #1
+ 294 0052 F6E7     		b	.L15
+ 295              	.LVL27:
+ 296              	.L25:
+ 107:../Core/Src/tee_client_api.c ****         }
+ 297              		.loc 1 107 20 view .LVU77
+ 298              	.LBE3:
+ 135:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 299              		.loc 1 135 16 view .LVU78
+ 300 0054 0120     		movs	r0, #1
+ 301              	.LVL28:
+ 135:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 302              		.loc 1 135 16 view .LVU79
+ 303 0056 F4E7     		b	.L15
+ 304              	.L27:
+ 305              		.align	2
+ 306              	.L26:
+ 307 0058 00000000 		.word	internal_op
+ 308 005c 00000000 		.word	__func__.6
+ 309 0060 00000000 		.word	.LC0
+ 310 0064 00000000 		.word	.LC3
+ 311              		.cfi_endproc
+ 312              	.LFE79:
+ 314              		.section	.rodata.TEEC_FinalizeContext.str1.4,"aMS",%progbits,1
+ 315              		.align	2
+ 316              	.LC4:
+ 317 0000 1B5B303B 		.ascii	"\033[0;31mERROR: %s:%d:%s(): \"context finalize err"
+ 317      33316D45 
+ 317      52524F52 
+ 317      3A202573 
+ 317      3A25643A 
+ 318 002f 220D0A00 		.ascii	"\"\015\012\000"
+ 319              		.section	.text.TEEC_FinalizeContext,"ax",%progbits
+ 320              		.align	1
+ 321              		.global	TEEC_FinalizeContext
+ 322              		.syntax unified
+ 323              		.thumb
+ 324              		.thumb_func
+ 326              	TEEC_FinalizeContext:
+ 327              	.LVL29:
+ARM GAS  Build/tee_client_api.s 			page 10
+
+
+ 328              	.LFB80:
+ 139:../Core/Src/tee_client_api.c **** 
+ 140:../Core/Src/tee_client_api.c **** 
+ 141:../Core/Src/tee_client_api.c **** /**
+ 142:../Core/Src/tee_client_api.c ****  * @brief Function from global platform standards, you can check the documentation on page 31
+ 143:../Core/Src/tee_client_api.c ****  *
+ 144:../Core/Src/tee_client_api.c ****  * @param ctx TEEC_Context type struct
+ 145:../Core/Src/tee_client_api.c **** */
+ 146:../Core/Src/tee_client_api.c **** void TEEC_FinalizeContext(TEEC_Context* ctx)
+ 147:../Core/Src/tee_client_api.c **** {
+ 329              		.loc 1 147 1 is_stmt 1 view -0
+ 330              		.cfi_startproc
+ 331              		@ args = 0, pretend = 0, frame = 0
+ 332              		@ frame_needed = 0, uses_anonymous_args = 0
+ 333              		.loc 1 147 1 is_stmt 0 view .LVU81
+ 334 0000 38B5     		push	{r3, r4, r5, lr}
+ 335              	.LCFI2:
+ 336              		.cfi_def_cfa_offset 16
+ 337              		.cfi_offset 3, -16
+ 338              		.cfi_offset 4, -12
+ 339              		.cfi_offset 5, -8
+ 340              		.cfi_offset 14, -4
+ 148:../Core/Src/tee_client_api.c **** 	int param = 1;
+ 341              		.loc 1 148 2 is_stmt 1 view .LVU82
+ 342              	.LVL30:
+ 149:../Core/Src/tee_client_api.c **** 
+ 150:../Core/Src/tee_client_api.c ****     // Check the context if it is valid or not, and return an error message if it is not
+ 151:../Core/Src/tee_client_api.c ****     if((!ctx) || (ctx->id < 1)){
+ 343              		.loc 1 151 5 view .LVU83
+ 344              		.loc 1 151 7 is_stmt 0 view .LVU84
+ 345 0002 10B1     		cbz	r0, .L29
+ 346 0004 0446     		mov	r4, r0
+ 347              		.loc 1 151 22 discriminator 1 view .LVU85
+ 348 0006 0368     		ldr	r3, [r0]
+ 349              		.loc 1 151 15 discriminator 1 view .LVU86
+ 350 0008 5BB9     		cbnz	r3, .L30
+ 351              	.L29:
+ 152:../Core/Src/tee_client_api.c ****         ERR_MSG("context finalize err");
+ 352              		.loc 1 152 9 is_stmt 1 view .LVU87
+ 353              		.loc 1 152 9 view .LVU88
+ 354 000a 0B4B     		ldr	r3, .L33
+ 355 000c 9822     		movs	r2, #152
+ 356 000e 0B49     		ldr	r1, .L33+4
+ 357 0010 0B48     		ldr	r0, .L33+8
+ 358              	.LVL31:
+ 359              		.loc 1 152 9 is_stmt 0 view .LVU89
+ 360 0012 FFF7FEFF 		bl	printf
+ 361              	.LVL32:
+ 362              		.loc 1 152 9 is_stmt 1 view .LVU90
+ 363              		.loc 1 152 40 view .LVU91
+ 148:../Core/Src/tee_client_api.c **** 	int param = 1;
+ 364              		.loc 1 148 6 is_stmt 0 view .LVU92
+ 365 0016 0125     		movs	r5, #1
+ 366              	.LVL33:
+ 367              	.L31:
+ 153:../Core/Src/tee_client_api.c ****     }else{
+ 154:../Core/Src/tee_client_api.c ****         // Create a temporary variable to store the id of the context before freeing the memory
+ARM GAS  Build/tee_client_api.s 			page 11
+
+
+ 155:../Core/Src/tee_client_api.c ****         // The id is used to identify the TA that is being closed
+ 156:../Core/Src/tee_client_api.c ****     	param = ctx->id;
+ 157:../Core/Src/tee_client_api.c ****         free(internal_op[ctx->id -1]);
+ 158:../Core/Src/tee_client_api.c ****         ctx->id = 0;
+ 159:../Core/Src/tee_client_api.c ****     }
+ 160:../Core/Src/tee_client_api.c **** 
+ 161:../Core/Src/tee_client_api.c ****     // Temprary save the value of r4 register
+ 162:../Core/Src/tee_client_api.c ****     uint32_t temp_val_r4 = 0;
+ 368              		.loc 1 162 5 is_stmt 1 view .LVU93
+ 163:../Core/Src/tee_client_api.c ****    __asm__("MOV %[temp_val_r4], R4\n" : [temp_val_r4] "=r" (temp_val_r4));
+ 369              		.loc 1 163 4 view .LVU94
+ 370              		.syntax unified
+ 371              	@ 163 "../Core/Src/tee_client_api.c" 1
+ 372 0018 2346     		MOV r3, R4
+ 373              	
+ 374              	@ 0 "" 2
+ 375              	.LVL34:
+ 164:../Core/Src/tee_client_api.c **** 
+ 165:../Core/Src/tee_client_api.c ****     // Pass the parameter to the SVC
+ 166:../Core/Src/tee_client_api.c ****    __asm__("MOV R4, %[param]\n": : [param] "r" (param): "r4");
+ 376              		.loc 1 166 4 view .LVU95
+ 377              	@ 166 "../Core/Src/tee_client_api.c" 1
+ 378 001a 2C46     		MOV R4, r5
+ 379              	
+ 380              	@ 0 "" 2
+ 167:../Core/Src/tee_client_api.c **** 
+ 168:../Core/Src/tee_client_api.c ****    INVOKE_SVC(FUNCTION_FINALIZE_CONTEXT);
+ 381              		.loc 1 168 4 view .LVU96
+ 382              	@ 168 "../Core/Src/tee_client_api.c" 1
+ 383 001c 01DF     		svc #1
+ 384              	@ 0 "" 2
+ 169:../Core/Src/tee_client_api.c **** 
+ 170:../Core/Src/tee_client_api.c ****     // Restore the value of r4 register
+ 171:../Core/Src/tee_client_api.c **** 	__asm__("MOV R4, %[temp_val_r4]\n": : [temp_val_r4] "r" (temp_val_r4): "r4");
+ 385              		.loc 1 171 2 view .LVU97
+ 386              	@ 171 "../Core/Src/tee_client_api.c" 1
+ 387 001e 1C46     		MOV R4, r3
+ 388              	
+ 389              	@ 0 "" 2
+ 172:../Core/Src/tee_client_api.c **** }
+ 390              		.loc 1 172 1 is_stmt 0 view .LVU98
+ 391              		.thumb
+ 392              		.syntax unified
+ 393 0020 38BD     		pop	{r3, r4, r5, pc}
+ 394              	.LVL35:
+ 395              	.L30:
+ 156:../Core/Src/tee_client_api.c ****         free(internal_op[ctx->id -1]);
+ 396              		.loc 1 156 6 is_stmt 1 view .LVU99
+ 156:../Core/Src/tee_client_api.c ****         free(internal_op[ctx->id -1]);
+ 397              		.loc 1 156 12 is_stmt 0 view .LVU100
+ 398 0022 1D46     		mov	r5, r3
+ 399              	.LVL36:
+ 157:../Core/Src/tee_client_api.c ****         ctx->id = 0;
+ 400              		.loc 1 157 9 is_stmt 1 view .LVU101
+ 157:../Core/Src/tee_client_api.c ****         ctx->id = 0;
+ 401              		.loc 1 157 34 is_stmt 0 view .LVU102
+ 402 0024 013B     		subs	r3, r3, #1
+ARM GAS  Build/tee_client_api.s 			page 12
+
+
+ 157:../Core/Src/tee_client_api.c ****         ctx->id = 0;
+ 403              		.loc 1 157 9 view .LVU103
+ 404 0026 074A     		ldr	r2, .L33+12
+ 405 0028 52F82300 		ldr	r0, [r2, r3, lsl #2]
+ 406              	.LVL37:
+ 157:../Core/Src/tee_client_api.c ****         ctx->id = 0;
+ 407              		.loc 1 157 9 view .LVU104
+ 408 002c FFF7FEFF 		bl	free
+ 409              	.LVL38:
+ 158:../Core/Src/tee_client_api.c ****     }
+ 410              		.loc 1 158 9 is_stmt 1 view .LVU105
+ 158:../Core/Src/tee_client_api.c ****     }
+ 411              		.loc 1 158 17 is_stmt 0 view .LVU106
+ 412 0030 0023     		movs	r3, #0
+ 413 0032 2360     		str	r3, [r4]
+ 414 0034 F0E7     		b	.L31
+ 415              	.L34:
+ 416 0036 00BF     		.align	2
+ 417              	.L33:
+ 418 0038 00000000 		.word	__func__.5
+ 419 003c 00000000 		.word	.LC0
+ 420 0040 00000000 		.word	.LC4
+ 421 0044 00000000 		.word	internal_op
+ 422              		.cfi_endproc
+ 423              	.LFE80:
+ 425              		.section	.rodata.TEEC_OpenSession.str1.4,"aMS",%progbits,1
+ 426              		.align	2
+ 427              	.LC5:
+ 428 0000 1B5B303B 		.ascii	"\033[0;31mERROR: %s:%d:%s(): \"uuid is null\"\015\012"
+ 428      33316D45 
+ 428      52524F52 
+ 428      3A202573 
+ 428      3A25643A 
+ 429 002a 00       		.ascii	"\000"
+ 430              		.section	.text.TEEC_OpenSession,"ax",%progbits
+ 431              		.align	1
+ 432              		.global	TEEC_OpenSession
+ 433              		.syntax unified
+ 434              		.thumb
+ 435              		.thumb_func
+ 437              	TEEC_OpenSession:
+ 438              	.LVL39:
+ 439              	.LFB81:
+ 173:../Core/Src/tee_client_api.c **** 
+ 174:../Core/Src/tee_client_api.c **** 
+ 175:../Core/Src/tee_client_api.c **** /**
+ 176:../Core/Src/tee_client_api.c ****  * @brief Function from global platform standards, you can check the documentation on page 37
+ 177:../Core/Src/tee_client_api.c ****  *
+ 178:../Core/Src/tee_client_api.c ****  * @param ctx TEEC_Context type struct
+ 179:../Core/Src/tee_client_api.c ****  * @param session TEEC_Session type struct
+ 180:../Core/Src/tee_client_api.c ****  * @param destination UUID parameter
+ 181:../Core/Src/tee_client_api.c ****  * @param connectionMethod unused parameter
+ 182:../Core/Src/tee_client_api.c ****  * @param connectionData unused parameter
+ 183:../Core/Src/tee_client_api.c ****  * @param operation TEEC_Operation type struct, it contains payload of data
+ 184:../Core/Src/tee_client_api.c ****  * @param returnOrigin unused parameter
+ 185:../Core/Src/tee_client_api.c ****  *
+ 186:../Core/Src/tee_client_api.c ****  * @return if it is success, return TEEC_SUCCESS(0) else TEEC_FAILED(1)
+ARM GAS  Build/tee_client_api.s 			page 13
+
+
+ 187:../Core/Src/tee_client_api.c **** */
+ 188:../Core/Src/tee_client_api.c **** TEEC_Result TEEC_OpenSession(TEEC_Context* ctx,
+ 189:../Core/Src/tee_client_api.c **** 								TEEC_Session* session,
+ 190:../Core/Src/tee_client_api.c **** 								const TEE_UUID* destination,
+ 191:../Core/Src/tee_client_api.c **** 								uint32_t connectionMethod, //unused
+ 192:../Core/Src/tee_client_api.c **** 								const void* connectionData,//unused
+ 193:../Core/Src/tee_client_api.c **** 								TEEC_Operation* operation,
+ 194:../Core/Src/tee_client_api.c **** 								uint32_t* returnOrigin /*unused*/)
+ 195:../Core/Src/tee_client_api.c **** {
+ 440              		.loc 1 195 1 is_stmt 1 view -0
+ 441              		.cfi_startproc
+ 442              		@ args = 12, pretend = 0, frame = 0
+ 443              		@ frame_needed = 0, uses_anonymous_args = 0
+ 444              		.loc 1 195 1 is_stmt 0 view .LVU108
+ 445 0000 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 446              	.LCFI3:
+ 447              		.cfi_def_cfa_offset 24
+ 448              		.cfi_offset 3, -24
+ 449              		.cfi_offset 4, -20
+ 450              		.cfi_offset 5, -16
+ 451              		.cfi_offset 6, -12
+ 452              		.cfi_offset 7, -8
+ 453              		.cfi_offset 14, -4
+ 454 0002 0446     		mov	r4, r0
+ 455 0004 0D46     		mov	r5, r1
+ 456 0006 1746     		mov	r7, r2
+ 457 0008 079E     		ldr	r6, [sp, #28]
+ 196:../Core/Src/tee_client_api.c ****     int ret_val = -1;
+ 458              		.loc 1 196 5 is_stmt 1 view .LVU109
+ 459              	.LVL40:
+ 197:../Core/Src/tee_client_api.c **** 
+ 198:../Core/Src/tee_client_api.c ****     // Check if the context is valid or not
+ 199:../Core/Src/tee_client_api.c ****     if(check_context(ctx) != TEEC_SUCCESS)
+ 460              		.loc 1 199 5 view .LVU110
+ 461              		.loc 1 199 8 is_stmt 0 view .LVU111
+ 462 000a FFF7FEFF 		bl	check_context
+ 463              	.LVL41:
+ 464              		.loc 1 199 7 view .LVU112
+ 465 000e 0028     		cmp	r0, #0
+ 466 0010 49D1     		bne	.L43
+ 467 0012 0346     		mov	r3, r0
+ 200:../Core/Src/tee_client_api.c ****     {
+ 201:../Core/Src/tee_client_api.c ****         goto err;
+ 202:../Core/Src/tee_client_api.c ****     }
+ 203:../Core/Src/tee_client_api.c **** 
+ 204:../Core/Src/tee_client_api.c ****     // Check if the UUID parameter is null or not
+ 205:../Core/Src/tee_client_api.c ****     if(!destination)
+ 468              		.loc 1 205 5 is_stmt 1 view .LVU113
+ 469              		.loc 1 205 7 is_stmt 0 view .LVU114
+ 470 0014 47B1     		cbz	r7, .L46
+ 206:../Core/Src/tee_client_api.c ****     {
+ 207:../Core/Src/tee_client_api.c ****         ERR_MSG("uuid is null");
+ 208:../Core/Src/tee_client_api.c ****         goto err;
+ 209:../Core/Src/tee_client_api.c ****     }
+ 210:../Core/Src/tee_client_api.c **** 
+ 211:../Core/Src/tee_client_api.c ****     // Assign ctx params to session ctx parameter
+ 212:../Core/Src/tee_client_api.c ****     session->ctx = ctx;
+ARM GAS  Build/tee_client_api.s 			page 14
+
+
+ 471              		.loc 1 212 5 is_stmt 1 view .LVU115
+ 472              		.loc 1 212 18 is_stmt 0 view .LVU116
+ 473 0016 2C60     		str	r4, [r5]
+ 213:../Core/Src/tee_client_api.c **** 
+ 214:../Core/Src/tee_client_api.c **** 	// Context id parameter used to identify TA and internal operation index 
+ 215:../Core/Src/tee_client_api.c **** 	// Assign the destination uuid parameter to internal operation uuid parameter
+ 216:../Core/Src/tee_client_api.c **** 	internal_op[ctx->id - 1]->uuid = destination;
+ 474              		.loc 1 216 2 is_stmt 1 view .LVU117
+ 475              		.loc 1 216 17 is_stmt 0 view .LVU118
+ 476 0018 2268     		ldr	r2, [r4]
+ 477              		.loc 1 216 22 view .LVU119
+ 478 001a 013A     		subs	r2, r2, #1
+ 479              		.loc 1 216 13 view .LVU120
+ 480 001c 2449     		ldr	r1, .L48
+ 481 001e 51F82220 		ldr	r2, [r1, r2, lsl #2]
+ 482              		.loc 1 216 33 view .LVU121
+ 483 0022 5761     		str	r7, [r2, #20]
+ 217:../Core/Src/tee_client_api.c **** 
+ 218:../Core/Src/tee_client_api.c **** 	// Check if the operation parameter is null:
+ 219:../Core/Src/tee_client_api.c **** 	// if not NULL, copy the params from operation to internal_op
+ 220:../Core/Src/tee_client_api.c **** 	if(operation) {
+ 484              		.loc 1 220 2 is_stmt 1 view .LVU122
+ 485              		.loc 1 220 4 is_stmt 0 view .LVU123
+ 486 0024 AEB9     		cbnz	r6, .L38
+ 487 0026 34E0     		b	.L39
+ 488              	.L46:
+ 207:../Core/Src/tee_client_api.c ****         goto err;
+ 489              		.loc 1 207 9 is_stmt 1 view .LVU124
+ 207:../Core/Src/tee_client_api.c ****         goto err;
+ 490              		.loc 1 207 9 view .LVU125
+ 491 0028 224B     		ldr	r3, .L48+4
+ 492 002a CF22     		movs	r2, #207
+ 493 002c 2249     		ldr	r1, .L48+8
+ 494 002e 2348     		ldr	r0, .L48+12
+ 495 0030 FFF7FEFF 		bl	printf
+ 496              	.LVL42:
+ 207:../Core/Src/tee_client_api.c ****         goto err;
+ 497              		.loc 1 207 9 view .LVU126
+ 207:../Core/Src/tee_client_api.c ****         goto err;
+ 498              		.loc 1 207 32 view .LVU127
+ 208:../Core/Src/tee_client_api.c ****     }
+ 499              		.loc 1 208 9 view .LVU128
+ 221:../Core/Src/tee_client_api.c **** 		// Assign each operation parameter to internal operation parameters
+ 222:../Core/Src/tee_client_api.c **** 		for(int i=0; i<4; i++)
+ 223:../Core/Src/tee_client_api.c **** 		{
+ 224:../Core/Src/tee_client_api.c **** 			internal_op[ctx->id -1]->params[i] = &(operation->params[i]);
+ 225:../Core/Src/tee_client_api.c **** 		}
+ 226:../Core/Src/tee_client_api.c **** 		// Assign the paramtypes parameter to internal operation paramtypes parameter
+ 227:../Core/Src/tee_client_api.c **** 		internal_op[ctx->id -1]->paramTypes = operation->paramTypes;
+ 228:../Core/Src/tee_client_api.c **** 	} else {
+ 229:../Core/Src/tee_client_api.c ****         // If the operation parameter is NULL, set all the params to NULL and the paramTypes to TEE
+ 230:../Core/Src/tee_client_api.c **** 		for(int i=0; i<4; i++)
+ 231:../Core/Src/tee_client_api.c **** 		{
+ 232:../Core/Src/tee_client_api.c **** 			internal_op[ctx->id -1]->params[i] = NULL;
+ 233:../Core/Src/tee_client_api.c **** 		}
+ 234:../Core/Src/tee_client_api.c **** 		internal_op[ctx->id -1]->paramTypes = TEEC_PARAM_TYPES(TEEC_NONE, TEEC_NONE , TEEC_NONE, TEEC_NON
+ 235:../Core/Src/tee_client_api.c **** 	}
+ARM GAS  Build/tee_client_api.s 			page 15
+
+
+ 236:../Core/Src/tee_client_api.c **** 
+ 237:../Core/Src/tee_client_api.c ****     // Session id should be 1 if sessions is successfuly created
+ 238:../Core/Src/tee_client_api.c ****     session->id = 1;
+ 239:../Core/Src/tee_client_api.c **** 
+ 240:../Core/Src/tee_client_api.c ****     //Get internal_operation parameter address value, then pass it on r4 register
+ 241:../Core/Src/tee_client_api.c ****     // according to the SVC calling convention
+ 242:../Core/Src/tee_client_api.c ****     uint32_t temp_val = 0;
+ 243:../Core/Src/tee_client_api.c ****     uint32_t *param_addr = (uint32_t*)(internal_op[ctx->id -1]);
+ 244:../Core/Src/tee_client_api.c ****     __asm__("MOV %0, r4" : "=r" (temp_val) : : "r4");
+ 245:../Core/Src/tee_client_api.c ****     __asm__("MOV R4, %[param_addr]\n": : [param_addr] "r" (param_addr): "r4");
+ 246:../Core/Src/tee_client_api.c **** 
+ 247:../Core/Src/tee_client_api.c ****     INVOKE_SVC(FUNCTION_OPEN_SESSION);
+ 248:../Core/Src/tee_client_api.c **** 
+ 249:../Core/Src/tee_client_api.c ****     // Get the return value of the SVC call from the r4 register and restore the value of r4
+ 250:../Core/Src/tee_client_api.c ****     __asm__("MOV %[ret_val], R4\n" : [ret_val] "=r" (ret_val));
+ 251:../Core/Src/tee_client_api.c ****     __asm__("MOV R4, %[temp_val]\n": : [temp_val] "r" (temp_val): "r4");
+ 252:../Core/Src/tee_client_api.c **** 
+ 253:../Core/Src/tee_client_api.c ****     if(ret_val != TEEC_SUCCESS)
+ 254:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 255:../Core/Src/tee_client_api.c **** 
+ 256:../Core/Src/tee_client_api.c ****     return TEEC_SUCCESS;
+ 257:../Core/Src/tee_client_api.c **** 
+ 258:../Core/Src/tee_client_api.c ****     // Error handling
+ 259:../Core/Src/tee_client_api.c **** 	err:
+ 260:../Core/Src/tee_client_api.c **** 		return TEEC_FAILED;
+ 500              		.loc 1 260 10 is_stmt 0 view .LVU129
+ 501 0034 0120     		movs	r0, #1
+ 208:../Core/Src/tee_client_api.c ****     }
+ 502              		.loc 1 208 9 view .LVU130
+ 503 0036 22E0     		b	.L35
+ 504              	.LVL43:
+ 505              	.L40:
+ 506              	.LBB4:
+ 224:../Core/Src/tee_client_api.c **** 		}
+ 507              		.loc 1 224 4 is_stmt 1 discriminator 3 view .LVU131
+ 224:../Core/Src/tee_client_api.c **** 		}
+ 508              		.loc 1 224 19 is_stmt 0 discriminator 3 view .LVU132
+ 509 0038 2268     		ldr	r2, [r4]
+ 224:../Core/Src/tee_client_api.c **** 		}
+ 510              		.loc 1 224 24 discriminator 3 view .LVU133
+ 511 003a 013A     		subs	r2, r2, #1
+ 224:../Core/Src/tee_client_api.c **** 		}
+ 512              		.loc 1 224 15 discriminator 3 view .LVU134
+ 513 003c 1C49     		ldr	r1, .L48
+ 514 003e 51F82210 		ldr	r1, [r1, r2, lsl #2]
+ 224:../Core/Src/tee_client_api.c **** 		}
+ 515              		.loc 1 224 41 discriminator 3 view .LVU135
+ 516 0042 C3EBC302 		rsb	r2, r3, r3, lsl #3
+ 517 0046 9200     		lsls	r2, r2, #2
+ 518 0048 0832     		adds	r2, r2, #8
+ 519 004a 3244     		add	r2, r2, r6
+ 224:../Core/Src/tee_client_api.c **** 		}
+ 520              		.loc 1 224 39 discriminator 3 view .LVU136
+ 521 004c 41F82320 		str	r2, [r1, r3, lsl #2]
+ 222:../Core/Src/tee_client_api.c **** 		{
+ 522              		.loc 1 222 22 is_stmt 1 discriminator 3 view .LVU137
+ 523 0050 0133     		adds	r3, r3, #1
+ARM GAS  Build/tee_client_api.s 			page 16
+
+
+ 524              	.LVL44:
+ 525              	.L38:
+ 222:../Core/Src/tee_client_api.c **** 		{
+ 526              		.loc 1 222 17 discriminator 1 view .LVU138
+ 527 0052 032B     		cmp	r3, #3
+ 528 0054 F0DD     		ble	.L40
+ 529              	.LBE4:
+ 227:../Core/Src/tee_client_api.c **** 	} else {
+ 530              		.loc 1 227 3 view .LVU139
+ 227:../Core/Src/tee_client_api.c **** 	} else {
+ 531              		.loc 1 227 18 is_stmt 0 view .LVU140
+ 532 0056 2368     		ldr	r3, [r4]
+ 533              	.LVL45:
+ 227:../Core/Src/tee_client_api.c **** 	} else {
+ 534              		.loc 1 227 23 view .LVU141
+ 535 0058 013B     		subs	r3, r3, #1
+ 227:../Core/Src/tee_client_api.c **** 	} else {
+ 536              		.loc 1 227 14 view .LVU142
+ 537 005a 154A     		ldr	r2, .L48
+ 538 005c 52F82330 		ldr	r3, [r2, r3, lsl #2]
+ 227:../Core/Src/tee_client_api.c **** 	} else {
+ 539              		.loc 1 227 50 view .LVU143
+ 540 0060 7268     		ldr	r2, [r6, #4]
+ 227:../Core/Src/tee_client_api.c **** 	} else {
+ 541              		.loc 1 227 39 view .LVU144
+ 542 0062 1A61     		str	r2, [r3, #16]
+ 543              	.LVL46:
+ 544              	.L41:
+ 238:../Core/Src/tee_client_api.c **** 
+ 545              		.loc 1 238 5 is_stmt 1 view .LVU145
+ 238:../Core/Src/tee_client_api.c **** 
+ 546              		.loc 1 238 17 is_stmt 0 view .LVU146
+ 547 0064 0123     		movs	r3, #1
+ 548 0066 6B60     		str	r3, [r5, #4]
+ 242:../Core/Src/tee_client_api.c ****     uint32_t *param_addr = (uint32_t*)(internal_op[ctx->id -1]);
+ 549              		.loc 1 242 5 is_stmt 1 view .LVU147
+ 550              	.LVL47:
+ 243:../Core/Src/tee_client_api.c ****     __asm__("MOV %0, r4" : "=r" (temp_val) : : "r4");
+ 551              		.loc 1 243 5 view .LVU148
+ 243:../Core/Src/tee_client_api.c ****     __asm__("MOV %0, r4" : "=r" (temp_val) : : "r4");
+ 552              		.loc 1 243 55 is_stmt 0 view .LVU149
+ 553 0068 2368     		ldr	r3, [r4]
+ 243:../Core/Src/tee_client_api.c ****     __asm__("MOV %0, r4" : "=r" (temp_val) : : "r4");
+ 554              		.loc 1 243 60 view .LVU150
+ 555 006a 013B     		subs	r3, r3, #1
+ 243:../Core/Src/tee_client_api.c ****     __asm__("MOV %0, r4" : "=r" (temp_val) : : "r4");
+ 556              		.loc 1 243 15 view .LVU151
+ 557 006c 104A     		ldr	r2, .L48
+ 558 006e 52F82320 		ldr	r2, [r2, r3, lsl #2]
+ 559              	.LVL48:
+ 244:../Core/Src/tee_client_api.c ****     __asm__("MOV R4, %[param_addr]\n": : [param_addr] "r" (param_addr): "r4");
+ 560              		.loc 1 244 5 is_stmt 1 view .LVU152
+ 561              		.syntax unified
+ 562              	@ 244 "../Core/Src/tee_client_api.c" 1
+ 563 0072 2346     		MOV r3, r4
+ 564              	@ 0 "" 2
+ 565              	.LVL49:
+ARM GAS  Build/tee_client_api.s 			page 17
+
+
+ 245:../Core/Src/tee_client_api.c **** 
+ 566              		.loc 1 245 5 view .LVU153
+ 567              	@ 245 "../Core/Src/tee_client_api.c" 1
+ 568 0074 1446     		MOV R4, r2
+ 569              	
+ 570              	@ 0 "" 2
+ 247:../Core/Src/tee_client_api.c **** 
+ 571              		.loc 1 247 5 view .LVU154
+ 572              	@ 247 "../Core/Src/tee_client_api.c" 1
+ 573 0076 02DF     		svc #2
+ 574              	@ 0 "" 2
+ 250:../Core/Src/tee_client_api.c ****     __asm__("MOV R4, %[temp_val]\n": : [temp_val] "r" (temp_val): "r4");
+ 575              		.loc 1 250 5 view .LVU155
+ 576              	@ 250 "../Core/Src/tee_client_api.c" 1
+ 577 0078 2046     		MOV r0, R4
+ 578              	
+ 579              	@ 0 "" 2
+ 580              	.LVL50:
+ 251:../Core/Src/tee_client_api.c **** 
+ 581              		.loc 1 251 5 view .LVU156
+ 582              	@ 251 "../Core/Src/tee_client_api.c" 1
+ 583 007a 1C46     		MOV R4, r3
+ 584              	
+ 585              	@ 0 "" 2
+ 253:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 586              		.loc 1 253 5 view .LVU157
+ 253:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 587              		.loc 1 253 7 is_stmt 0 view .LVU158
+ 588              		.thumb
+ 589              		.syntax unified
+ 590 007c A8B9     		cbnz	r0, .L47
+ 591              	.LVL51:
+ 592              	.L35:
+ 261:../Core/Src/tee_client_api.c **** }
+ 593              		.loc 1 261 1 view .LVU159
+ 594 007e F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 595              	.LVL52:
+ 596              	.L42:
+ 597              	.LBB5:
+ 232:../Core/Src/tee_client_api.c **** 		}
+ 598              		.loc 1 232 4 is_stmt 1 discriminator 3 view .LVU160
+ 232:../Core/Src/tee_client_api.c **** 		}
+ 599              		.loc 1 232 19 is_stmt 0 discriminator 3 view .LVU161
+ 600 0080 2268     		ldr	r2, [r4]
+ 232:../Core/Src/tee_client_api.c **** 		}
+ 601              		.loc 1 232 24 discriminator 3 view .LVU162
+ 602 0082 013A     		subs	r2, r2, #1
+ 232:../Core/Src/tee_client_api.c **** 		}
+ 603              		.loc 1 232 15 discriminator 3 view .LVU163
+ 604 0084 0A49     		ldr	r1, .L48
+ 605 0086 51F82220 		ldr	r2, [r1, r2, lsl #2]
+ 232:../Core/Src/tee_client_api.c **** 		}
+ 606              		.loc 1 232 39 discriminator 3 view .LVU164
+ 607 008a 0021     		movs	r1, #0
+ 608 008c 42F82310 		str	r1, [r2, r3, lsl #2]
+ 230:../Core/Src/tee_client_api.c **** 		{
+ 609              		.loc 1 230 22 is_stmt 1 discriminator 3 view .LVU165
+ARM GAS  Build/tee_client_api.s 			page 18
+
+
+ 610 0090 0133     		adds	r3, r3, #1
+ 611              	.LVL53:
+ 612              	.L39:
+ 230:../Core/Src/tee_client_api.c **** 		{
+ 613              		.loc 1 230 17 discriminator 1 view .LVU166
+ 614 0092 032B     		cmp	r3, #3
+ 615 0094 F4DD     		ble	.L42
+ 616              	.LBE5:
+ 234:../Core/Src/tee_client_api.c **** 	}
+ 617              		.loc 1 234 3 view .LVU167
+ 234:../Core/Src/tee_client_api.c **** 	}
+ 618              		.loc 1 234 18 is_stmt 0 view .LVU168
+ 619 0096 2368     		ldr	r3, [r4]
+ 620              	.LVL54:
+ 234:../Core/Src/tee_client_api.c **** 	}
+ 621              		.loc 1 234 23 view .LVU169
+ 622 0098 013B     		subs	r3, r3, #1
+ 234:../Core/Src/tee_client_api.c **** 	}
+ 623              		.loc 1 234 14 view .LVU170
+ 624 009a 054A     		ldr	r2, .L48
+ 625 009c 52F82330 		ldr	r3, [r2, r3, lsl #2]
+ 234:../Core/Src/tee_client_api.c **** 	}
+ 626              		.loc 1 234 39 view .LVU171
+ 627 00a0 0022     		movs	r2, #0
+ 628 00a2 1A61     		str	r2, [r3, #16]
+ 629 00a4 DEE7     		b	.L41
+ 630              	.LVL55:
+ 631              	.L43:
+ 260:../Core/Src/tee_client_api.c **** }
+ 632              		.loc 1 260 10 view .LVU172
+ 633 00a6 0120     		movs	r0, #1
+ 634 00a8 E9E7     		b	.L35
+ 635              	.LVL56:
+ 636              	.L47:
+ 254:../Core/Src/tee_client_api.c **** 
+ 637              		.loc 1 254 16 view .LVU173
+ 638 00aa 0120     		movs	r0, #1
+ 639              	.LVL57:
+ 254:../Core/Src/tee_client_api.c **** 
+ 640              		.loc 1 254 16 view .LVU174
+ 641 00ac E7E7     		b	.L35
+ 642              	.L49:
+ 643 00ae 00BF     		.align	2
+ 644              	.L48:
+ 645 00b0 00000000 		.word	internal_op
+ 646 00b4 00000000 		.word	__func__.4
+ 647 00b8 00000000 		.word	.LC0
+ 648 00bc 00000000 		.word	.LC5
+ 649              		.cfi_endproc
+ 650              	.LFE81:
+ 652              		.section	.rodata.TEEC_CloseSession.str1.4,"aMS",%progbits,1
+ 653              		.align	2
+ 654              	.LC6:
+ 655 0000 1B5B303B 		.ascii	"\033[0;31mERROR: %s:%d:%s(): \"Session close err\"\015"
+ 655      33316D45 
+ 655      52524F52 
+ 655      3A202573 
+ARM GAS  Build/tee_client_api.s 			page 19
+
+
+ 655      3A25643A 
+ 656 002e 0A00     		.ascii	"\012\000"
+ 657              		.section	.text.TEEC_CloseSession,"ax",%progbits
+ 658              		.align	1
+ 659              		.global	TEEC_CloseSession
+ 660              		.syntax unified
+ 661              		.thumb
+ 662              		.thumb_func
+ 664              	TEEC_CloseSession:
+ 665              	.LVL58:
+ 666              	.LFB82:
+ 262:../Core/Src/tee_client_api.c **** 
+ 263:../Core/Src/tee_client_api.c **** /**
+ 264:../Core/Src/tee_client_api.c ****  * @brief Function from global platform standards, you can check the documentation on page 40
+ 265:../Core/Src/tee_client_api.c ****  *
+ 266:../Core/Src/tee_client_api.c ****  * @param session TEEC_Session type struct
+ 267:../Core/Src/tee_client_api.c **** */
+ 268:../Core/Src/tee_client_api.c **** void TEEC_CloseSession(TEEC_Session* session)
+ 269:../Core/Src/tee_client_api.c **** {
+ 667              		.loc 1 269 1 is_stmt 1 view -0
+ 668              		.cfi_startproc
+ 669              		@ args = 0, pretend = 0, frame = 0
+ 670              		@ frame_needed = 0, uses_anonymous_args = 0
+ 671              		.loc 1 269 1 is_stmt 0 view .LVU176
+ 672 0000 10B5     		push	{r4, lr}
+ 673              	.LCFI4:
+ 674              		.cfi_def_cfa_offset 8
+ 675              		.cfi_offset 4, -8
+ 676              		.cfi_offset 14, -4
+ 270:../Core/Src/tee_client_api.c **** 	int param = 1; // default TA value
+ 677              		.loc 1 270 2 is_stmt 1 view .LVU177
+ 678              	.LVL59:
+ 271:../Core/Src/tee_client_api.c **** 
+ 272:../Core/Src/tee_client_api.c ****     // Check the session if it is valid or not
+ 273:../Core/Src/tee_client_api.c ****     if(!session){
+ 679              		.loc 1 273 5 view .LVU178
+ 680              		.loc 1 273 7 is_stmt 0 view .LVU179
+ 681 0002 40B1     		cbz	r0, .L54
+ 274:../Core/Src/tee_client_api.c ****         ERR_MSG("Session close err");
+ 275:../Core/Src/tee_client_api.c ****     }else{
+ 276:../Core/Src/tee_client_api.c ****         // Create a temporary variable to store the id of the context before resetting it
+ 277:../Core/Src/tee_client_api.c ****         // The id is used to identify the TA that is being closed
+ 278:../Core/Src/tee_client_api.c ****     	param = session->ctx->id;
+ 682              		.loc 1 278 6 is_stmt 1 view .LVU180
+ 683              		.loc 1 278 21 is_stmt 0 view .LVU181
+ 684 0004 0268     		ldr	r2, [r0]
+ 685              		.loc 1 278 26 view .LVU182
+ 686 0006 1268     		ldr	r2, [r2]
+ 687              	.LVL60:
+ 279:../Core/Src/tee_client_api.c ****         session->id = 0;
+ 688              		.loc 1 279 9 is_stmt 1 view .LVU183
+ 689              		.loc 1 279 21 is_stmt 0 view .LVU184
+ 690 0008 0021     		movs	r1, #0
+ 691 000a 4160     		str	r1, [r0, #4]
+ 692              	.LVL61:
+ 693              	.L52:
+ 280:../Core/Src/tee_client_api.c ****     }
+ARM GAS  Build/tee_client_api.s 			page 20
+
+
+ 281:../Core/Src/tee_client_api.c **** 
+ 282:../Core/Src/tee_client_api.c ****     // Temporary save the value of r4 register
+ 283:../Core/Src/tee_client_api.c ****     uint32_t temp_val_r4 = 0;
+ 694              		.loc 1 283 5 is_stmt 1 view .LVU185
+ 284:../Core/Src/tee_client_api.c ****    __asm__("MOV %[temp_val_r4], R4\n" : [temp_val_r4] "=r" (temp_val_r4));
+ 695              		.loc 1 284 4 view .LVU186
+ 696              		.syntax unified
+ 697              	@ 284 "../Core/Src/tee_client_api.c" 1
+ 698 000c 2346     		MOV r3, R4
+ 699              	
+ 700              	@ 0 "" 2
+ 701              	.LVL62:
+ 285:../Core/Src/tee_client_api.c **** 
+ 286:../Core/Src/tee_client_api.c ****     // Pass the parameter to the SVC
+ 287:../Core/Src/tee_client_api.c ****    __asm__("MOV R4, %[param]\n": : [param] "r" (param): "r4");
+ 702              		.loc 1 287 4 view .LVU187
+ 703              	@ 287 "../Core/Src/tee_client_api.c" 1
+ 704 000e 1446     		MOV R4, r2
+ 705              	
+ 706              	@ 0 "" 2
+ 288:../Core/Src/tee_client_api.c **** 
+ 289:../Core/Src/tee_client_api.c ****     INVOKE_SVC(FUNCTION_CLOSE_SESSION);
+ 707              		.loc 1 289 5 view .LVU188
+ 708              	@ 289 "../Core/Src/tee_client_api.c" 1
+ 709 0010 03DF     		svc #3
+ 710              	@ 0 "" 2
+ 290:../Core/Src/tee_client_api.c **** 
+ 291:../Core/Src/tee_client_api.c ****     // Restore the value of r4 register
+ 292:../Core/Src/tee_client_api.c ****     __asm__("MOV R4, %[temp_val_r4]\n": : [temp_val_r4] "r" (temp_val_r4): "r4");
+ 711              		.loc 1 292 5 view .LVU189
+ 712              	@ 292 "../Core/Src/tee_client_api.c" 1
+ 713 0012 1C46     		MOV R4, r3
+ 714              	
+ 715              	@ 0 "" 2
+ 293:../Core/Src/tee_client_api.c **** }
+ 716              		.loc 1 293 1 is_stmt 0 view .LVU190
+ 717              		.thumb
+ 718              		.syntax unified
+ 719 0014 10BD     		pop	{r4, pc}
+ 720              	.LVL63:
+ 721              	.L54:
+ 274:../Core/Src/tee_client_api.c ****     }else{
+ 722              		.loc 1 274 9 is_stmt 1 view .LVU191
+ 274:../Core/Src/tee_client_api.c ****     }else{
+ 723              		.loc 1 274 9 view .LVU192
+ 724 0016 044B     		ldr	r3, .L55
+ 725 0018 4FF48972 		mov	r2, #274
+ 726 001c 0349     		ldr	r1, .L55+4
+ 727 001e 0448     		ldr	r0, .L55+8
+ 728              	.LVL64:
+ 274:../Core/Src/tee_client_api.c ****     }else{
+ 729              		.loc 1 274 9 is_stmt 0 view .LVU193
+ 730 0020 FFF7FEFF 		bl	printf
+ 731              	.LVL65:
+ 274:../Core/Src/tee_client_api.c ****     }else{
+ 732              		.loc 1 274 9 is_stmt 1 view .LVU194
+ 274:../Core/Src/tee_client_api.c ****     }else{
+ARM GAS  Build/tee_client_api.s 			page 21
+
+
+ 733              		.loc 1 274 37 view .LVU195
+ 270:../Core/Src/tee_client_api.c **** 
+ 734              		.loc 1 270 6 is_stmt 0 view .LVU196
+ 735 0024 0122     		movs	r2, #1
+ 736 0026 F1E7     		b	.L52
+ 737              	.L56:
+ 738              		.align	2
+ 739              	.L55:
+ 740 0028 00000000 		.word	__func__.2
+ 741 002c 00000000 		.word	.LC0
+ 742 0030 00000000 		.word	.LC6
+ 743              		.cfi_endproc
+ 744              	.LFE82:
+ 746              		.section	.rodata.TEEC_InvokeCommand.str1.4,"aMS",%progbits,1
+ 747              		.align	2
+ 748              	.LC7:
+ 749 0000 1B5B303B 		.ascii	"\033[0;31mERROR: %s:%d:%s(): \"Null parameter err ("
+ 749      33316D45 
+ 749      52524F52 
+ 749      3A202573 
+ 749      3A25643A 
+ 750 002f 73657373 		.ascii	"session | context)\"\015\012\000"
+ 750      696F6E20 
+ 750      7C20636F 
+ 750      6E746578 
+ 750      7429220D 
+ 751 0045 000000   		.align	2
+ 752              	.LC8:
+ 753 0048 1B5B303B 		.ascii	"\033[0;31mERROR: %s:%d:%s(): \"Invalid session id\""
+ 753      33316D45 
+ 753      52524F52 
+ 753      3A202573 
+ 753      3A25643A 
+ 754 0076 0D0A00   		.ascii	"\015\012\000"
+ 755 0079 000000   		.align	2
+ 756              	.LC9:
+ 757 007c 1B5B303B 		.ascii	"\033[0;31mERROR: %s:%d:%s(): \"operation parameter "
+ 757      33316D45 
+ 757      52524F52 
+ 757      3A202573 
+ 757      3A25643A 
+ 758 00ab 6973206E 		.ascii	"is null\"\015\012\000"
+ 758      756C6C22 
+ 758      0D0A00
+ 759              		.section	.text.TEEC_InvokeCommand,"ax",%progbits
+ 760              		.align	1
+ 761              		.global	TEEC_InvokeCommand
+ 762              		.syntax unified
+ 763              		.thumb
+ 764              		.thumb_func
+ 766              	TEEC_InvokeCommand:
+ 767              	.LVL66:
+ 768              	.LFB83:
+ 294:../Core/Src/tee_client_api.c **** 
+ 295:../Core/Src/tee_client_api.c **** 
+ 296:../Core/Src/tee_client_api.c **** /**
+ 297:../Core/Src/tee_client_api.c ****  * @brief Function from global platform standards, you can check the documentation on page 40
+ARM GAS  Build/tee_client_api.s 			page 22
+
+
+ 298:../Core/Src/tee_client_api.c ****  *
+ 299:../Core/Src/tee_client_api.c ****  * @param session TEEC_Session type struct
+ 300:../Core/Src/tee_client_api.c ****  * @param command_id indicate whatever command you want to execure from the TA 
+ 301:../Core/Src/tee_client_api.c ****  * @param operation TEEC_Operation type struct, it contains payload of data
+ 302:../Core/Src/tee_client_api.c ****  * @param returnOrigin unused
+ 303:../Core/Src/tee_client_api.c ****  *
+ 304:../Core/Src/tee_client_api.c ****  * @return None
+ 305:../Core/Src/tee_client_api.c **** */
+ 306:../Core/Src/tee_client_api.c **** TEEC_Result TEEC_InvokeCommand(TEEC_Session* session,
+ 307:../Core/Src/tee_client_api.c ****                                     uint32_t command_id,
+ 308:../Core/Src/tee_client_api.c ****                                     TEEC_Operation* op,
+ 309:../Core/Src/tee_client_api.c ****                                     uint32_t* returnOrigin /*unused*/)
+ 310:../Core/Src/tee_client_api.c **** {
+ 769              		.loc 1 310 1 is_stmt 1 view -0
+ 770              		.cfi_startproc
+ 771              		@ args = 0, pretend = 0, frame = 0
+ 772              		@ frame_needed = 0, uses_anonymous_args = 0
+ 773              		.loc 1 310 1 is_stmt 0 view .LVU198
+ 774 0000 38B5     		push	{r3, r4, r5, lr}
+ 775              	.LCFI5:
+ 776              		.cfi_def_cfa_offset 16
+ 777              		.cfi_offset 3, -16
+ 778              		.cfi_offset 4, -12
+ 779              		.cfi_offset 5, -8
+ 780              		.cfi_offset 14, -4
+ 311:../Core/Src/tee_client_api.c ****     int ret_val = -1;
+ 781              		.loc 1 311 5 is_stmt 1 view .LVU199
+ 782              	.LVL67:
+ 312:../Core/Src/tee_client_api.c **** 
+ 313:../Core/Src/tee_client_api.c ****     // Check if session and session's ctx parameter are null
+ 314:../Core/Src/tee_client_api.c ****     if((!session) || (!session->ctx))
+ 783              		.loc 1 314 5 view .LVU200
+ 784              		.loc 1 314 7 is_stmt 0 view .LVU201
+ 785 0002 38B1     		cbz	r0, .L58
+ 786 0004 8446     		mov	ip, r0
+ 787              		.loc 1 314 31 discriminator 1 view .LVU202
+ 788 0006 0368     		ldr	r3, [r0]
+ 789              	.LVL68:
+ 790              		.loc 1 314 19 discriminator 1 view .LVU203
+ 791 0008 23B1     		cbz	r3, .L58
+ 315:../Core/Src/tee_client_api.c ****     {
+ 316:../Core/Src/tee_client_api.c ****         ERR_MSG("Null parameter err (session | context)");
+ 317:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 318:../Core/Src/tee_client_api.c ****     }
+ 319:../Core/Src/tee_client_api.c **** 
+ 320:../Core/Src/tee_client_api.c ****     // Check session if it is initalized, if id different from 0 that means it is initialized
+ 321:../Core/Src/tee_client_api.c ****     if(!session->id)
+ 792              		.loc 1 321 5 is_stmt 1 view .LVU204
+ 793              		.loc 1 321 16 is_stmt 0 view .LVU205
+ 794 000a 4368     		ldr	r3, [r0, #4]
+ 795              		.loc 1 321 7 view .LVU206
+ 796 000c 5BB1     		cbz	r3, .L67
+ 322:../Core/Src/tee_client_api.c ****     {
+ 323:../Core/Src/tee_client_api.c ****         ERR_MSG("Invalid session id");
+ 324:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 325:../Core/Src/tee_client_api.c ****     }
+ 326:../Core/Src/tee_client_api.c **** 
+ARM GAS  Build/tee_client_api.s 			page 23
+
+
+ 327:../Core/Src/tee_client_api.c ****     // Check if operation parameter is null
+ 328:../Core/Src/tee_client_api.c ****     if(!op)
+ 797              		.loc 1 328 5 is_stmt 1 view .LVU207
+ 798              		.loc 1 328 7 is_stmt 0 view .LVU208
+ 799 000e 9AB1     		cbz	r2, .L68
+ 800              	.LBB6:
+ 329:../Core/Src/tee_client_api.c ****     {
+ 330:../Core/Src/tee_client_api.c ****         ERR_MSG("operation parameter is null");
+ 331:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 332:../Core/Src/tee_client_api.c ****     }
+ 333:../Core/Src/tee_client_api.c **** 
+ 334:../Core/Src/tee_client_api.c ****     // Assign each operation params[index] parameter to internal operation each params[index] param
+ 335:../Core/Src/tee_client_api.c ****     for(int i=0; i<4; i++)
+ 801              		.loc 1 335 13 view .LVU209
+ 802 0010 0020     		movs	r0, #0
+ 803              	.LVL69:
+ 804              		.loc 1 335 13 view .LVU210
+ 805 0012 29E0     		b	.L62
+ 806              	.LVL70:
+ 807              	.L58:
+ 808              		.loc 1 335 13 view .LVU211
+ 809              	.LBE6:
+ 316:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 810              		.loc 1 316 9 is_stmt 1 view .LVU212
+ 316:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 811              		.loc 1 316 9 view .LVU213
+ 812 0014 234B     		ldr	r3, .L70
+ 813 0016 4FF49E72 		mov	r2, #316
+ 814              	.LVL71:
+ 316:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 815              		.loc 1 316 9 is_stmt 0 view .LVU214
+ 816 001a 2349     		ldr	r1, .L70+4
+ 817              	.LVL72:
+ 316:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 818              		.loc 1 316 9 view .LVU215
+ 819 001c 2348     		ldr	r0, .L70+8
+ 820              	.LVL73:
+ 316:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 821              		.loc 1 316 9 view .LVU216
+ 822 001e FFF7FEFF 		bl	printf
+ 823              	.LVL74:
+ 316:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 824              		.loc 1 316 9 is_stmt 1 view .LVU217
+ 316:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 825              		.loc 1 316 58 view .LVU218
+ 317:../Core/Src/tee_client_api.c ****     }
+ 826              		.loc 1 317 9 view .LVU219
+ 317:../Core/Src/tee_client_api.c ****     }
+ 827              		.loc 1 317 16 is_stmt 0 view .LVU220
+ 828 0022 0120     		movs	r0, #1
+ 829 0024 3BE0     		b	.L57
+ 830              	.LVL75:
+ 831              	.L67:
+ 323:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 832              		.loc 1 323 9 is_stmt 1 view .LVU221
+ 323:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 833              		.loc 1 323 9 view .LVU222
+ARM GAS  Build/tee_client_api.s 			page 24
+
+
+ 834 0026 1F4B     		ldr	r3, .L70
+ 835 0028 40F24312 		movw	r2, #323
+ 836              	.LVL76:
+ 323:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 837              		.loc 1 323 9 is_stmt 0 view .LVU223
+ 838 002c 1E49     		ldr	r1, .L70+4
+ 839              	.LVL77:
+ 323:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 840              		.loc 1 323 9 view .LVU224
+ 841 002e 2048     		ldr	r0, .L70+12
+ 842              	.LVL78:
+ 323:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 843              		.loc 1 323 9 view .LVU225
+ 844 0030 FFF7FEFF 		bl	printf
+ 845              	.LVL79:
+ 323:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 846              		.loc 1 323 9 is_stmt 1 view .LVU226
+ 323:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 847              		.loc 1 323 38 view .LVU227
+ 324:../Core/Src/tee_client_api.c ****     }
+ 848              		.loc 1 324 9 view .LVU228
+ 324:../Core/Src/tee_client_api.c ****     }
+ 849              		.loc 1 324 16 is_stmt 0 view .LVU229
+ 850 0034 0120     		movs	r0, #1
+ 851 0036 32E0     		b	.L57
+ 852              	.LVL80:
+ 853              	.L68:
+ 330:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 854              		.loc 1 330 9 is_stmt 1 view .LVU230
+ 330:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 855              		.loc 1 330 9 view .LVU231
+ 856 0038 1A4B     		ldr	r3, .L70
+ 857 003a 4FF4A572 		mov	r2, #330
+ 858              	.LVL81:
+ 330:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 859              		.loc 1 330 9 is_stmt 0 view .LVU232
+ 860 003e 1A49     		ldr	r1, .L70+4
+ 861              	.LVL82:
+ 330:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 862              		.loc 1 330 9 view .LVU233
+ 863 0040 1C48     		ldr	r0, .L70+16
+ 864              	.LVL83:
+ 330:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 865              		.loc 1 330 9 view .LVU234
+ 866 0042 FFF7FEFF 		bl	printf
+ 867              	.LVL84:
+ 330:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 868              		.loc 1 330 9 is_stmt 1 view .LVU235
+ 330:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 869              		.loc 1 330 47 view .LVU236
+ 331:../Core/Src/tee_client_api.c ****     }
+ 870              		.loc 1 331 9 view .LVU237
+ 331:../Core/Src/tee_client_api.c ****     }
+ 871              		.loc 1 331 16 is_stmt 0 view .LVU238
+ 872 0046 0120     		movs	r0, #1
+ 873 0048 29E0     		b	.L57
+ 874              	.LVL85:
+ARM GAS  Build/tee_client_api.s 			page 25
+
+
+ 875              	.L63:
+ 876              	.LBB7:
+ 336:../Core/Src/tee_client_api.c ****     {
+ 337:../Core/Src/tee_client_api.c ****         internal_op[session->ctx->id -1]->params[i] = &(op->params[i]);
+ 877              		.loc 1 337 9 is_stmt 1 discriminator 3 view .LVU239
+ 878              		.loc 1 337 28 is_stmt 0 discriminator 3 view .LVU240
+ 879 004a DCF80030 		ldr	r3, [ip]
+ 880              		.loc 1 337 33 discriminator 3 view .LVU241
+ 881 004e 1B68     		ldr	r3, [r3]
+ 882              		.loc 1 337 38 discriminator 3 view .LVU242
+ 883 0050 013B     		subs	r3, r3, #1
+ 884              		.loc 1 337 20 discriminator 3 view .LVU243
+ 885 0052 194C     		ldr	r4, .L70+20
+ 886 0054 54F82340 		ldr	r4, [r4, r3, lsl #2]
+ 887              		.loc 1 337 55 discriminator 3 view .LVU244
+ 888 0058 C0EBC003 		rsb	r3, r0, r0, lsl #3
+ 889 005c 9B00     		lsls	r3, r3, #2
+ 890 005e 0833     		adds	r3, r3, #8
+ 891 0060 1344     		add	r3, r3, r2
+ 892              		.loc 1 337 53 discriminator 3 view .LVU245
+ 893 0062 44F82030 		str	r3, [r4, r0, lsl #2]
+ 335:../Core/Src/tee_client_api.c ****     {
+ 894              		.loc 1 335 24 is_stmt 1 discriminator 3 view .LVU246
+ 895 0066 0130     		adds	r0, r0, #1
+ 896              	.LVL86:
+ 897              	.L62:
+ 335:../Core/Src/tee_client_api.c ****     {
+ 898              		.loc 1 335 19 discriminator 1 view .LVU247
+ 899 0068 0328     		cmp	r0, #3
+ 900 006a EEDD     		ble	.L63
+ 901              	.LBE7:
+ 338:../Core/Src/tee_client_api.c ****     }
+ 339:../Core/Src/tee_client_api.c ****     // Assign the paramtypes parameter to internal operation paramtypes parameter
+ 340:../Core/Src/tee_client_api.c ****     internal_op[session->ctx->id -1]->paramTypes = op->paramTypes;
+ 902              		.loc 1 340 5 view .LVU248
+ 903              		.loc 1 340 24 is_stmt 0 view .LVU249
+ 904 006c DCF80030 		ldr	r3, [ip]
+ 905              		.loc 1 340 29 view .LVU250
+ 906 0070 1B68     		ldr	r3, [r3]
+ 907              		.loc 1 340 34 view .LVU251
+ 908 0072 013B     		subs	r3, r3, #1
+ 909              		.loc 1 340 16 view .LVU252
+ 910 0074 104C     		ldr	r4, .L70+20
+ 911 0076 54F82330 		ldr	r3, [r4, r3, lsl #2]
+ 912              		.loc 1 340 54 view .LVU253
+ 913 007a 5268     		ldr	r2, [r2, #4]
+ 914              	.LVL87:
+ 915              		.loc 1 340 50 view .LVU254
+ 916 007c 1A61     		str	r2, [r3, #16]
+ 341:../Core/Src/tee_client_api.c **** 
+ 342:../Core/Src/tee_client_api.c ****     //Get internal_operation parameter address value, then pass it on r4 register
+ 343:../Core/Src/tee_client_api.c ****     // Temporarily store the value of r4 and r5 registers 
+ 344:../Core/Src/tee_client_api.c ****     uint32_t temp_val_r4 = 0, temp_val_r5;
+ 917              		.loc 1 344 5 is_stmt 1 view .LVU255
+ 918              	.LVL88:
+ 345:../Core/Src/tee_client_api.c ****     __asm__("MOV %[temp_val_r4], R4\n" : [temp_val_r4] "=r" (temp_val_r4));
+ 919              		.loc 1 345 5 view .LVU256
+ARM GAS  Build/tee_client_api.s 			page 26
+
+
+ 920              		.syntax unified
+ 921              	@ 345 "../Core/Src/tee_client_api.c" 1
+ 922 007e 2246     		MOV r2, R4
+ 923              	
+ 924              	@ 0 "" 2
+ 925              	.LVL89:
+ 346:../Core/Src/tee_client_api.c ****     __asm__("MOV %[temp_val_r5], R5\n" : [temp_val_r5] "=r" (temp_val_r5));
+ 926              		.loc 1 346 5 view .LVU257
+ 927              	@ 346 "../Core/Src/tee_client_api.c" 1
+ 928 0080 2B46     		MOV r3, R5
+ 929              	
+ 930              	@ 0 "" 2
+ 347:../Core/Src/tee_client_api.c ****     uint32_t *param_addr = internal_op[session->ctx->id -1];
+ 931              		.loc 1 347 5 view .LVU258
+ 932              		.loc 1 347 47 is_stmt 0 view .LVU259
+ 933              		.thumb
+ 934              		.syntax unified
+ 935 0082 DCF80000 		ldr	r0, [ip]
+ 936              	.LVL90:
+ 937              		.loc 1 347 52 view .LVU260
+ 938 0086 0068     		ldr	r0, [r0]
+ 939              		.loc 1 347 57 view .LVU261
+ 940 0088 0138     		subs	r0, r0, #1
+ 941              		.loc 1 347 15 view .LVU262
+ 942 008a 54F82000 		ldr	r0, [r4, r0, lsl #2]
+ 943              	.LVL91:
+ 348:../Core/Src/tee_client_api.c ****     
+ 349:../Core/Src/tee_client_api.c ****     // Pass parameters data structure in r4 register
+ 350:../Core/Src/tee_client_api.c ****     __asm__("MOV R4, %[param_addr]\n": : [param_addr] "r" (param_addr): "r4");
+ 944              		.loc 1 350 5 is_stmt 1 view .LVU263
+ 945              		.syntax unified
+ 946              	@ 350 "../Core/Src/tee_client_api.c" 1
+ 947 008e 0446     		MOV R4, r0
+ 948              	
+ 949              	@ 0 "" 2
+ 351:../Core/Src/tee_client_api.c ****     // Pass command_id in r5 register
+ 352:../Core/Src/tee_client_api.c ****     __asm__("MOV R5, %[command_id]\n": : [command_id] "r" (command_id): "r5");
+ 950              		.loc 1 352 5 view .LVU264
+ 951              	@ 352 "../Core/Src/tee_client_api.c" 1
+ 952 0090 0D46     		MOV R5, r1
+ 953              	
+ 954              	@ 0 "" 2
+ 353:../Core/Src/tee_client_api.c **** 
+ 354:../Core/Src/tee_client_api.c ****     // Call the SVC to pass the context
+ 355:../Core/Src/tee_client_api.c ****     INVOKE_SVC(FUNCTION_INVOKE_COMMAND);
+ 955              		.loc 1 355 5 view .LVU265
+ 956              	@ 355 "../Core/Src/tee_client_api.c" 1
+ 957 0092 04DF     		svc #4
+ 958              	@ 0 "" 2
+ 356:../Core/Src/tee_client_api.c **** 
+ 357:../Core/Src/tee_client_api.c ****     // Get the return value of the SVC call from the r4 register and restore the value of r4 and r5
+ 358:../Core/Src/tee_client_api.c ****     __asm__("MOV %0, r4" : "=r" (ret_val) : : "r4");
+ 959              		.loc 1 358 5 view .LVU266
+ 960              	@ 358 "../Core/Src/tee_client_api.c" 1
+ 961 0094 2146     		MOV r1, r4
+ 962              	@ 0 "" 2
+ 963              	.LVL92:
+ARM GAS  Build/tee_client_api.s 			page 27
+
+
+ 964              		.loc 1 358 5 is_stmt 0 view .LVU267
+ 965              		.thumb
+ 966              		.syntax unified
+ 967 0096 0846     		mov	r0, r1
+ 968              	.LVL93:
+ 359:../Core/Src/tee_client_api.c ****     __asm__("MOV R4, %[temp_val_r4]\n": : [temp_val_r4] "r" (temp_val_r4): "r4");
+ 969              		.loc 1 359 5 is_stmt 1 view .LVU268
+ 970              		.syntax unified
+ 971              	@ 359 "../Core/Src/tee_client_api.c" 1
+ 972 0098 1446     		MOV R4, r2
+ 973              	
+ 974              	@ 0 "" 2
+ 360:../Core/Src/tee_client_api.c ****     __asm__("MOV R5, %[temp_val_r5]\n": : [temp_val_r5] "r" (temp_val_r5): "r5");
+ 975              		.loc 1 360 5 view .LVU269
+ 976              	@ 360 "../Core/Src/tee_client_api.c" 1
+ 977 009a 1D46     		MOV R5, r3
+ 978              	
+ 979              	@ 0 "" 2
+ 361:../Core/Src/tee_client_api.c **** 
+ 362:../Core/Src/tee_client_api.c ****     // If the return value is different from TEE_SUCCESS, return TEE_FAILED
+ 363:../Core/Src/tee_client_api.c ****     if(ret_val != TEEC_SUCCESS)
+ 980              		.loc 1 363 5 view .LVU270
+ 981              		.loc 1 363 7 is_stmt 0 view .LVU271
+ 982              		.thumb
+ 983              		.syntax unified
+ 984 009c 01B9     		cbnz	r1, .L69
+ 985              	.LVL94:
+ 986              	.L57:
+ 364:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 365:../Core/Src/tee_client_api.c **** 
+ 366:../Core/Src/tee_client_api.c ****     return TEEC_SUCCESS;
+ 367:../Core/Src/tee_client_api.c **** }
+ 987              		.loc 1 367 1 view .LVU272
+ 988 009e 38BD     		pop	{r3, r4, r5, pc}
+ 989              	.LVL95:
+ 990              	.L69:
+ 364:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 991              		.loc 1 364 16 view .LVU273
+ 992 00a0 0120     		movs	r0, #1
+ 993              	.LVL96:
+ 364:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 994              		.loc 1 364 16 view .LVU274
+ 995 00a2 FCE7     		b	.L57
+ 996              	.L71:
+ 997              		.align	2
+ 998              	.L70:
+ 999 00a4 00000000 		.word	__func__.1
+ 1000 00a8 00000000 		.word	.LC0
+ 1001 00ac 00000000 		.word	.LC7
+ 1002 00b0 48000000 		.word	.LC8
+ 1003 00b4 7C000000 		.word	.LC9
+ 1004 00b8 00000000 		.word	internal_op
+ 1005              		.cfi_endproc
+ 1006              	.LFE83:
+ 1008              		.section	.rodata.TEEC_AllocateSharedMemory.str1.4,"aMS",%progbits,1
+ 1009              		.align	2
+ 1010              	.LC10:
+ARM GAS  Build/tee_client_api.s 			page 28
+
+
+ 1011 0000 1B5B303B 		.ascii	"\033[0;31mERROR: %s:%d:%s(): \"Invalid parameter\"\015"
+ 1011      33316D45 
+ 1011      52524F52 
+ 1011      3A202573 
+ 1011      3A25643A 
+ 1012 002e 0A00     		.ascii	"\012\000"
+ 1013              		.align	2
+ 1014              	.LC11:
+ 1015 0030 1B5B303B 		.ascii	"\033[0;31mERROR: %s:%d:%s(): \"Memory limit has bee"
+ 1015      33316D45 
+ 1015      52524F52 
+ 1015      3A202573 
+ 1015      3A25643A 
+ 1016 005f 6E207265 		.ascii	"n reached\"\015\012\000"
+ 1016      61636865 
+ 1016      64220D0A 
+ 1016      00
+ 1017              		.align	2
+ 1018              	.LC12:
+ 1019 006c 1B5B303B 		.ascii	"\033[0;31mERROR: %s:%d:%s(): \"Shared memory can no"
+ 1019      33316D45 
+ 1019      52524F52 
+ 1019      3A202573 
+ 1019      3A25643A 
+ 1020 009b 7420616C 		.ascii	"t allocate\"\015\012\000"
+ 1020      6C6F6361 
+ 1020      7465220D 
+ 1020      0A00
+ 1021              		.section	.text.TEEC_AllocateSharedMemory,"ax",%progbits
+ 1022              		.align	1
+ 1023              		.global	TEEC_AllocateSharedMemory
+ 1024              		.syntax unified
+ 1025              		.thumb
+ 1026              		.thumb_func
+ 1028              	TEEC_AllocateSharedMemory:
+ 1029              	.LVL97:
+ 1030              	.LFB84:
+ 368:../Core/Src/tee_client_api.c **** 
+ 369:../Core/Src/tee_client_api.c **** /**
+ 370:../Core/Src/tee_client_api.c **** * @brief Function from Global Platform Client API used to allocate shared memory: 
+ 371:../Core/Src/tee_client_api.c **** * - the memory is allocated using the resources of the client application
+ 372:../Core/Src/tee_client_api.c **** * - the memory is also accessible by the TAs and TEE
+ 373:../Core/Src/tee_client_api.c **** *
+ 374:../Core/Src/tee_client_api.c **** * @param ctx TEEC_Context type struct
+ 375:../Core/Src/tee_client_api.c **** * @param shm TEEC_SharedMemory struct to allocate memory for the TA
+ 376:../Core/Src/tee_client_api.c **** *
+ 377:../Core/Src/tee_client_api.c **** * @return if it is success, return TEEC_SUCCESS(0) else TEEC_FAILED(1)
+ 378:../Core/Src/tee_client_api.c **** */
+ 379:../Core/Src/tee_client_api.c **** TEEC_Result TEEC_AllocateSharedMemory(TEEC_Context* ctx,
+ 380:../Core/Src/tee_client_api.c ****                                       TEEC_SharedMemory* shm)
+ 381:../Core/Src/tee_client_api.c **** {   
+ 1031              		.loc 1 381 1 is_stmt 1 view -0
+ 1032              		.cfi_startproc
+ 1033              		@ args = 0, pretend = 0, frame = 0
+ 1034              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1035              		.loc 1 381 1 is_stmt 0 view .LVU276
+ 1036 0000 70B5     		push	{r4, r5, r6, lr}
+ARM GAS  Build/tee_client_api.s 			page 29
+
+
+ 1037              	.LCFI6:
+ 1038              		.cfi_def_cfa_offset 16
+ 1039              		.cfi_offset 4, -16
+ 1040              		.cfi_offset 5, -12
+ 1041              		.cfi_offset 6, -8
+ 1042              		.cfi_offset 14, -4
+ 382:../Core/Src/tee_client_api.c ****     // Check if the shared memory and the context are valid
+ 383:../Core/Src/tee_client_api.c ****     if((!shm) || (!ctx)){
+ 1043              		.loc 1 383 5 is_stmt 1 view .LVU277
+ 1044              		.loc 1 383 7 is_stmt 0 view .LVU278
+ 1045 0002 D9B1     		cbz	r1, .L73
+ 1046 0004 0D46     		mov	r5, r1
+ 1047              		.loc 1 383 15 discriminator 1 view .LVU279
+ 1048 0006 C8B1     		cbz	r0, .L73
+ 384:../Core/Src/tee_client_api.c ****         ERR_MSG("Invalid parameter");
+ 385:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 386:../Core/Src/tee_client_api.c ****     }
+ 387:../Core/Src/tee_client_api.c **** 
+ 388:../Core/Src/tee_client_api.c ****     // Check if the context is valid or not
+ 389:../Core/Src/tee_client_api.c ****     if(ctx->id == 0)
+ 1049              		.loc 1 389 5 is_stmt 1 view .LVU280
+ 1050              		.loc 1 389 11 is_stmt 0 view .LVU281
+ 1051 0008 0368     		ldr	r3, [r0]
+ 1052              		.loc 1 389 7 view .LVU282
+ 1053 000a 03B3     		cbz	r3, .L80
+ 390:../Core/Src/tee_client_api.c ****     {
+ 391:../Core/Src/tee_client_api.c ****         // Invalid context id, contex is not initialized
+ 392:../Core/Src/tee_client_api.c ****         ERR_MSG("Invalid context id");
+ 393:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 394:../Core/Src/tee_client_api.c ****     }
+ 395:../Core/Src/tee_client_api.c **** 
+ 396:../Core/Src/tee_client_api.c ****     // Check if the shared memory size is valid or not (greater than the maximum size of 4KB)
+ 397:../Core/Src/tee_client_api.c ****     if(SHARED_MEMORY_MAX_SIZE < (shm->size + used_shm_size)){
+ 1054              		.loc 1 397 5 is_stmt 1 view .LVU283
+ 1055              		.loc 1 397 37 is_stmt 0 view .LVU284
+ 1056 000c 4E68     		ldr	r6, [r1, #4]
+ 1057              		.loc 1 397 44 view .LVU285
+ 1058 000e 1D4B     		ldr	r3, .L83
+ 1059 0010 1C68     		ldr	r4, [r3]
+ 1060 0012 3319     		adds	r3, r6, r4
+ 1061              		.loc 1 397 7 view .LVU286
+ 1062 0014 B3F5805F 		cmp	r3, #4096
+ 1063 0018 22D8     		bhi	.L81
+ 398:../Core/Src/tee_client_api.c ****         // Size err, not enough memory
+ 399:../Core/Src/tee_client_api.c ****         ERR_MSG("Memory limit has been reached");
+ 400:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 401:../Core/Src/tee_client_api.c ****     }
+ 402:../Core/Src/tee_client_api.c **** 
+ 403:../Core/Src/tee_client_api.c ****     // Allocate required size of memory
+ 404:../Core/Src/tee_client_api.c ****     shm->buffer = (uint8_t*)calloc(shm->size + 1, sizeof(uint8_t));
+ 1064              		.loc 1 404 5 is_stmt 1 view .LVU287
+ 1065              		.loc 1 404 29 is_stmt 0 view .LVU288
+ 1066 001a 0121     		movs	r1, #1
+ 1067              	.LVL98:
+ 1068              		.loc 1 404 29 view .LVU289
+ 1069 001c 7018     		adds	r0, r6, r1
+ 1070              	.LVL99:
+ARM GAS  Build/tee_client_api.s 			page 30
+
+
+ 1071              		.loc 1 404 29 view .LVU290
+ 1072 001e FFF7FEFF 		bl	calloc
+ 1073              	.LVL100:
+ 1074              		.loc 1 404 17 view .LVU291
+ 1075 0022 2860     		str	r0, [r5]
+ 405:../Core/Src/tee_client_api.c ****     if(!shm->buffer){
+ 1076              		.loc 1 405 5 is_stmt 1 view .LVU292
+ 1077              		.loc 1 405 7 is_stmt 0 view .LVU293
+ 1078 0024 28B3     		cbz	r0, .L82
+ 406:../Core/Src/tee_client_api.c ****         // Shared memory can not be allocated
+ 407:../Core/Src/tee_client_api.c ****         ERR_MSG("Shared memory can not allocate");
+ 408:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 409:../Core/Src/tee_client_api.c ****     }
+ 410:../Core/Src/tee_client_api.c **** 
+ 411:../Core/Src/tee_client_api.c ****     // Fill the shared memory buffer with zero
+ 412:../Core/Src/tee_client_api.c ****     memset(shm->buffer, 0, shm->size);
+ 1079              		.loc 1 412 5 is_stmt 1 view .LVU294
+ 1080 0026 3246     		mov	r2, r6
+ 1081 0028 0021     		movs	r1, #0
+ 1082 002a FFF7FEFF 		bl	memset
+ 1083              	.LVL101:
+ 413:../Core/Src/tee_client_api.c **** 
+ 414:../Core/Src/tee_client_api.c ****     // Update the used shared memory size
+ 415:../Core/Src/tee_client_api.c ****     used_shm_size += shm->size + 8;
+ 1084              		.loc 1 415 5 view .LVU295
+ 1085              		.loc 1 415 25 is_stmt 0 view .LVU296
+ 1086 002e 6B68     		ldr	r3, [r5, #4]
+ 1087              		.loc 1 415 19 view .LVU297
+ 1088 0030 1C44     		add	r4, r4, r3
+ 1089 0032 0834     		adds	r4, r4, #8
+ 1090 0034 134B     		ldr	r3, .L83
+ 1091 0036 1C60     		str	r4, [r3]
+ 416:../Core/Src/tee_client_api.c **** 
+ 417:../Core/Src/tee_client_api.c ****     return TEEC_SUCCESS;
+ 1092              		.loc 1 417 5 is_stmt 1 view .LVU298
+ 1093              		.loc 1 417 12 is_stmt 0 view .LVU299
+ 1094 0038 0020     		movs	r0, #0
+ 1095              	.LVL102:
+ 1096              	.L72:
+ 418:../Core/Src/tee_client_api.c **** }
+ 1097              		.loc 1 418 1 view .LVU300
+ 1098 003a 70BD     		pop	{r4, r5, r6, pc}
+ 1099              	.LVL103:
+ 1100              	.L73:
+ 384:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1101              		.loc 1 384 9 is_stmt 1 view .LVU301
+ 384:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1102              		.loc 1 384 9 view .LVU302
+ 1103 003c 124B     		ldr	r3, .L83+4
+ 1104 003e 4FF4C072 		mov	r2, #384
+ 1105 0042 1249     		ldr	r1, .L83+8
+ 1106              	.LVL104:
+ 384:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1107              		.loc 1 384 9 is_stmt 0 view .LVU303
+ 1108 0044 1248     		ldr	r0, .L83+12
+ 1109              	.LVL105:
+ 384:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ARM GAS  Build/tee_client_api.s 			page 31
+
+
+ 1110              		.loc 1 384 9 view .LVU304
+ 1111 0046 FFF7FEFF 		bl	printf
+ 1112              	.LVL106:
+ 384:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1113              		.loc 1 384 9 is_stmt 1 view .LVU305
+ 384:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1114              		.loc 1 384 37 view .LVU306
+ 385:../Core/Src/tee_client_api.c ****     }
+ 1115              		.loc 1 385 9 view .LVU307
+ 385:../Core/Src/tee_client_api.c ****     }
+ 1116              		.loc 1 385 16 is_stmt 0 view .LVU308
+ 1117 004a 0120     		movs	r0, #1
+ 1118 004c F5E7     		b	.L72
+ 1119              	.LVL107:
+ 1120              	.L80:
+ 392:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1121              		.loc 1 392 9 is_stmt 1 view .LVU309
+ 392:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1122              		.loc 1 392 9 view .LVU310
+ 1123 004e 0E4B     		ldr	r3, .L83+4
+ 1124 0050 4FF4C472 		mov	r2, #392
+ 1125 0054 0D49     		ldr	r1, .L83+8
+ 1126              	.LVL108:
+ 392:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1127              		.loc 1 392 9 is_stmt 0 view .LVU311
+ 1128 0056 0F48     		ldr	r0, .L83+16
+ 1129              	.LVL109:
+ 392:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1130              		.loc 1 392 9 view .LVU312
+ 1131 0058 FFF7FEFF 		bl	printf
+ 1132              	.LVL110:
+ 392:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1133              		.loc 1 392 9 is_stmt 1 view .LVU313
+ 392:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1134              		.loc 1 392 38 view .LVU314
+ 393:../Core/Src/tee_client_api.c ****     }
+ 1135              		.loc 1 393 9 view .LVU315
+ 393:../Core/Src/tee_client_api.c ****     }
+ 1136              		.loc 1 393 16 is_stmt 0 view .LVU316
+ 1137 005c 0120     		movs	r0, #1
+ 1138 005e ECE7     		b	.L72
+ 1139              	.LVL111:
+ 1140              	.L81:
+ 399:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1141              		.loc 1 399 9 is_stmt 1 view .LVU317
+ 399:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1142              		.loc 1 399 9 view .LVU318
+ 1143 0060 094B     		ldr	r3, .L83+4
+ 1144 0062 40F28F12 		movw	r2, #399
+ 1145 0066 0949     		ldr	r1, .L83+8
+ 1146              	.LVL112:
+ 399:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1147              		.loc 1 399 9 is_stmt 0 view .LVU319
+ 1148 0068 0B48     		ldr	r0, .L83+20
+ 1149              	.LVL113:
+ 399:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1150              		.loc 1 399 9 view .LVU320
+ARM GAS  Build/tee_client_api.s 			page 32
+
+
+ 1151 006a FFF7FEFF 		bl	printf
+ 1152              	.LVL114:
+ 399:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1153              		.loc 1 399 9 is_stmt 1 view .LVU321
+ 399:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1154              		.loc 1 399 49 view .LVU322
+ 400:../Core/Src/tee_client_api.c ****     }
+ 1155              		.loc 1 400 9 view .LVU323
+ 400:../Core/Src/tee_client_api.c ****     }
+ 1156              		.loc 1 400 16 is_stmt 0 view .LVU324
+ 1157 006e 0120     		movs	r0, #1
+ 1158 0070 E3E7     		b	.L72
+ 1159              	.L82:
+ 407:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1160              		.loc 1 407 9 is_stmt 1 view .LVU325
+ 407:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1161              		.loc 1 407 9 view .LVU326
+ 1162 0072 054B     		ldr	r3, .L83+4
+ 1163 0074 40F29712 		movw	r2, #407
+ 1164 0078 0449     		ldr	r1, .L83+8
+ 1165 007a 0848     		ldr	r0, .L83+24
+ 1166 007c FFF7FEFF 		bl	printf
+ 1167              	.LVL115:
+ 407:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1168              		.loc 1 407 9 view .LVU327
+ 407:../Core/Src/tee_client_api.c ****         return TEEC_FAILED;
+ 1169              		.loc 1 407 50 view .LVU328
+ 408:../Core/Src/tee_client_api.c ****     }
+ 1170              		.loc 1 408 9 view .LVU329
+ 408:../Core/Src/tee_client_api.c ****     }
+ 1171              		.loc 1 408 16 is_stmt 0 view .LVU330
+ 1172 0080 0120     		movs	r0, #1
+ 1173 0082 DAE7     		b	.L72
+ 1174              	.L84:
+ 1175              		.align	2
+ 1176              	.L83:
+ 1177 0084 00000000 		.word	used_shm_size
+ 1178 0088 00000000 		.word	__func__.0
+ 1179 008c 00000000 		.word	.LC0
+ 1180 0090 00000000 		.word	.LC10
+ 1181 0094 50000000 		.word	.LC2
+ 1182 0098 30000000 		.word	.LC11
+ 1183 009c 6C000000 		.word	.LC12
+ 1184              		.cfi_endproc
+ 1185              	.LFE84:
+ 1187              		.section	.text.TEEC_ReleaseSharedMemory,"ax",%progbits
+ 1188              		.align	1
+ 1189              		.global	TEEC_ReleaseSharedMemory
+ 1190              		.syntax unified
+ 1191              		.thumb
+ 1192              		.thumb_func
+ 1194              	TEEC_ReleaseSharedMemory:
+ 1195              	.LVL116:
+ 1196              	.LFB85:
+ 419:../Core/Src/tee_client_api.c **** 
+ 420:../Core/Src/tee_client_api.c **** /**
+ 421:../Core/Src/tee_client_api.c **** * @brief Function from Global Platform Client API used to release previously allocated shared memor
+ARM GAS  Build/tee_client_api.s 			page 33
+
+
+ 422:../Core/Src/tee_client_api.c **** *
+ 423:../Core/Src/tee_client_api.c **** * @param shm TEEC_SharedMemory struct to allocate memory for the TA
+ 424:../Core/Src/tee_client_api.c **** *
+ 425:../Core/Src/tee_client_api.c **** * @return if it is success, return TEEC_SUCCESS(0) else TEEC_FAILED(1)
+ 426:../Core/Src/tee_client_api.c **** */
+ 427:../Core/Src/tee_client_api.c **** void TEEC_ReleaseSharedMemory(TEEC_SharedMemory *shm)
+ 428:../Core/Src/tee_client_api.c **** {
+ 1197              		.loc 1 428 1 is_stmt 1 view -0
+ 1198              		.cfi_startproc
+ 1199              		@ args = 0, pretend = 0, frame = 0
+ 1200              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1201              		.loc 1 428 1 is_stmt 0 view .LVU332
+ 1202 0000 10B5     		push	{r4, lr}
+ 1203              	.LCFI7:
+ 1204              		.cfi_def_cfa_offset 8
+ 1205              		.cfi_offset 4, -8
+ 1206              		.cfi_offset 14, -4
+ 1207 0002 0446     		mov	r4, r0
+ 429:../Core/Src/tee_client_api.c ****     // If shared memory payload is not equal null, then free the memory area and update the used sh
+ 430:../Core/Src/tee_client_api.c ****     if(shm->buffer)
+ 1208              		.loc 1 430 5 is_stmt 1 view .LVU333
+ 1209              		.loc 1 430 11 is_stmt 0 view .LVU334
+ 1210 0004 0068     		ldr	r0, [r0]
+ 1211              	.LVL117:
+ 1212              		.loc 1 430 7 view .LVU335
+ 1213 0006 38B1     		cbz	r0, .L85
+ 431:../Core/Src/tee_client_api.c ****     {
+ 432:../Core/Src/tee_client_api.c ****         free(shm->buffer);
+ 1214              		.loc 1 432 9 is_stmt 1 view .LVU336
+ 1215 0008 FFF7FEFF 		bl	free
+ 1216              	.LVL118:
+ 433:../Core/Src/tee_client_api.c ****         used_shm_size = used_shm_size - (shm->size + 8);
+ 1217              		.loc 1 433 9 view .LVU337
+ 1218              		.loc 1 433 45 is_stmt 0 view .LVU338
+ 1219 000c 6168     		ldr	r1, [r4, #4]
+ 1220              		.loc 1 433 39 view .LVU339
+ 1221 000e 034A     		ldr	r2, .L88
+ 1222 0010 1368     		ldr	r3, [r2]
+ 1223 0012 5B1A     		subs	r3, r3, r1
+ 1224 0014 083B     		subs	r3, r3, #8
+ 1225              		.loc 1 433 23 view .LVU340
+ 1226 0016 1360     		str	r3, [r2]
+ 434:../Core/Src/tee_client_api.c ****     }
+ 435:../Core/Src/tee_client_api.c **** 
+ 436:../Core/Src/tee_client_api.c ****     //If used shared memory size is less than 0 due to before operation, then reset it to 0
+ 437:../Core/Src/tee_client_api.c ****     if(used_shm_size < 0)
+ 1227              		.loc 1 437 5 is_stmt 1 view .LVU341
+ 1228              	.L85:
+ 438:../Core/Src/tee_client_api.c ****         used_shm_size = 0;
+ 439:../Core/Src/tee_client_api.c **** }...
+ 1229              		.loc 1 439 1 is_stmt 0 view .LVU342
+ 1230 0018 10BD     		pop	{r4, pc}
+ 1231              	.LVL119:
+ 1232              	.L89:
+ 1233              		.loc 1 439 1 view .LVU343
+ 1234 001a 00BF     		.align	2
+ 1235              	.L88:
+ARM GAS  Build/tee_client_api.s 			page 34
+
+
+ 1236 001c 00000000 		.word	used_shm_size
+ 1237              		.cfi_endproc
+ 1238              	.LFE85:
+ 1240              		.section	.rodata.__func__.0,"a"
+ 1241              		.align	2
+ 1244              	__func__.0:
+ 1245 0000 54454543 		.ascii	"TEEC_AllocateSharedMemory\000"
+ 1245      5F416C6C 
+ 1245      6F636174 
+ 1245      65536861 
+ 1245      7265644D 
+ 1246              		.section	.rodata.__func__.1,"a"
+ 1247              		.align	2
+ 1250              	__func__.1:
+ 1251 0000 54454543 		.ascii	"TEEC_InvokeCommand\000"
+ 1251      5F496E76 
+ 1251      6F6B6543 
+ 1251      6F6D6D61 
+ 1251      6E6400
+ 1252              		.section	.rodata.__func__.2,"a"
+ 1253              		.align	2
+ 1256              	__func__.2:
+ 1257 0000 54454543 		.ascii	"TEEC_CloseSession\000"
+ 1257      5F436C6F 
+ 1257      73655365 
+ 1257      7373696F 
+ 1257      6E00
+ 1258              		.section	.rodata.__func__.3,"a"
+ 1259              		.align	2
+ 1262              	__func__.3:
+ 1263 0000 63686563 		.ascii	"check_context\000"
+ 1263      6B5F636F 
+ 1263      6E746578 
+ 1263      7400
+ 1264              		.section	.rodata.__func__.4,"a"
+ 1265              		.align	2
+ 1268              	__func__.4:
+ 1269 0000 54454543 		.ascii	"TEEC_OpenSession\000"
+ 1269      5F4F7065 
+ 1269      6E536573 
+ 1269      73696F6E 
+ 1269      00
+ 1270              		.section	.rodata.__func__.5,"a"
+ 1271              		.align	2
+ 1274              	__func__.5:
+ 1275 0000 54454543 		.ascii	"TEEC_FinalizeContext\000"
+ 1275      5F46696E 
+ 1275      616C697A 
+ 1275      65436F6E 
+ 1275      74657874 
+ 1276              		.section	.rodata.__func__.6,"a"
+ 1277              		.align	2
+ 1280              	__func__.6:
+ 1281 0000 54454543 		.ascii	"TEEC_InitializeContext\000"
+ 1281      5F496E69 
+ 1281      7469616C 
+ 1281      697A6543 
+ARM GAS  Build/tee_client_api.s 			page 35
+
+
+ 1281      6F6E7465 
+ 1282              		.section	.bss.used_shm_size,"aw",%nobits
+ 1283              		.align	2
+ 1286              	used_shm_size:
+ 1287 0000 00000000 		.space	4
+ 1288              		.global	internal_op
+ 1289              		.section	.bss.internal_op,"aw",%nobits
+ 1290              		.align	2
+ 1293              	internal_op:
+ 1294 0000 00000000 		.space	8
+ 1294      00000000 
+ 1295              		.text
+ 1296              	.Letext0:
+ 1297              		.file 2 "/home/emanuele/st/stm32cubeide_1.15.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-
+ 1298              		.file 3 "/home/emanuele/st/stm32cubeide_1.15.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-
+ 1299              		.file 4 "/home/emanuele/st/stm32cubeide_1.15.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-
+ 1300              		.file 5 "../Core/Inc/tee_common.h"
+ 1301              		.file 6 "/home/emanuele/st/stm32cubeide_1.15.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-
+ 1302              		.file 7 "/home/emanuele/st/stm32cubeide_1.15.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-
+ 1303              		.file 8 "/home/emanuele/st/stm32cubeide_1.15.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-
+ 1304              		.file 9 "<built-in>"
+ARM GAS  Build/tee_client_api.s 			page 36
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 tee_client_api.c
+Build/tee_client_api.s:19     .rodata.check_context.str1.4:00000000 $d
+Build/tee_client_api.s:31     .text.check_context:00000000 $t
+Build/tee_client_api.s:36     .text.check_context:00000000 check_context
+Build/tee_client_api.s:103    .text.check_context:00000030 $d
+Build/tee_client_api.s:1262   .rodata.__func__.3:00000000 __func__.3
+Build/tee_client_api.s:111    .text.get_internalOperation:00000000 $t
+Build/tee_client_api.s:117    .text.get_internalOperation:00000000 get_internalOperation
+Build/tee_client_api.s:146    .text.get_internalOperation:00000010 $d
+Build/tee_client_api.s:1293   .bss.internal_op:00000000 internal_op
+Build/tee_client_api.s:151    .rodata.TEEC_InitializeContext.str1.4:00000000 $d
+Build/tee_client_api.s:156    .text.TEEC_InitializeContext:00000000 $t
+Build/tee_client_api.s:162    .text.TEEC_InitializeContext:00000000 TEEC_InitializeContext
+Build/tee_client_api.s:307    .text.TEEC_InitializeContext:00000058 $d
+Build/tee_client_api.s:1280   .rodata.__func__.6:00000000 __func__.6
+Build/tee_client_api.s:315    .rodata.TEEC_FinalizeContext.str1.4:00000000 $d
+Build/tee_client_api.s:320    .text.TEEC_FinalizeContext:00000000 $t
+Build/tee_client_api.s:326    .text.TEEC_FinalizeContext:00000000 TEEC_FinalizeContext
+Build/tee_client_api.s:418    .text.TEEC_FinalizeContext:00000038 $d
+Build/tee_client_api.s:1274   .rodata.__func__.5:00000000 __func__.5
+Build/tee_client_api.s:426    .rodata.TEEC_OpenSession.str1.4:00000000 $d
+Build/tee_client_api.s:431    .text.TEEC_OpenSession:00000000 $t
+Build/tee_client_api.s:437    .text.TEEC_OpenSession:00000000 TEEC_OpenSession
+Build/tee_client_api.s:645    .text.TEEC_OpenSession:000000b0 $d
+Build/tee_client_api.s:1268   .rodata.__func__.4:00000000 __func__.4
+Build/tee_client_api.s:653    .rodata.TEEC_CloseSession.str1.4:00000000 $d
+Build/tee_client_api.s:658    .text.TEEC_CloseSession:00000000 $t
+Build/tee_client_api.s:664    .text.TEEC_CloseSession:00000000 TEEC_CloseSession
+Build/tee_client_api.s:740    .text.TEEC_CloseSession:00000028 $d
+Build/tee_client_api.s:1256   .rodata.__func__.2:00000000 __func__.2
+Build/tee_client_api.s:747    .rodata.TEEC_InvokeCommand.str1.4:00000000 $d
+Build/tee_client_api.s:760    .text.TEEC_InvokeCommand:00000000 $t
+Build/tee_client_api.s:766    .text.TEEC_InvokeCommand:00000000 TEEC_InvokeCommand
+Build/tee_client_api.s:999    .text.TEEC_InvokeCommand:000000a4 $d
+Build/tee_client_api.s:1250   .rodata.__func__.1:00000000 __func__.1
+Build/tee_client_api.s:1009   .rodata.TEEC_AllocateSharedMemory.str1.4:00000000 $d
+Build/tee_client_api.s:1022   .text.TEEC_AllocateSharedMemory:00000000 $t
+Build/tee_client_api.s:1028   .text.TEEC_AllocateSharedMemory:00000000 TEEC_AllocateSharedMemory
+Build/tee_client_api.s:1177   .text.TEEC_AllocateSharedMemory:00000084 $d
+Build/tee_client_api.s:1286   .bss.used_shm_size:00000000 used_shm_size
+Build/tee_client_api.s:1244   .rodata.__func__.0:00000000 __func__.0
+Build/tee_client_api.s:1188   .text.TEEC_ReleaseSharedMemory:00000000 $t
+Build/tee_client_api.s:1194   .text.TEEC_ReleaseSharedMemory:00000000 TEEC_ReleaseSharedMemory
+Build/tee_client_api.s:1236   .text.TEEC_ReleaseSharedMemory:0000001c $d
+Build/tee_client_api.s:1241   .rodata.__func__.0:00000000 $d
+Build/tee_client_api.s:1247   .rodata.__func__.1:00000000 $d
+Build/tee_client_api.s:1253   .rodata.__func__.2:00000000 $d
+Build/tee_client_api.s:1259   .rodata.__func__.3:00000000 $d
+Build/tee_client_api.s:1265   .rodata.__func__.4:00000000 $d
+Build/tee_client_api.s:1271   .rodata.__func__.5:00000000 $d
+Build/tee_client_api.s:1277   .rodata.__func__.6:00000000 $d
+Build/tee_client_api.s:1283   .bss.used_shm_size:00000000 $d
+Build/tee_client_api.s:1290   .bss.internal_op:00000000 $d
+
+UNDEFINED SYMBOLS
+printf
+ARM GAS  Build/tee_client_api.s 			page 37
+
+
+calloc
+free
+memset

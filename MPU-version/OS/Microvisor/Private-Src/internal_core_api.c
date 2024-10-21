@@ -595,8 +595,15 @@ TEE_Result internal_TEE_WriteObjectData(TEE_ObjectHandle object,
     // The mechanism in the documentation assume that there is a file system and overwrited data will start at the current position
     // However there is not fs in this case, and for now, if the buffer is already allocated, do not overwrite
 
-    if(!obj->buffer)
+    if(obj->buffer) { // Check if the buffer is already allocated (object already exists)
         return TEE_FAILED;
+    } else {
+        obj->buffer = (char*)malloc(size * sizeof(char));
+        if(!obj->buffer){
+            ERR_MSG("Buffer allocation failed");
+            return TEE_FAILED;
+        }
+    }
 
     if(obj->obj_storage_type == TEE_OBJ_TYPE_PERSISTENT) // Check if it is a persistent object
     {
@@ -750,9 +757,13 @@ TEE_Result internal_TEE_OpenPersistentObject(uint32_t storageID,
 
         flash_internalRead((uint8_t*)temp_buff, total_size - free_size, start_addr);
 
-        int ret = flash_readObject((const char*)temp_buff, total_size - free_size, temp_obj->obj_id, NULL, 0);
+        temp_obj->buffer = (char*)malloc(temp_obj->len * sizeof(char));
+
+        int ret = flash_readObject((const char*)temp_buff, total_size - free_size, temp_obj->obj_id, temp_obj->buffer , &temp_obj->len);
         if(ret <= 0)
             return TEE_FAILED;
+
+        *object = (void*)temp_obj;
 
         return TEE_SUCCESS;
     }

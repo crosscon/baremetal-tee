@@ -1,0 +1,9 @@
+../Core/Src/tee_client_api.c:33:23:get_internalOperation	16	static
+../Core/Src/tee_client_api.c:53:20:check_context	16	static
+../Core/Src/tee_client_api.c:82:13:TEEC_InitializeContext	40	static,ignoring_inline_asm
+../Core/Src/tee_client_api.c:146:6:TEEC_FinalizeContext	32	static,ignoring_inline_asm
+../Core/Src/tee_client_api.c:188:13:TEEC_OpenSession	56	static,ignoring_inline_asm
+../Core/Src/tee_client_api.c:268:6:TEEC_CloseSession	32	static,ignoring_inline_asm
+../Core/Src/tee_client_api.c:306:13:TEEC_InvokeCommand	56	static,ignoring_inline_asm
+../Core/Src/tee_client_api.c:379:13:TEEC_AllocateSharedMemory	16	static
+../Core/Src/tee_client_api.c:427:6:TEEC_ReleaseSharedMemory	16	static
