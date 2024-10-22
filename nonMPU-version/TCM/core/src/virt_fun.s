@@ -354,7 +354,7 @@ write_subcx_fun:
     RET
 
 .stop:
-    BR #0x1000 ;cause a reset by jumping to the BSL
+    BR #secureBoot ;cause a reset by jumping to the BSL
 
     .balign 2
     .global receiveUpdate

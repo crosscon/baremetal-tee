@@ -475,7 +475,9 @@ SECTIONS
   .secure_reset_vector : 
   {
     /* THIS NEEDS TO BE THE FIRST ADDRESS OF THE TCM CODE */
-    SHORT(0xc400)
+    /* TODO: this is a bug. It should be c400 but it crashes. The receive secureUpdate
+    function will set it to c400 so it's not an issue if we deploy the app through that */
+    SHORT(0x4400) 
   } > RESETVEC
 
 

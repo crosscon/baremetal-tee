@@ -11,6 +11,7 @@
 #include "msp430.h"
 #include "stdlib.h"
 #include "core.h"
+#include "secureUpdate.h"
 
 #define REJECT 1 /* IF SET to 1 THEN WE REJECT THE APPLICATION WHEN AN INSTRUCTION FAILS VERIFICATION*/
 #define DEBUG 0 /* IF SET TO 1 WE TAKE NOTE OF WHAT WORD CAUSED THE VERIFICATION TO FAIL*/
@@ -88,8 +89,8 @@ volatile uint32_t cfiDataHolder;
 /**
  *  Initiate the secure boot of the device. Use codeStart section to force address to 0xC400
  */ 
-__attribute__((section(".tcm:codeStart"))) static void secureBoot(){
-
+__attribute__((section(".tcm:codeStart"))) void secureBoot(){
+    
     WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
 
     //TODO: disable interrupts inside the BSL.
@@ -118,11 +119,11 @@ __attribute__((section(".tcm:codeStart"))) static void secureBoot(){
 
     //If both verification succeed then launch the application
     if(codeStatus == VERIFIED && cfiStatus == VERIFIED){
-        
         launchAppCode();
     }else{
         //If verification fails then reset the device
-        WDTCTL = 6; //Reset
+        //WDTCTL = 6; //Reset
+        secureUpdate();
     }
 }
 
@@ -132,6 +133,14 @@ __attribute__((section(".tcm:codeStart"))) static void secureBoot(){
 **/
 __attribute__((section(".tcm:code"))) void launchAppCode(){
     
+    P4DIR |= BIT7; // Set 4.7 pin in output (green LED)
+    for(int i = 0; i < 10; i++){
+        if(i%2 == 0) P1OUT ^= BIT0; // Toggle red LED
+        else P4OUT ^= BIT7;
+        for(int j = 0; j < 10000; j++){ // Delay{
+            __asm("nop");
+        }
+    }
     // Turn off LEDs
     P4OUT &= 0x7f; // Turn off the green LED
     P1OUT &= 0xfe; // Turn off the red LED
@@ -141,7 +150,7 @@ __attribute__((section(".tcm:code"))) void launchAppCode(){
 
     //Enable interrupts
     __eint();
-
+    
     //Jump to beginning of application
     __asm("\n\tBR #4400h");
 }
@@ -1066,6 +1075,7 @@ __attribute__((section(".tcm:code"))) bool verify(uint16_t address, uint16_t las
 ** - REJECTED: the destination is NOT a valid instruction
 **/
 __attribute__((section(".tcm:code"))) bool cfiCheck(uint32_t destination){
+    
     if(
         //It is a safe value (e.g. virtual function)
         isImmediateSafeValue(destination) ||

@@ -247,6 +247,7 @@ The following table shows the current nonMPU-BareMetal-TEE' usage of the various
 | Green LED | Red LED | Description |
 | --------- | ------- | ----------- |
 |   blink*10 → ON      | OFF     | The TCM is waiting for an income update       |    
+|   blink*5 → ON      | blink*5 → ON     | Alternated blinking signals a successful verification of the client application       |    
 |   ON      | ON      | *reserved*       |
 |   OFF     | OFF     | Application started       |
 |   OFF     | ON      | Verification of code in progress       |
