@@ -1263,7 +1263,7 @@ static psa_cipher_operation_t* cipher_operationInit(void)
 */
 static void cipher_operationDeinit(psa_cipher_operation_t* cipher_op)
 {
-    if(!cipher_op)
+    if(cipher_op)
         free(cipher_op);
 }
 
