@@ -503,10 +503,10 @@ void internal_TEE_CloseObject(TEE_ObjectHandle object)
 {
     __TEE_ObjectHandle *temp_obj = (__TEE_ObjectHandle*)object;
 
-    if(!temp_obj) {
-        ERR_MSG("Object does not exists");
-
-    } else {
+    //if(!temp_obj) {
+    //    ERR_MSG("Object does not exists");
+    //} 
+    if(temp_obj) {
         // If buffer is allocated, release it
         if(temp_obj->buffer != NULL)
             free(temp_obj->buffer);

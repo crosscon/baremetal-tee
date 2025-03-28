@@ -29,7 +29,7 @@ SECTIONS
     KEEP(*(.isr_vector_deprio))
   } >FLASH_BOOT
 
-  /* Section to contain TA1 objects, in this example the Bitcoin Wallet TA objects, that is accessible only by TA1 or TEE */
+  /* Section to contain TA1 objects, in this example the keylogger objects, that is accessible only by TA1 or TEE */
   .code_TA1 :
   { 
     . = ALIGN(4);
@@ -134,6 +134,34 @@ SECTIONS
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);
 
+  /* used by the startup to initialize TA1 data */
+  _sidata_TA1 = LOADADDR(.data_TA1);
+
+   /* used by the startup to initialize TA1 data */
+  _sidata_TA2 = LOADADDR(.data_TA2);
+
+  .data_TA1 :
+  {
+    . = ALIGN(4);
+    _sdata_TA1 = .; 
+    *(.data_TA1)
+    Build/bitcoin_wallet_ta.o(.data .data* .RamFunc .RamFunc*) /* Entry point object for TA1 which include GP Client API*/ 
+    Build/TA/TA1/*.o(.data .data* .RamFunc .RamFunc*) /* Other objects of TA1 */ 
+    . = ALIGN(4);
+    _edata_TA1 = .;        /* define a global symbol at data end */
+  } > RAM_TA1  AT> FLASH_TA1
+
+  .data_TA2 :
+  {
+    . = ALIGN(4);
+    _sdata_TA2 = .; 
+    *(.data_TA2)
+    Build/ta2.o(.data .data* .RamFunc .RamFunc*) /* Entry point object for TA2 which include GP Client API*/ 
+    Build/TA/TA2/*.o(.data .data* .RamFunc .RamFunc*) /* Other objects of TA2 */ 
+    . = ALIGN(4);
+    _edata_TA2 = .;        /* define a global symbol at data end */
+  } > RAM_TA2  AT> FLASH_TA2
+
   /* Initialized data sections goes into RAM, load LMA copy after code */
   .data :
   {
@@ -170,19 +198,23 @@ SECTIONS
   .bss_TA1 :
   {
     . = ALIGN(4);
+    _sbss_TA1 = .;         /* define a global symbol at bss start */
     *(.bss_TA1)
-    Build/bitcoin_wallet_ta.o(.bss .bss*) /* Entry point object for TA1 which include GP Client API*/ 
-    Build/TA/TA1/*.o(.bss .bss*) /* Other objects of TA1 */ 
+    Build/bitcoin_wallet_ta.o(.bss .bss*)
+    Build/TA/TA1/*.o(.bss .bss*)
     . = ALIGN(4);
+    _ebss_TA1 = .;         /* define a global symbol at bss end */
   } > RAM_TA1
 
   /* Uninitialized data section (BSS) dedicated for TA2 */
   .bss_TA2 :
   {
     . = ALIGN(4);
+    _sbss_TA2 = .; 
     *(.bss_TA2)
-    Build/TA/TA2/*.o(.bss .bss*) /* Entry point object for TA2 which include GP Client API*/ 
-    Build/ta2.o(.bss .bss*) /* Other objects of TA2 */ 
+    Build/ta2.o(.bss .bss*)  /* Entry point object for TA2 which include GP Client API*/
+    Build/TA/TA2/*.o(.bss .bss*) /* Other objects of TA2 */ 
+    _ebss_TA2 = .;         /* define a global symbol at bss end */
     . = ALIGN(4);
   } > RAM_TA2
 

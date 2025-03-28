@@ -6,6 +6,8 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#define __maybe_unused  __attribute__((unused))
+
 #define PRINT 1
 
 // This file contains the definition for all the types and constants used in the Microvisor 

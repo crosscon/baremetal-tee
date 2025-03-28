@@ -1,5 +1,7 @@
 # Bare metal TEE with MPU
 
+Note: more information about the design and implementation choices are available in the docs folder. 
+
 ## Introduction
 
 The BareMetal-TEE with MPU is a solution for memory isolation and supervised execution aiming at increasing the security of embedded devices in a way that is mostly transparent to application developers. The architecture is fully compliant with the Global Platform TEE Client API specification and with a subset of the TEE Core API. The BareMetal TEE with MPU support the deployment of up to two custom Trusted Applications (TAs) compliant with the Global Platform TEE Core API.  

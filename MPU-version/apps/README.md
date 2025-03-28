@@ -31,3 +31,27 @@ Client Application that is used to verify different security properties of the s
 Some of these tests require the deployment of the *TA1* TA on the TEE. 
 
 **NOTE**: each client application example developed includes a folder *Tests* with logs of execution and with the Makefile and BOOTLOADER.ld file used to compile the TEE. This simplifies the execution of the tests as these files already include the correct TAs needed by the CA. 
+
+# Performance evaluation 
+
+- Microbenchmarks
+    - Domain switch time
+	    - CA to TA: 21.848 / 21.824 μs
+	    - TA to CA: 11.192 / 11.16 μs
+- TA-based APIs
+    - Opening a session with the TA: 28.8 μs / 28.76 μs
+	- Invoking TA functions by sending commands: 40.472 μs / 40.432 μs
+	- Closing the session once the TA operation is completed: 24.576 μs / 24.536 μs
+
+- Keylogger (debug CA, no TA): 
+    - 2 domains: 7.182064 ms
+    - 1 domain: 7.18008 ms
+
+- Bitcoin wallet (debug CA, no TA): 
+    - 2 domains: 1.152729592 s
+    - 1 domain:  0.986071904 s
+
+
+
+
+

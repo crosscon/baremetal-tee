@@ -463,8 +463,8 @@ void Microvisor_HardFault_Handler() {
 }
 
 /*
-* MCU-Fortifier microvisor SVC_Handler can be invoked for 2 reasons: 
-* - There is the need to simulate of a system istruction (the SVC was called due to the code instrumentation).  
+* MCU-Fortifier microvisor SVC_Handler can be invoked for 4 reasons: 
+* - There is the need to simulate of a system instruction (the SVC was called due to the code instrumentation).
 * 	In that case the instruction is simulated and the exception return is performed 
 * - The SVC was called by the client application to perform a Global Platform API call (SVC number is in the range 0-4)
 * 	In that case the API call is performed and the exception return is performed

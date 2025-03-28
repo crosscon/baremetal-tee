@@ -16,6 +16,28 @@ defined in linker script */
 .word	_sbss
 /* end address for the .bss section. defined in linker script */
 .word	_ebss
+/* start address for the initialization values of the .data_TA1 section.
+defined in linker script */
+.word 	_sidata_TA1 
+/* start address for the .data_TA1 section. defined in linker script */
+.word	_sdata_TA1
+/* end address for the .data_TA1 section. defined in linker script */
+.word	_edata_TA1
+/* start address for the .bss_TA1 section. defined in linker script */
+.word	_sbss_TA1
+/* end address for the .bss_TA1 section. defined in linker script */
+.word	_ebss_TA1
+/* start address for the initialization values of the .data_TA2 section.
+defined in linker script */
+.word 	_sidata_TA2 
+/* start address for the .data_TA2 section. defined in linker script */
+.word	_sdata_TA2
+/* end address for the .data_TA2 section. defined in linker script */
+.word	_edata_TA2
+/* start address for the .bss_TA2 section. defined in linker script */
+.word	_sbss_TA2
+/* end address for the .bss_TA2 section. defined in linker script */
+.word	_ebss_TA2
 
 .equ  BootRAM,        0xF1E0F85F
 /**
@@ -37,37 +59,95 @@ Reset_Handler:
 	bl  SystemInit
 
 /* Copy the data segment initializers from flash to SRAM */
-  movs	r1, #0
-  b	LoopCopyDataInit
+	movs   r1, #0
+	b      LoopCopyDataInit
 
 CopyDataInit:
-	ldr	r3, =_sidata
-	ldr	r3, [r3, r1]
-	str	r3, [r0, r1]
-	adds	r1, r1, #4
+    ldr    r3, =_sidata
+    ldr    r3, [r3, r1]
+    str    r3, [r0, r1]
+    adds   r1, r1, #4
 
 LoopCopyDataInit:
-	ldr	r0, =_sdata
-	ldr	r3, =_edata
-	adds	r2, r0, r1
-	cmp	r2, r3
-	bcc	CopyDataInit
-	ldr	r2, =_sbss
-	b	LoopFillZerobss
-/* Zero fill the bss segment. */
-FillZerobss:
-	movs	r3, #0
-	str	r3, [r2], #4
+    ldr    r0, =_sdata
+    ldr    r3, =_edata
+    adds   r2, r0, r1
+    cmp    r2, r3
+    bcc    CopyDataInit
 
-LoopFillZerobss:
-	ldr	r3, = _ebss
-	cmp	r2, r3
-	bcc	FillZerobss
+    /* --- TA1 Data Copy Code Start --- */
+    movs   r1, #0
+    b      LoopCopyDataInitTA1
 
-/* Call static constructors */
+CopyDataInitTA1:
+    ldr    r3, =_sidata_TA1
+    ldr    r3, [r3, r1]
+    str    r3, [r0, r1]
+    adds   r1, r1, #4
+
+LoopCopyDataInitTA1:
+    ldr    r0, =_sdata_TA1
+    ldr    r3, =_edata_TA1
+    adds   r2, r0, r1
+    cmp    r2, r3
+    bcc    CopyDataInitTA1
+    /* --- TA1 Data Copy Code End --- */
+
+    /* --- TA2 Data Copy Code Start --- */
+    movs   r1, #0
+    b      LoopCopyDataInitTA2
+
+CopyDataInitTA2:
+    ldr    r3, =_sidata_TA2
+    ldr    r3, [r3, r1]
+    str    r3, [r0, r1]
+    adds   r1, r1, #4
+
+LoopCopyDataInitTA2:
+    ldr    r0, =_sdata_TA2
+    ldr    r3, =_edata_TA2
+    adds   r2, r0, r1
+    cmp    r2, r3
+    bcc    CopyDataInitTA2
+    /* --- TA2 Data Copy Code End --- */
+
+    /* Zero fill the main .bss segment */
+    ldr    r2, =_sbss
+    b      LoopFillZerobss_Main
+FillZerobss_Main:
+    movs   r3, #0
+    str    r3, [r2], #4
+LoopFillZerobss_Main:
+    ldr    r3, =_ebss
+    cmp    r2, r3
+    bcc    FillZerobss_Main
+
+    /* Zero fill the TA1 .bss segment */
+    ldr    r2, =_sbss_TA1
+    b      LoopFillZerobss_TA1
+FillZerobss_TA1:
+    movs   r3, #0
+    str    r3, [r2], #4
+LoopFillZerobss_TA1:
+    ldr    r3, =_ebss_TA1
+    cmp    r2, r3
+    bcc    FillZerobss_TA1
+
+    /* Zero fill the TA2 .bss segment */
+    ldr    r2, =_sbss_TA2
+    b      LoopFillZerobss_TA2
+FillZerobss_TA2:
+    movs   r3, #0
+    str    r3, [r2], #4
+LoopFillZerobss_TA2:
+    ldr    r3, =_ebss_TA2
+    cmp    r2, r3
+    bcc    FillZerobss_TA2
+
+    /* Call static constructors */
     bl __libc_init_array
-/* Call the application's entry point.*/
-	bl	boot
+    /* Call the application's entry point. */
+    bl   boot
 
 LoopForever:
     b LoopForever
