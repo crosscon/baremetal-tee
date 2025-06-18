@@ -74,8 +74,8 @@ __attribute__((section(".heap_TA1"))) static uint32_t heapTA1[TA_HEAP_SIZE / siz
 __attribute__((section(".heap_TA2"))) static uint32_t heapTA2[TA_HEAP_SIZE / sizeof(uint32_t)];
 __attribute__((section(".heap_core"))) static uint32_t heapCore[CORE_HEAP_SIZE / sizeof(uint32_t)];
 
-__attribute__((section(".heap_TA1"))) static Block* freeListTA1 = {0};
-__attribute__((section(".heap_TA2"))) static Block* freeListTA2 = {0};
+__attribute__((section(".heap_core"))) static Block* freeListTA1 = {0};
+__attribute__((section(".heap_core"))) static Block* freeListTA2 = {0};
 __attribute__((section(".heap_core"))) static Block* freeListTEEcore = {0};
 
 //These will be used to keep track of the various objects and operations created by the TAs
@@ -277,12 +277,24 @@ void* internal_TEE_Malloc(size_t size, uint32_t hint, uint8_t ta_num)
         if(!freeListTA1){
             freeListTA1 = (Block*)heapTA1;
             init_memory(ta_num);
+        }else{
+            //Check if freeListTA1 points to TA1's memory area
+            if((uintptr_t)freeListTA1 < TA1_MEMORY_START_ADDR || (uintptr_t)freeListTA1 > TA1_MEMORY_END_ADDR){
+                ERR_MSG("Free list for TA1 is not initialized correctly");
+                return NULL;
+            }
         }
         curr = freeListTA1;
     } else if(ta_num == 2) {
         if (!freeListTA2) {
             freeListTA2 = (Block*)heapTA2;
             init_memory(ta_num);
+        }else{
+            //Check if freeListTA2 points to TA2's memory area
+            if((uintptr_t)freeListTA2 < TA2_MEMORY_START_ADDR || (uintptr_t)freeListTA2 > TA2_MEMORY_END_ADDR){
+                ERR_MSG("Free list for TA2 is not initialized correctly");
+                return NULL;
+            }
         }
         curr = freeListTA2;   
     }
@@ -334,20 +346,20 @@ void internal_TEE_Free(void* buffer, uint8_t ta_num)
     }
 
     if(ta_num == CORE_NUM) {
-        if((buffer < TEE_CORE_MEMORY_START_ADDR) || (buffer > TEE_CORE_MEMORY_END_ADDR)){
+        if((buffer  - sizeof(Block) < TEE_CORE_MEMORY_START_ADDR) || (buffer - sizeof(Block) > TEE_CORE_MEMORY_END_ADDR)){
             ERR_MSG("Free function error");
             return;
         }
     } else if (ta_num == 1) {
-        if((buffer < TA1_MEMORY_START_ADDR) || (buffer > TA1_MEMORY_END_ADDR)){
-            if (buffer < CA_MEMORY_START_ADDR || buffer > CA_MEMORY_END_ADDR) {
+        if((buffer - sizeof(Block) < TA1_MEMORY_START_ADDR) || (buffer - sizeof(Block) > TA1_MEMORY_END_ADDR)){
+            if (buffer - sizeof(Block) < CA_MEMORY_START_ADDR || buffer - sizeof(Block) > CA_MEMORY_END_ADDR) {
                 ERR_MSG("Free function error");
     	        return;
             }
         }
     } else if (ta_num == 2) {
-        if((buffer < TA2_MEMORY_START_ADDR) || (buffer > TA2_MEMORY_END_ADDR)){
-    	    if (buffer < CA_MEMORY_START_ADDR || buffer > CA_MEMORY_END_ADDR) {
+        if((buffer - sizeof(Block) < TA2_MEMORY_START_ADDR) || (buffer - sizeof(Block) > TA2_MEMORY_END_ADDR)){
+    	    if (buffer - sizeof(Block) < CA_MEMORY_START_ADDR || buffer - sizeof(Block) > CA_MEMORY_END_ADDR) {
                 ERR_MSG("Free function error");
     	        return;
             }
@@ -355,7 +367,10 @@ void internal_TEE_Free(void* buffer, uint8_t ta_num)
     }
 
     Block* block = (Block*)((uint32_t*)buffer - sizeof(Block));
-    block->free = 1;
+    if(block){
+        block->free = 1;
+    }
+    
 
     // Get the head of the free list for this TA
     Block* head = NULL;
@@ -507,7 +522,7 @@ TEE_Result internal_TEE_AllocateTransientObject(uint32_t objectType,
 
     //Set the handle in the available handles array
     if(!populate_object(obj)){
-        internal_TEE_Free(obj,CORE_NUM);
+        internal_TEE_Free(obj, CORE_NUM);
         return TEE_FAILED;
     }
 
@@ -810,6 +825,7 @@ TEE_Result internal_TEE_ReadObjectData(TEE_ObjectHandle object,
         flash_getConfig(ta_num, &start_addr, &total_size);
 
         // Create a buffer to read raw flash data
+        // If the temp_buffer is too big it will overflow into an unmapped memory area.
         char temp_buff[total_size - free_size];
         memset(temp_buff, 0, total_size - free_size);
 
@@ -2032,12 +2048,12 @@ void internal_TEE_GenerateRandom(void* randomBuffer, size_t randomBufferLen, uin
         rnum = trng_createNumber();
         // Remove if there is a number that bigger than 32 because it cause a problem for cjson. 
         // To do that just need to set the first msb zero, 0b01111111
-        //rnum = rnum & 0x7F7F7F7F;
+        rnum = rnum & 0x7F7F7F7F;
         memcpy(val, &rnum, 4);
 
         // Remove if there is a number that smaller than 32 because it cause a problem for cjson
-        /*if((val[0]<32) || (val[1]<32) || (val[2]<32) || (val[3]<32))
-            continue;*/
+        if((val[0]<32) || (val[1]<32) || (val[2]<32) || (val[3]<32))
+            continue;
 
         // copy data according to offset
         if((randomBufferLen - len) < 4)

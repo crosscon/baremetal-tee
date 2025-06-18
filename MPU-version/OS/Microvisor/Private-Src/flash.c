@@ -384,7 +384,7 @@ static int flash_init(uint32_t ta_id)
 }
 
 /**
- * @brief Read tue flash memory area, identify the object with the given id and return its data
+ * @brief Read the flash memory area, identify the object with the given id and return its data
  * 
  * @param ctx The JSON content
  * @param len Length of the content
