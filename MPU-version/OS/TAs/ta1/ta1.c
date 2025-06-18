@@ -22,9 +22,9 @@ void access_TEE_RAM(){
 		f1 = f2;
 		f2 = f;
 
-		IMSG("TA1 is trying to load data from: 0x10000000 (TEE reserved RAM memory address)\r\n");
+		IMSG("TA1 is trying to load data from: 0x20000000 (TEE reserved RAM memory address)\r\n");
 		__asm__(
-			"ldr r8, =0x10000000\n" // load the address 0x10000000 into r8 (0x10000000 is part of the RAM of TEE)
+			"ldr r8, =0x20000000\n" // load the address 0x20000000 into r8 (0x20000000 is part of the RAM of TEE)
 			"ldr r0, [r8]\n"        // load the value of r8 in r0
 		);
 	}
@@ -33,9 +33,9 @@ void access_TEE_RAM(){
 void access_TA2_RAM(){
 	// Try to access RAM area dedicated to TA2 (without having the privileges to do so)
 
-	IMSG("TA1 is trying to load data from: 0x2000C010 (TA2 reserved RAM memory address)\r\n");
+	IMSG("TA1 is trying to load data from: 0x10005010 (TA2 reserved RAM memory address)\r\n");
 	__asm__(
-		"ldr r1, =0x2000C010\n" // load the address 0x2000C010 into r1 (0x2000C010 is part of the RAM of TA1)
+		"ldr r1, =0x10005010\n" // load the address 0x10005010 into r1 (0x10005010 is part of the RAM of TA2)
 		"ldr r0, [r1]\n"        // load the value of r1 in r0
 	);
 }

@@ -21,6 +21,9 @@
 void Configure_MPU(void) {
 	MPU_Region_InitTypeDef MPU_InitStruct;
 
+	/* Disable interrupts for critical section */
+	__disable_irq();  
+
 	/* Disable MPU */
 	HAL_MPU_Disable();
 
@@ -67,13 +70,13 @@ void Configure_MPU(void) {
 	HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
 	/************************************************************************/
-	/* RAM (region for TAs)																	*/
-	/* Region 2		BASE = 0x20000000, SIZE = 0x18000						*/
+	/* RAM (region for both TAs)																	*/
+	/* Region 2		BASE = 0x10000000, SIZE = 0x8000						*/
 	/************************************************************************/
 	MPU_InitStruct.Enable = MPU_REGION_ENABLE;
 	MPU_InitStruct.Number = MPU_REGION_NUMBER2;
-	MPU_InitStruct.BaseAddress = 0x20000000;
-	MPU_InitStruct.Size = MPU_REGION_SIZE_128KB;	// cannot create region of size 96KB, do immediately bigger one
+	MPU_InitStruct.BaseAddress = 0x10000000;
+	MPU_InitStruct.Size = MPU_REGION_SIZE_32KB;	
 	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
 	MPU_InitStruct.AccessPermission = MPU_REGION_PRIV_RW;	// privileged read+write
 	MPU_InitStruct.SubRegionDisable = 0x00;
@@ -88,12 +91,12 @@ void Configure_MPU(void) {
 
 	/************************************************************************/
 	/* RAM	(region for user app)																*/
-	/* Region 3		BASE = 0x10000000, SIZE = 0x18000						*/
+	/* Region 3		BASE = 0x20000000, SIZE = 0x4000						*/
 	/************************************************************************/
 	MPU_InitStruct.Enable = MPU_REGION_ENABLE;
 	MPU_InitStruct.Number = MPU_REGION_NUMBER3;
-	MPU_InitStruct.BaseAddress = 0x10000000;
-	MPU_InitStruct.Size = MPU_REGION_SIZE_128KB;
+	MPU_InitStruct.BaseAddress = 0x20000000;
+	MPU_InitStruct.Size = MPU_REGION_SIZE_128KB; //It's 32kb but starting after the Bootloader reserved RAM whose region will have higher priority
 	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
 	MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
 	MPU_InitStruct.SubRegionDisable = 0x00;
@@ -108,12 +111,12 @@ void Configure_MPU(void) {
 
 	/************************************************************************/
 	/* Bootloader Reserved RAM												*/
-	/* Region 4		BASE = 0x10000000, SIZE = 0x20							*/
+	/* Region 4		BASE = 0x20000000, SIZE = 0x10000							*/
 	/************************************************************************/
 	MPU_InitStruct.Enable = MPU_REGION_ENABLE;
 	MPU_InitStruct.Number = MPU_REGION_NUMBER4;
-	MPU_InitStruct.BaseAddress = 0x10000000;
-	MPU_InitStruct.Size = MPU_REGION_SIZE_32B;
+	MPU_InitStruct.BaseAddress = 0x20000000;
+	MPU_InitStruct.Size = MPU_REGION_SIZE_64KB;
 	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
 	MPU_InitStruct.AccessPermission = MPU_REGION_PRIV_RW;
 	MPU_InitStruct.SubRegionDisable = 0x00;
@@ -190,6 +193,9 @@ void Configure_MPU(void) {
 	/* MPU_PRIVILEGED_DEFAULT enable the backgroud region for priviledged processes */
 	HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
 	
+	/* Enable interrupts */
+	__enable_irq();  
+
 	/* Enable MemManage exception */
 	SCB->SHCSR |= SCB_SHCSR_MEMFAULTENA_Msk;
 	__DSB();
@@ -215,6 +221,8 @@ void Configure_MPU(void) {
 void Reconfigure_MPU(int TA_number) {
 	MPU_Region_InitTypeDef MPU_InitStruct;
 
+	/* Disable interrupts for critical section */
+	__disable_irq();  
 	/* Disable MPU */
 	HAL_MPU_Disable();
 
@@ -277,13 +285,13 @@ void Reconfigure_MPU(int TA_number) {
 	HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
 	/************************************************************************/
-	/* RAM (region for TAs)																	*/
-	/* Region 2		BASE = 0x20000000, SIZE = 0x18000						*/
+	/* RAM (region for both TAs)																	*/
+	/* Region 2		BASE = 0x10000000, SIZE = 0x8000						*/
 	/************************************************************************/
 	MPU_InitStruct.Enable = MPU_REGION_ENABLE;
 	MPU_InitStruct.Number = MPU_REGION_NUMBER2;
-	MPU_InitStruct.BaseAddress = 0x20000000;
-	MPU_InitStruct.Size = MPU_REGION_SIZE_128KB;	// cannot create region of size 96KB, do immediately bigger one
+	MPU_InitStruct.BaseAddress = 0x10000000;
+	MPU_InitStruct.Size = MPU_REGION_SIZE_32KB;	// cannot create region of size 96KB, do immediately bigger one
 	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
 	MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
 	// 1) give full access to the RAM of TAs
@@ -305,11 +313,11 @@ void Reconfigure_MPU(int TA_number) {
 
 	/************************************************************************/
 	/* RAM	(region for user app)																*/
-	/* Region 3		BASE = 0x10000000, SIZE = 0x18000						*/
+	/* Region 3		BASE = 0x20000000, SIZE = 0x8000						*/
 	/************************************************************************/
 	MPU_InitStruct.Enable = MPU_REGION_ENABLE;
 	MPU_InitStruct.Number = MPU_REGION_NUMBER3;
-	MPU_InitStruct.BaseAddress = 0x10000000;
+	MPU_InitStruct.BaseAddress = 0x20000000;
 	MPU_InitStruct.Size = MPU_REGION_SIZE_128KB;
 	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
 	// access is not disabled due to the current implementation of shared memory
@@ -325,13 +333,13 @@ void Reconfigure_MPU(int TA_number) {
 	HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
 	/************************************************************************/
-	/* Bootloader Reserved RAM												*/
-	/* Region 4		BASE = 0x10000000, SIZE = 0x20							*/
+	/* Bootloader Reserved RAM (RAM_BOOT)												*/
+	/* Region 4		BASE = 0x20000000, SIZE = 0x10000							*/
 	/************************************************************************/
 	MPU_InitStruct.Enable = MPU_REGION_ENABLE;
 	MPU_InitStruct.Number = MPU_REGION_NUMBER4;
-	MPU_InitStruct.BaseAddress = 0x10000000;
-	MPU_InitStruct.Size = MPU_REGION_SIZE_32B;
+	MPU_InitStruct.BaseAddress = 0x20000000;
+	MPU_InitStruct.Size = MPU_REGION_SIZE_64KB;
 	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;
 	MPU_InitStruct.AccessPermission = MPU_REGION_PRIV_RW;
 	MPU_InitStruct.SubRegionDisable = 0x00;
@@ -407,6 +415,9 @@ void Reconfigure_MPU(int TA_number) {
 	/* Enable MPU */
 	/* MPU_PRIVILEGED_DEFAULT enable the backgroud region for priviledged processes */
 	HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
+
+	/* Enable interrupts */
+	__enable_irq();
 	
 	/* Enable MemManage exception */
 	SCB->SHCSR |= SCB_SHCSR_MEMFAULTENA_Msk;

@@ -174,7 +174,7 @@ SECTIONS
 
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
-  } >RAM AT> FLASH_BOOT
+  } >RAM_BOOT AT> FLASH_BOOT
 
   /* Section to store the custom heap memory dedicated to TA1 */
   .heap_TA1 :
@@ -187,6 +187,12 @@ SECTIONS
   {
     *(.heap_TA2)
   } > RAM_TA2
+
+  /* Section to store the custom heap memory dedicated to TEE core */
+  .heap_core :
+  {
+    *(.heap_core)
+  } > RAM_BOOT
 
   /* RAM section to store data that should be accessible by boot TEE and TAs (e.g. passing parameters) */
   .TEE_TA_data :
@@ -232,7 +238,7 @@ SECTIONS
     . = ALIGN(4);
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
-  } >RAM
+  } >RAM_BOOT
 
   /* User_heap_stack section, used to check that there is enough RAM left */
   ._user_heap_stack :

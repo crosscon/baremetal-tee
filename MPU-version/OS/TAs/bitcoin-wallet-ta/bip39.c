@@ -13,7 +13,7 @@ TEE_Result get_random_mnemonic(uint32_t strength, char* out){
 
 	uint8_t entropy[33];
 	uint8_t entropy_hash[32];
-	uint64_t entropy_hash_len = 32;
+	size_t entropy_hash_len = 32;
 	uint64_t mnemonic_num = strength / 8 * 3 / 4;
 	uint64_t i, j, idx;
 	char mnemonic[MNEMONIC_LENGTH];

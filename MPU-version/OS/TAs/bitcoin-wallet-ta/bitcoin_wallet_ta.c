@@ -314,7 +314,7 @@ static void get_child_privatekey(uint32_t i, uint8_t* child_sk, uint8_t* child_c
 	uint8_t masterkey_ext[64];
 	uint8_t masterkey[32];
 	uint8_t masterchain[32];
-	uint32_t masterkey_ext_len;
+	size_t masterkey_ext_len;
 	uint32_t masterkey_ext_id = TA_OBJECT_MASTERKEY_EXT;
 
 	// change to hardened wallet
@@ -360,7 +360,7 @@ static void get_child_publickey(uint32_t i, uint8_t* child_pk_x, uint8_t* child_
 	uint8_t masterkey_ext[64];
 	uint8_t masterkey[32];
 	uint8_t masterchain[32];
-	uint32_t masterkey_ext_len;
+	size_t masterkey_ext_len;
 	uint32_t masterkey_ext_id = TA_OBJECT_MASTERKEY_EXT;
 
 	//printf("%d\n", i);
@@ -550,7 +550,7 @@ static TEE_Result ecdsa_to_bitaddr(TEE_ObjectHandle obj, uint8_t *bcadd, uint8_t
 	TEE_Result res = TEE_SUCCESS;
 	TEE_OperationHandle sha256_op = (TEE_OperationHandle)NULL;
 	size_t shasize = 32;
-	uint32_t keysize = 32;
+	size_t keysize = 32;
 	uint32_t j = 1;
 	uint8_t net = network;
 

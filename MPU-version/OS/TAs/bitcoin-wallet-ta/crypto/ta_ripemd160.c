@@ -25,6 +25,7 @@
 //#include <util.h>
 #include <inttypes.h>
 #include <stdlib.h>
+#include "tee_core_api.h"
 
 #include "ta_ripemd160.h"
 

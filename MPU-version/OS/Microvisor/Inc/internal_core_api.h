@@ -1,7 +1,12 @@
 #ifndef __INTERNAL_CORE_API_H__
 #define __INTERNAL_CORE_API_H__
 
-#include "tee_core_api.h"
+#include <tee_common.h> 
+#define MAX_HANDLES 10
+#define CORE_NUM 0
+
+extern  __TEE_ObjectHandle * registeredObjects[MAX_HANDLES];
+extern  __TEE_OperationHandle * registeredOperations[MAX_HANDLES];
 
 // Function called during the boot process to ensure the pointers
 // for the heap memory of each TA are initialized to NULL
@@ -37,13 +42,13 @@ void heap_erase();
  * MemFill: fill a memory area with a given value
  */
 
-void* internal_TEE_Malloc(int ta_num, size_t size, uint32_t hint);
+void* internal_TEE_Malloc(size_t size, uint32_t hint, uint8_t ta_num);
 
-void internal_TEE_Free(int ta_num, void* buffer);
+void internal_TEE_Free(void* buffer, uint8_t ta_num) ;
 
-void internal_TEE_MemMove(int ta_num, void* dest, void* src, size_t size);
+void internal_TEE_MemMove(void* dest, void* src, size_t size, uint8_t ta_num);
 
-void internal_TEE_MemFill(int ta_num, void* buffer, uint8_t x, size_t size);
+void internal_TEE_MemFill( void* buffer, uint8_t x, size_t size, uint8_t ta_num);
 
 
 /**
@@ -60,17 +65,17 @@ void internal_TEE_MemFill(int ta_num, void* buffer, uint8_t x, size_t size);
  * ConvertFromOctetString: convert an octet string to a BigInt number
  */
 
-TEE_Result internal_TEE_BigIntConvertToS32(int32_t *dest, TEE_BigInt *src);
+TEE_Result internal_TEE_BigIntConvertToS32(int32_t *dest, TEE_BigInt *src, uint8_t ta_num);
 
-int32_t internal_TEE_BigIntCmpS32(TEE_BigInt *op, int32_t shortVal);
+int32_t internal_TEE_BigIntCmpS32(TEE_BigInt *op, int32_t shortVal, uint8_t ta_num);
 
-void internal_TEE_BigIntMod(TEE_BigInt *dest, TEE_BigInt *op, TEE_BigInt *n);
+void internal_TEE_BigIntMod(TEE_BigInt *dest, TEE_BigInt *op, TEE_BigInt *n, uint8_t ta_num);
 
-void internal_TEE_BigIntDiv(TEE_BigInt *dest_q, TEE_BigInt *dest_r, TEE_BigInt *op1, TEE_BigInt *op2);
+void internal_TEE_BigIntDiv(TEE_BigInt *dest_q, TEE_BigInt *dest_r, TEE_BigInt *op1, TEE_BigInt *op2, uint8_t ta_num);
 
-TEE_Result internal_TEE_BigIntConvertFromOctetString(TEE_BigInt *dest, uint8_t *buffer, size_t bufferLen, int32_t sign);
+TEE_Result internal_TEE_BigIntConvertFromOctetString(TEE_BigInt *dest, uint8_t *buffer, size_t bufferLen, int32_t sign, uint8_t ta_num);
 
-void internal_TEE_BigIntInit(TEE_BigInt *bigInt, size_t len);
+void internal_TEE_BigIntInit(TEE_BigInt *bigInt, size_t len, uint8_t ta_num);
 
 
 /*
@@ -100,39 +105,41 @@ void internal_TEE_BigIntInit(TEE_BigInt *bigInt, size_t len);
 
 TEE_Result internal_TEE_AllocateTransientObject(uint32_t objectType,
                                         uint32_t maxObjectSize,
-                            /*[out]*/   TEE_ObjectHandle* object);
+                            /*[out]*/   TEE_ObjectHandle* object,
+                                        uint8_t ta_num);
 
 TEE_Result internal_TEE_PopulateTransientObject(TEE_ObjectHandle object,
                         /*unused*/      TEE_Attribute* attrs, 
-                        /*unused*/      uint32_t attrCount);
+                        /*unused*/      uint32_t attrCount,
+                                        uint8_t ta_num);
 
 void internal_TEE_InitRefAttribute(TEE_Attribute* attr, uint32_t attributeID, 
-                            void* buffer, size_t length);
+                            void* buffer, size_t length, uint8_t ta_num);
 
 
 void internal_TEE_InitValueAttribute(TEE_Attribute* attr, uint32_t attributeID,
-                                uint32_t a, uint32_t b);
+                                uint32_t a, uint32_t b, uint8_t ta_num);
 
 TEE_Result internal_TEE_GetObjectBufferAttribute(TEE_ObjectHandle object, uint32_t attributeID,
-                        /*[outbuf]*/     void* buffer, size_t* size);
+                        /*[outbuf]*/     void* buffer, size_t* size, uint8_t ta_num);
 
 TEE_Result internal_TEE_GetObjectValueAttribute(TEE_ObjectHandle object, uint32_t attributeID,
-                                                uint32_t* a, uint32_t* b);
+                                                uint32_t* a, uint32_t* b, uint8_t ta_num);
 
-void internal_TEE_FreeTransientObject(TEE_ObjectHandle object);
+void internal_TEE_FreeTransientObject(TEE_ObjectHandle object, uint8_t ta_num);
 
-void internal_TEE_CloseObject(TEE_ObjectHandle object);
+void internal_TEE_CloseObject(TEE_ObjectHandle object, uint8_t ta_num);
 
 TEE_Result internal_TEE_ReadObjectData(TEE_ObjectHandle object,
                                         void* buffer,
                                         size_t size,
                                         size_t* count,
-                                        uint32_t ta_num); 
+                                        uint8_t ta_num); 
 
 TEE_Result internal_TEE_WriteObjectData(TEE_ObjectHandle object,
                                         void* buffer, 
                                         size_t size,
-                                        uint32_t ta_num);
+                                        uint8_t ta_num);
 
 TEE_Result internal_TEE_CreatePersistentObject(uint32_t storageID,
               /*[in(newObjectIDLen)]*/  void* objectID,
@@ -141,16 +148,18 @@ TEE_Result internal_TEE_CreatePersistentObject(uint32_t storageID,
                                         TEE_ObjectHandle attributes,
                             /*[inbuf]*/ void* initialData, 
                                         size_t initialDataLen,
-                           /*[outopt]*/ TEE_ObjectHandle* object );
+                           /*[outopt]*/ TEE_ObjectHandle* object,
+                                        uint8_t ta_num);
 
 TEE_Result internal_TEE_OpenPersistentObject(uint32_t storageID,
               /*[in(objectIDLength)]*/ void* objectID,
                                         size_t objectIDLen,
                                         uint32_t flags,
-                              /*[out]*/ TEE_ObjectHandle* object );
+                              /*[out]*/ TEE_ObjectHandle* object,
+                                        uint8_t ta_num);       
 
 
-TEE_Result internal_TEE_CloseAndDeletePersistentObject1(TEE_ObjectHandle object, uint32_t ta_num);
+TEE_Result internal_TEE_CloseAndDeletePersistentObject(TEE_ObjectHandle object, uint8_t ta_num);
 
 
 /*
@@ -169,16 +178,19 @@ TEE_Result internal_TEE_CloseAndDeletePersistentObject1(TEE_ObjectHandle object,
 TEE_Result internal_TEE_AllocateOperation(TEE_OperationHandle* operation,           
                                     uint32_t algorithm,
                                     uint32_t mode, 
-                                    uint32_t maxKeySize);
+                                    uint32_t maxKeySize,
+                                        uint8_t ta_num);
 
-void internal_TEE_FreeOperation(TEE_OperationHandle operation);                         
+void internal_TEE_FreeOperation(TEE_OperationHandle operation, uint8_t ta_num);                         
 
 TEE_Result internal_TEE_SetOperationKey(TEE_OperationHandle operation,              
-                                TEE_ObjectHandle key);
+                                TEE_ObjectHandle key,
+                                        uint8_t ta_num);
 
-TEE_Result internal_TEE_SetOperationKey2(TEE_OperationHandle operation,
+/* TEE_Result internal_TEE_SetOperationKey2(TEE_OperationHandle operation,
                                 TEE_ObjectHandle key1,
-                                TEE_ObjectHandle key2);
+                                TEE_ObjectHandle key2,
+                                        uint8_t ta_num); */
 
 
 /*
@@ -195,14 +207,16 @@ TEE_Result internal_TEE_GenerateKey(TEE_ObjectHandle object,
                             uint32_t keySize,
                             TEE_Attribute* params,
                             uint32_t paramCount, 
-                            uint32_t ta_num);
+                            uint8_t ta_num);
 
-void internal_TEE_GenerateRandom(void* randomBuffer, size_t randomBufferLen);  
+void internal_TEE_GenerateRandom(void* randomBuffer, size_t randomBufferLen, 
+                            uint8_t ta_num);  
 
 void internal_TEE_DeriveKey(TEE_OperationHandle operation,
                     TEE_Attribute* params, 
                     uint32_t paramCount,
-                    TEE_ObjectHandle derivedKey);
+                    TEE_ObjectHandle derivedKey,
+                    uint8_t ta_num);
 
 
 /*
@@ -221,20 +235,23 @@ void internal_TEE_DeriveKey(TEE_OperationHandle operation,
 
 void internal_TEE_CipherInit(TEE_OperationHandle operation,
                         void* IV, 
-                        size_t IVLen);
+                        size_t IVLen,
+                    uint8_t ta_num);
 
 TEE_Result internal_TEE_CipherUpdate(TEE_OperationHandle operation,
                 /*[inbuf]*/ void* srcData, 
                             size_t srcLen,
                /*[outbuf]*/ void* destData, 
-                            size_t *destLen);
+                            size_t *destLen,
+                    uint8_t ta_num);
 
 
 TEE_Result internal_TEE_CipherDoFinal(TEE_OperationHandle operation,
                     /*[inbuf]*/ void* srcData, 
                                 size_t srcLen,
                 /*[outbufopt]*/ void* destData, 
-                                size_t *destLen);
+                                size_t *destLen,
+                    uint8_t ta_num);
 
 
 /*
@@ -251,15 +268,18 @@ TEE_Result internal_TEE_CipherDoFinal(TEE_OperationHandle operation,
 */
 
 void internal_TEE_MACInit(TEE_OperationHandle operation,                             
-                  void* IV, size_t IVLen);
+                  void* IV, size_t IVLen,
+                    uint8_t ta_num);
 
 
 void internal_TEE_MACUpdate(TEE_OperationHandle operation,
-        /*[inbuf]*/ void* chunk, size_t chunkSize);                        
+        /*[inbuf]*/ void* chunk, size_t chunkSize,
+                    uint8_t ta_num);                        
 
 TEE_Result internal_TEE_MACComputeFinal(TEE_OperationHandle operation,
              /*[inbuf]*/        void* message, size_t messageLen,
-             /*[outbuf]*/       void* mac, size_t *macLen);  
+             /*[outbuf]*/       void* mac, size_t *macLen,
+                                uint8_t ta_num);  
 
 
 /*
@@ -277,13 +297,15 @@ TEE_Result internal_TEE_MACComputeFinal(TEE_OperationHandle operation,
 TEE_Result internal_TEE_AsymmetricSignDigest(TEE_OperationHandle operation,
                     /*[in]*/         TEE_Attribute* params, uint32_t paramCount,
                     /*[inbuf]*/      void* digest, size_t digestLen,
-                    /*[outbuf]*/     void* signature, size_t *signatureLen);  
+                    /*[outbuf]*/     void* signature, size_t *signatureLen,
+                                     uint8_t ta_num);  
 
 
 TEE_Result internal_TEE_AsymmetricVerifyDigest(TEE_OperationHandle operation, 
                     /*[in] */ TEE_Attribute* params, uint32_t paramCount,
                     /*[inbuf]*/ void* digest, size_t digestLen,
-                    /*[inbuf]*/ void* signature, size_t signatureLen); 
+                    /*[inbuf]*/ void* signature, size_t signatureLen,
+                                uint8_t ta_num); 
 
 
 
@@ -301,14 +323,17 @@ TEE_Result internal_TEE_AsymmetricVerifyDigest(TEE_OperationHandle operation,
 */
 
 void internal_TEE_DigestUpdate(TEE_OperationHandle operation,
-                               void* chunk, size_t chunkSize);
+                               void* chunk, size_t chunkSize,
+                               uint8_t ta_num);
 
 TEE_Result internal_TEE_DigestDoFinal(TEE_OperationHandle operation,
                                       /*[inbuf]*/ void *chunk, size_t chunkLen,
-                                      /*[outbuf]*/ void *hash, size_t *hashLen);
+                                      /*[outbuf]*/ void *hash, size_t *hashLen,
+                                                  uint8_t ta_num);
 
 
 TEE_Result internal_TEE_DigestExtract(TEE_OperationHandle operation,
-            /*[outbuf]*/       void* hash, size_t *hashLen);
+            /*[outbuf]*/       void* hash, size_t *hashLen,
+                               uint8_t ta_num);
 
 #endif // INTERNAL_CORE_API_H

@@ -44,6 +44,7 @@
 #include <limits.h>
 #include <ctype.h>
 #include <float.h>
+#include <internal_core_api.h>
 
 #ifdef ENABLE_LOCALES
 #include <locale.h>
@@ -213,7 +214,7 @@ CJSON_PUBLIC(void) cJSON_InitHooks(cJSON_Hooks* hooks)
         /* Reset hooks */
         global_hooks.allocate = malloc;
         global_hooks.deallocate = free;
-        global_hooks.reallocate = realloc;
+        global_hooks.reallocate = NULL;
         return;
     }
 
@@ -1280,7 +1281,7 @@ CJSON_PUBLIC(char *) cJSON_PrintBuffered(const cJSON *item, int prebuffer, cJSON
         return NULL;
     }
 
-    p.buffer = (unsigned char*)global_hooks.allocate((size_t)prebuffer);
+    p.buffer = (unsigned char*)cJSON_malloc((size_t)prebuffer);
     if (!p.buffer)
     {
         return NULL;
@@ -3133,11 +3134,14 @@ CJSON_PUBLIC(cJSON_bool) cJSON_Compare(const cJSON * const a, const cJSON * cons
 
 CJSON_PUBLIC(void *) cJSON_malloc(size_t size)
 {
-    return global_hooks.allocate(size);
+    return internal_TEE_Malloc(size, TEE_MALLOC_NO_FILL, CORE_NUM);
+    //return global_hooks.allocate(size);
 }
 
 CJSON_PUBLIC(void) cJSON_free(void *object)
 {
-    global_hooks.deallocate(object);
+    /* global_hooks.deallocate(object);
+    object = NULL; */
+    internal_TEE_Free(object, CORE_NUM);
     object = NULL;
 }

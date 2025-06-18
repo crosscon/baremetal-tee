@@ -195,6 +195,13 @@ void Clear_Data_BSS() {
 	}
 }
 
+//Used to initlialize the internal object arrays
+//TODO: IT would be nice to use the BSS but I haven't managed yet
+static void internal_TEE_ClearObjects(){
+	memset(registeredObjects, 0, sizeof(registeredObjects));
+	memset(registeredOperations, 0, sizeof(registeredOperations));
+}
+
 /**
  * Standard configuration of the system clock for the STM32L4xx family
 */
@@ -279,6 +286,9 @@ void boot(void) {
 
 	// Clear Data and BSS segments from RAM
 	Clear_Data_BSS();
+
+	//Clear internal object arrays
+	internal_TEE_ClearObjects();
 
 	// Set the SP and PC for the fortified application 
 	unsigned int* app_vector_table = &__flash_start__;

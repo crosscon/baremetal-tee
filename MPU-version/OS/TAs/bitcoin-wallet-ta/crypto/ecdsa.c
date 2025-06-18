@@ -4,6 +4,7 @@
 #include <assert.h>
 //#include <tee_client_api.h>
 //#include <tee_internal_api_extensions.h>
+#include "tee_core_api.h"
 
 #include "bignum.h"
 #include "ecdsa.h"

@@ -86,6 +86,7 @@ To start the compilation process, use the following command while located in the
 ```bash=
 make CC=arm-none-eabi-gcc AR=arm-none-eabi-ar LD=arm-none-eabi-ld CFLAGS="-mcpu=cortex-m3 -mthumb -DUSE_HAL_DRIVER -DSTM32L475xx -Og -Wall -fdata-sections -ffunction-sections -g -gdwarf-2" LDFLAGS="--specs=nosys.specs --specs=nano.spec"
 ```
+Note: it might require the `arm-none-eabi-newlib` package
 
 Note: make sure to use the path of GNU Arm Embedded Toolchain installed on your system to point to the CC and AR executables, as explained above. 
 
@@ -374,20 +375,20 @@ To build a fortified application able to run on top of MCU Fortifier, the build 
     FLASH_BOOT (rx)        	   : ORIGIN = 0x08000000, LENGTH = 0x20000   /* Microvisor reserved flash memory */
     FLASH_TA1 (rx)             : ORIGIN = 0x08020000, LENGTH = 0x3C000   /* Flash memory for first TA */
     FLASH_SECURE_TA1(rw)       : ORIGIN = 0x0805C000, LENGTH = 0x4000    /* Secure Storage (flash memory) for first TA */
-    FLASH_TA2 (rx)             : ORIGIN = 0x08060000, LENGTH = 0x3C000   /* Flash memory for second TA - w needed for trusted storage */
+    FLASH_TA2 (rx)             : ORIGIN = 0x08060000, LENGTH = 0x3C000   /* Flash memory for second TA */
     FLASH_SECURE_TA2(rw)       : ORIGIN = 0x0809C000, LENGTH = 0x4000    /* Secure Storage (flash memory) for second TA */
     FLASH (rx)                 : ORIGIN = 0x080A0000, LENGTH = 0x58000   /* Flash memory for user application */
     FLASH_BOOT_NOPRI (rx)      : ORIGIN = 0x080F8000, LENGTH = 0x8000    /* Microvisor code running without privileges */
-    RAM_BOOT (xrw)             : ORIGIN = 0x10000000, LENGTH = 0x20 	 /* Reserved RAM used by the microvisor during user application runtime */
-    RAM (xrw)             	   : ORIGIN = 0x10004000, LENGTH = 0x4000    /* RAM for the user application */
-    RAM_TA1 (xrw)       	   : ORIGIN = 0x20000000, LENGTH = 0xC000    /* RAM for the first TA */
-    RAM_TA2 (xrw)              : ORIGIN = 0x2000C000, LENGTH = 0xC000    /* RAM for the second TA */
+    RAM_TA1 (xrw)              : ORIGIN = 0x10000000, LENGTH = 0x4000 	 /* RAM for the first TA */
+    RAM_TA2 (xrw)              : ORIGIN = 0x10004000, LENGTH = 0x4000    /* RAM for the second TA */
+    RAM_BOOT (xrw)       	     : ORIGIN = 0x20000000, LENGTH = 0x10000   /* Reserved RAM used by the microvisor during user application runtime  */
+    RAM (xrw)                  : ORIGIN = 0x20010000, LENGTH = 0x8000    /* RAM for the user application */
   }
   ```
 
 * Remove the **directives related to the target processor** (e.g. *.cpu cortex-m4* in the startup file) inseted automatically by STM32CubeIDE during the build process. This can be done by using a single search-and-replace and should be done because MCU-Fortifier is designed to work with Cortex-M3 devices (which only support a subsection of Cortex-M4 instructions) and the correct architecture is already specified with command line options. 
 
-* Edit the **debug configuration** to correctly flash and load all the necessary information from both the Micorvisor executable (MCU-Fortifier.elf) and the fortified application executable (blinky_l475.elf). To do this with STM32CubeIDE it is necessary to open the *Debug Configuration* window by right-clicking on the project, selecting *Debug As* and choosing *Debug Configurations*. On the *Startup* tab, it is required to:
+* Edit the **debug configuration** to correctly flash and load all the necessary information from both the Micorvisor executable (MCU-Fortifier.elf) and the fortified application executable (blinky_l475.elf). To do this with STM32CubeIDE it is necessary to open the *Debug Configuration* window by right-clicking on the project, selecting *Debug As* and choosing *Debug Configurations*. Select the *STM32 C/C++ Application* version and then, on the *Startup* tab, it is required to:
     * Add the Microvisor executable by clicking on *Add* and browsing the file system to the location where the ".elf" for MCU Fortifier is stored;
     * *Move down* the imported executable and make it the last element of the list (a green play symbol should appear next to its name). This ensures that MCU Fortifier will be the first code executed on boot, otherwise, the fortified application would be executed directly without performing all the necessary configuration steps resulting in unpredictable behaviours;
     * Uncheck the *Halt on exception* option as they are often triggered by the Microvisor and leaving that on would interfere with the debugging process, resulting in constant halting of the code.

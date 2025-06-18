@@ -1,14 +1,16 @@
 #include "stm32l475vg_mpu.h"
+#include "stm32l4xx_hal.h"
 #include "memory_map.h"
 #include "it.h"
 #include "tee_common.h"
 #include "tee_client_api.h"
 #include "internal_core_api.h"
 
+
 // Declare the structure used to store the parameters passed by the client to the TA
-// The structure is placed in the TEE_TA_data section of the binary
-// This section is part of the RAM of the client application (see the linker script)
-TEE_Param  __attribute__((section(".TEE_TA_data"))) ta_params[4] = {0};
+// The structure is placed in the TA's own memory section of the binary
+TEE_Param  __attribute__((section(".data_TA1 "))) ta_params_1[4] = {0};
+TEE_Param  __attribute__((section(".data_TA2 "))) ta_params_2[4] = {0};
 
 
 /**
@@ -46,6 +48,7 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
  
 	// Declare a variable to store the internal operation (used to pass the parameters from the client to the core)
 	internal_operation_t *internal_op = {0};
+
 	// The internal operation is passed only in the case of the following functions: 
 	// FUNCTION_INIT_CONTEXT, FUNCTION_OPEN_SESSION, FUNCTION_INVOKE_COMMAND
 	// In the other cases (FUNCTION_FINALIZE_CONTEXT, FUNCTION_CLOSE_SESSION), the TA number is passed directly
@@ -55,11 +58,14 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
 		// which contains all the information passed by the TA (UUID, parameters, etc.)
 		internal_op = (internal_operation_t*)(manual_frame[0]);
 
-	    // If the internal operation is null, return with an error
-	    if(!internal_op){
+
+		//Check validity of the manual frame pointer
+		__disable_irq(); 
+		if(!internal_op || internal_op < CA_MEMORY_START_ADDR || internal_op+ sizeof(internal_operation_t) > CA_MEMORY_END_ADDR) {
 			ret_val = TEE_FAILED;
-	        goto exit;
-	    }
+			goto exit;
+		}
+		__enable_irq();
 
 		// Extract the TA number from the internal operation
 		ta_num = internal_op->id;
@@ -67,6 +73,21 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
 		// Extract the TA number from the manual frame (passed in r4)
 		ta_num = (int) manual_frame[0];
 	}
+
+	//Define which parameters which should use.
+	TEE_Param * ta_params_ptr = NULL;
+	if(ta_num == 1) {
+		// If the TA number is 1, use the ta_params_1 structure
+		ta_params_ptr = ta_params_1;
+	} else if (ta_num == 2) {
+		// If the TA number is 2, use the ta_params_2 structure
+		ta_params_ptr = ta_params_2;
+	} else {
+		// If the TA number is not valid, return with an error
+		ret_val = TEE_FAILED;
+		goto exit;
+	}
+
 
 	// Extract the command ID from the manual frame (passed in r5)
 	// This is the command_id is used only when the SVC number is equal to FUNCTION_INVOKE_COMMAND (4)
@@ -76,38 +97,67 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
 	// In these cases, the parameters are passed by TA inside the memory area used by the internal operation
 	// They need to be extracted and stored in the format used by the TA (TA_Param)
 	if((svc_num == FUNCTION_OPEN_SESSION)  || (svc_num == FUNCTION_INVOKE_COMMAND)) {
+		
+		//We still have the privileges so we must ensure that the memory we are accessing and copying around
+		// is valid and inside the CA memory area and the TA memory area. We disable interrupts to avoid TOCTOU
+		__disable_irq(); 
 		for(int i=0; i<4; i++) {
             // internal_op parameter carry the payload as a void pointer so we need to type cast it to TEEC_Parameter
 			TEEC_Parameter *ca_params = (TEEC_Parameter*)internal_op->params[i];
+
 			int type = TEE_PARAM_GET_TYPES(internal_op->paramTypes, i);
 
 			if(ca_params) {
+				//Check if both structures are inside the CA memory area
+				if(ca_params < CA_MEMORY_START_ADDR || ca_params + sizeof(TEEC_Parameter) > CA_MEMORY_END_ADDR) {
+					ret_val = TEE_FAILED;
+					goto exit;
+				}
+
+
 				// Copy the memory reference params from the TEEC_Param structure to TA_Param structure
 				if(ca_params->memref.parent != NULL) {
-					ta_params[i].memref.buffer = ca_params->memref.parent->buffer;
-					ta_params[i].memref.size = ca_params->memref.parent->size;
+					//Check if the various memory pointers are inside the CA memory area
+					if(ca_params->memref.parent->buffer < CA_MEMORY_START_ADDR || 
+					   ca_params->memref.parent->buffer + ca_params->memref.parent->size > CA_MEMORY_END_ADDR) {
+						ret_val = TEE_FAILED;
+						goto exit;
+					}
+
+					ta_params_ptr[i].memref.buffer = ca_params->memref.parent->buffer;
+					ta_params_ptr[i].memref.size = ca_params->memref.parent->size;
 				}
 				
+
 				// Copy the temporary memory reference params from the TEEC_Param structure to TA_Param structure
 				if(ca_params->tmpref.buffer != NULL) {
-					ta_params[i].memref.buffer = ca_params->tmpref.buffer;
-					ta_params[i].memref.size = ca_params->tmpref.size;
+					// Check if the temporary memory reference is valid
+					if(ca_params->tmpref.buffer < CA_MEMORY_START_ADDR || 
+					   ca_params->tmpref.buffer + ca_params->tmpref.size > CA_MEMORY_END_ADDR) {
+						ret_val = TEE_FAILED;
+						goto exit;
+					}
+					ta_params_ptr[i].memref.buffer = ca_params->tmpref.buffer;
+					ta_params_ptr[i].memref.size = ca_params->tmpref.size;
 				}
+
+				//Check if the value is valid
 
 				// Copy integer params from the TEEC_Param structure to TA_Param structure only if they are input or in-out params
 				if(type == TEE_PARAM_TYPE_VALUE_INPUT || type ==  TEE_PARAM_TYPE_VALUE_INOUT) {
-					ta_params[i].value.a = ca_params->value.a;
-					ta_params[i].value.b = ca_params->value.b;
+					ta_params_ptr[i].value.a = ca_params->value.a;
+					ta_params_ptr[i].value.b = ca_params->value.b;
 				}
 			}
-		} 
+		}
+		__enable_irq(); 
 	}
 
 	/**
 	 * Reconfigure dynamically the MPU and the various region
 	 * This allow the execution of the TA code and the access to the TA memory
 	 * Access to the client application memory is guaranteed 
-	 * Isolation between the TA and the Fortier/other TAs is enforced
+	 * Isolation between the TA and the OS/other TAs is enforced
 	 * The MPU reconfiguration is done based on the TA number passed as parameter (ta_num)
 	 */
 	Reconfigure_MPU(ta_num);
@@ -116,13 +166,13 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
 	// TODO: evaluate if we need to modify the PSP to a different value after the execution of the first function of the TA 
 	if(ta_num == 1){
 		__asm__(
-			".equ STACK_PSP_START, (0x20000000 + (48 *1024) -1)\n"
+			".equ STACK_PSP_START, (0x10000000 + (8 *1024) -1)\n"
 			"ldr r0, =STACK_PSP_START\n"
 			"msr psp, r0\n"
 		);
 	} else {
 		__asm__(
-			".equ STACK_PSP_START, (0x20000000 + (96 *1024) -1)\n"
+			".equ STACK_PSP_START, (0x10000000 + (16 *1024) -1)\n"
 			"ldr r0, =STACK_PSP_START\n"
 			"msr psp, r0\n"
 		);	
@@ -163,17 +213,17 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
             // Call TEE_openTASession, corresponding to TEEC_OpenSession() function
 			// TODO: ask if it was an implementation choice to not pass the session
 			if (ta_num == 1) 
-				ret_val = TA_OpenSessionEntryPoint1(internal_op->paramTypes, ta_params, NULL);
+				ret_val = TA_OpenSessionEntryPoint1(internal_op->paramTypes, ta_params_ptr, NULL);
 			else 
-				ret_val = TA_OpenSessionEntryPoint2(internal_op->paramTypes, ta_params, NULL);
+				ret_val = TA_OpenSessionEntryPoint2(internal_op->paramTypes, ta_params_ptr, NULL);
 			
 			// No out params are used inside this fuction, so there is no need to trasfer back the modifications
 			// to the TEEC_Param structure. Just need to reset the TA_Params structure
 			for(int i=0; i<4; i++) {
-				ta_params[i].memref.buffer = NULL;
-				ta_params[i].memref.size = 0;
-				ta_params[i].value.a = 0;
-				ta_params[i].value.b = 0;
+				ta_params_ptr[i].memref.buffer = NULL;
+				ta_params_ptr[i].memref.size = 0;
+				ta_params_ptr[i].value.a = 0;
+				ta_params_ptr[i].value.b = 0;
 			}
 			break;
 
@@ -189,41 +239,58 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
             // Call TA_invokeCommandEntryPoint, correspond to TEEC_InvokeCommand() function
 			// TODO: ask if it was an implementation choice to not pass the session
 			if (ta_num == 1) 
-				ret_val = TA_InvokeCommandEntryPoint1(NULL, command_id, internal_op->paramTypes, ta_params);
+				ret_val = TA_InvokeCommandEntryPoint1(NULL, command_id, internal_op->paramTypes, ta_params_ptr);
 			else 
-				ret_val = TA_InvokeCommandEntryPoint2(NULL, command_id, internal_op->paramTypes, ta_params);
+				ret_val = TA_InvokeCommandEntryPoint2(NULL, command_id, internal_op->paramTypes, ta_params_ptr);
 
 			// Copy back the parameters from the TA_Param structure to the TEEC_Param structure
 			// This is done only for the output and in-out parameters
+
+			//Disable interrupts since we enter a critical section
+			__disable_irq(); 
 			for(int i=0; i<4; i++) {
 			
 				TEEC_Parameter *ca_params = (TEEC_Parameter*)internal_op->params[i];
 				int type = TEE_PARAM_GET_TYPES(internal_op->paramTypes, i);
 
-				// Copy the integer params from the TA_Param structure to TEEC_Param structure
-				if(type == TEE_PARAM_TYPE_VALUE_OUTPUT || type ==  TEE_PARAM_TYPE_VALUE_INOUT) {
-					ca_params->value.a = ta_params[i].value.a;
-					ca_params->value.b = ta_params[i].value.b;
-				}
+				if(ca_params) {
+					if(ca_params < CA_MEMORY_START_ADDR || ca_params + sizeof(TEEC_Parameter) > CA_MEMORY_END_ADDR) {
+						ret_val = TEE_FAILED;
+						goto exit;
+					}
 
-				// Copy only the size of the memory reference params from the TA_Param structure to TEEC_Param structure
-				// The buffer is already allocated in the client application memory and the TA should not modify it
-				if(ta_params[i].memref.buffer != NULL && (type == TEE_PARAM_TYPE_MEMREF_OUTPUT || type == TEE_PARAM_TYPE_MEMREF_INOUT)) {
-					if (ca_params->memref.parent != NULL) {
-						ca_params->memref.parent->size = ta_params[i].memref.size;
-						ca_params->memref.size = ta_params[i].memref.size;	
-					} else {
-						ca_params->tmpref.size = ta_params[i].memref.size;
+					// Copy the integer params from the TA_Param structure to TEEC_Param structure
+					if(type == TEE_PARAM_TYPE_VALUE_OUTPUT || type ==  TEE_PARAM_TYPE_VALUE_INOUT) {
+						ca_params->value.a = ta_params_ptr[i].value.a;
+						ca_params->value.b = ta_params_ptr[i].value.b;
+					}
+
+					// Copy only the size of the memory reference params from the TA_Param structure to TEEC_Param structure
+					// The buffer is already allocated in the client application memory and the TA should not modify it
+					if(ta_params_ptr[i].memref.buffer != NULL && (type == TEE_PARAM_TYPE_MEMREF_OUTPUT || type == TEE_PARAM_TYPE_MEMREF_INOUT)) {
+						
+						if (ca_params->memref.parent != NULL) {
+							// Check if the memory reference is valid
+							if(ca_params->memref.parent < CA_MEMORY_START_ADDR || 
+								ca_params->memref.parent + sizeof(TEEC_SharedMemory) > CA_MEMORY_END_ADDR) {
+								ret_val = TEE_FAILED;
+								goto exit;
+							}
+							ca_params->memref.parent->size = ta_params_ptr[i].memref.size;
+							ca_params->memref.size = ta_params_ptr[i].memref.size;	
+						} else {
+							ca_params->tmpref.size = ta_params_ptr[i].memref.size;
+						}
 					}
 				}
 			}
 			
 			// Reset the TA_Params structure
 			for(int i=0; i<4; i++) {
-				ta_params[i].memref.buffer = NULL;
-				ta_params[i].memref.size = 0;
-				ta_params[i].value.a = 0;
-				ta_params[i].value.b = 0;
+				ta_params_ptr[i].memref.buffer = NULL;
+				ta_params_ptr[i].memref.size = 0;
+				ta_params_ptr[i].value.a = 0;
+				ta_params_ptr[i].value.b = 0;
 			}
 			break;
 
@@ -257,37 +324,42 @@ exit:
  */
 void call_TEE(unsigned int* auto_frame, unsigned int* manual_frame) {
 
-	int ret_val = 0; // Declare a variable to store the return value
+	void * ret_val = 0; // Declare a variable to store the return value
 
 	int svc_num = -1;
-	register uintptr_t sp_value = 0;
+	register uintptr_t pc_value = 0;
+	uint8_t ta_num = 0;
 
-	// Recover the value of the stack pointer (SP) from r2 register
+	// Recover the value of the program counter (PC) from r2 register
 	// and the value of SVC number from r3 register and store them in C variables
 	// These two values were placed in the registers by the SVC Handler
 	__asm__(
-		"mov %[sp_value], r2\n"
+		"mov %[pc_value], r2\n"
 		"mov %[svc_num], r3\n"
-		: [sp_value] "=r" (sp_value), [svc_num] "=r" (svc_num)
+		: [pc_value] "=r" (pc_value), [svc_num] "=r" (svc_num)
 		: 
 		: "r2", "r3"
 	);
 
-	// The SP value is used to check if the SP at the moment of the SVC call
-	// points to a memory area allocated for a TA or a CA
-	// If the SP value is not in the range of the TA memory, return with an error
+	// The PC value is used to check the caller of the SVC. 
+	// If the PC value is not in the range of the TAs memory, return with an error
 	// This is done to ensure that only TAs can call TEE Core API 
 	// that run in the secure world with privileged access
-	if (sp_value < TA1_MEMORY_START_ADDR || sp_value > TA2_MEMORY_END_ADDR) {
+	if (pc_value >= TA1_CODE_START_ADDR && pc_value < TA1_CODE_END_ADDR){
+		ta_num = 1;
+	} else if (pc_value >= TA2_CODE_START_ADDR && pc_value < TA2_CODE_END_ADDR){
+		ta_num = 2;
+	} else {
+		// If the PC value is not in the range of the TAs memory, return with an error
 		ERR_MSG("Unstrusted applications can not execure privileged TEE Core API directly, exiting");
-		ret_val = TEE_FAILED;
-		return;
-	}
+		ret_val = (void *)TEE_FAILED;
+		goto exit;
+	} 
 
 	// If the SVC number is not passed (or is not valid), return with an error
 	if (svc_num == -1) {
-		ret_val = TEE_FAILED;
-		return;
+		ret_val = (void *)TEE_FAILED;
+		goto exit;
 	}
 
 	// Based on the SVC number, call the internal implementation of the TEE Core API
@@ -296,134 +368,134 @@ void call_TEE(unsigned int* auto_frame, unsigned int* manual_frame) {
 		case FUNCTION_MALLOC:
 			// Extract the parameters from the manual frame and pass them to the internal implementation of TEE Core API
 			// As the values were passed in the registers to the SVC Handler, they are stored in the manual frame
-			ret_val = internal_TEE_Malloc(manual_frame[0], manual_frame[1], manual_frame[2]);
+			ret_val = internal_TEE_Malloc(manual_frame[0], manual_frame[1], ta_num);
 			break;
 		case FUNCTION_FREE:
-			internal_TEE_Free(manual_frame[0], (void*)manual_frame[1]);
+			internal_TEE_Free((void*)manual_frame[0], ta_num);
 			break;
 		case FUNCTION_MEM_MOVE:
-			internal_TEE_MemMove(manual_frame[0], (void*)manual_frame[1], (void*)manual_frame[2], manual_frame[3]);
+			internal_TEE_MemMove((void*)manual_frame[0], (void*)manual_frame[1], manual_frame[2], ta_num);
 			break;
 		case FUNCTION_MEM_FILL:
-			internal_TEE_MemFill(manual_frame[0], (void*)manual_frame[1], manual_frame[2], manual_frame[3]);
+			internal_TEE_MemFill((void*)manual_frame[0], manual_frame[1], manual_frame[2], ta_num);
 			break;
 		case FUNCTION_BIG_INT_CONVERT_TO_S32:
-			ret_val = internal_TEE_BigIntConvertToS32((int32_t*)manual_frame[0], (TEE_BigInt*)manual_frame[1]);
+			ret_val = (void *) internal_TEE_BigIntConvertToS32((int32_t*)manual_frame[0], (TEE_BigInt*)manual_frame[1], ta_num);
 			break;
 		case FUNCTION_BIG_INT_CMP_S32:
-			ret_val = internal_TEE_BigIntCmpS32((TEE_BigInt*)manual_frame[0], manual_frame[1]);
+			ret_val = (void *)internal_TEE_BigIntCmpS32((TEE_BigInt*)manual_frame[0], manual_frame[1], ta_num);
 			break;
 		case FUNCTION_BIG_INT_MOD:
-			internal_TEE_BigIntMod((TEE_BigInt*)manual_frame[0], (TEE_BigInt*)manual_frame[1], (TEE_BigInt*)manual_frame[2]);
+			internal_TEE_BigIntMod((TEE_BigInt*)manual_frame[0], (TEE_BigInt*)manual_frame[1], (TEE_BigInt*)manual_frame[2], ta_num);
 			break;
 		case FUNCTION_BIG_INT_DIV:
-			internal_TEE_BigIntDiv((TEE_BigInt*)manual_frame[0], (TEE_BigInt*)manual_frame[1], (TEE_BigInt*)manual_frame[2], (TEE_BigInt*)manual_frame[3]);
+			internal_TEE_BigIntDiv((TEE_BigInt*)manual_frame[0], (TEE_BigInt*)manual_frame[1], (TEE_BigInt*)manual_frame[2], (TEE_BigInt*)manual_frame[3], ta_num);
 			break;
 		case FUNCTION_BIG_INT_CONVERT_FROM_OCTET_STRING:
-			ret_val = internal_TEE_BigIntConvertFromOctetString((TEE_BigInt*)manual_frame[0], (uint8_t*)manual_frame[1], manual_frame[2], manual_frame[3]);
+			ret_val = (void *)internal_TEE_BigIntConvertFromOctetString((TEE_BigInt*)manual_frame[0], (uint8_t*)manual_frame[1], manual_frame[2], manual_frame[3], ta_num);
 			break;
 		case FUNCTION_BIG_INT_INIT:
-			internal_TEE_BigIntInit((TEE_BigInt*)manual_frame[0], manual_frame[1]);
+			internal_TEE_BigIntInit((TEE_BigInt*)manual_frame[0], manual_frame[1], ta_num);
 			break;
 		case FUNCTION_ALLOCATE_TRANSIENT_OBJECT:
-			ret_val = internal_TEE_AllocateTransientObject(manual_frame[0], manual_frame[1], manual_frame[2]);
+			ret_val = (void *)internal_TEE_AllocateTransientObject(manual_frame[0], manual_frame[1], (TEE_ObjectHandle *)manual_frame[2], ta_num);
 			break;
 		case FUNCTION_POPULATE_TRANSIENT_OBJECT:
-			ret_val = internal_TEE_PopulateTransientObject(manual_frame[0], manual_frame[1], manual_frame[2]);
+			ret_val = (void *)internal_TEE_PopulateTransientObject((TEE_ObjectHandle)manual_frame[0], (TEE_Attribute *)manual_frame[1], manual_frame[2], ta_num);
 			break;
 		case FUNCTION_INIT_REF_ATTRIBUTE:
-			internal_TEE_InitRefAttribute(manual_frame[0], manual_frame[1], manual_frame[2], manual_frame[3]);
+			internal_TEE_InitRefAttribute((TEE_Attribute *)manual_frame[0], manual_frame[1], (void *)manual_frame[2], manual_frame[3], ta_num);
 			break;
 		case FUNCTION_INIT_VALUE_ATTRIBUTE:
-			internal_TEE_InitValueAttribute(manual_frame[0], manual_frame[1], manual_frame[2], manual_frame[3]);
+			internal_TEE_InitValueAttribute((TEE_Attribute *)manual_frame[0], manual_frame[1], manual_frame[2], manual_frame[3], ta_num);
 			break;
 		case FUNCTION_GET_OBJECT_BUFFER_ATTRIBUTE:
-			ret_val = internal_TEE_GetObjectBufferAttribute(manual_frame[0], manual_frame[1], (void*)manual_frame[2], manual_frame[3]);
+			ret_val = (void *)internal_TEE_GetObjectBufferAttribute((TEE_ObjectHandle)manual_frame[0], manual_frame[1], (void*)manual_frame[2], (size_t *)manual_frame[3], ta_num);
 			break;
 		case FUNCTION_GET_OBJECT_VALUE_ATTRIBUTE:
-			ret_val = internal_TEE_GetObjectValueAttribute(manual_frame[0], manual_frame[1], (uint32_t*)manual_frame[2], (uint32_t*)manual_frame[3]);
+			ret_val = (void *)internal_TEE_GetObjectValueAttribute((TEE_ObjectHandle)manual_frame[0], manual_frame[1], (uint32_t*)manual_frame[2], (uint32_t*)manual_frame[3], ta_num);
 			break;
 		case FUNCTION_FREE_TRANSIENT_OBJECT:
-			internal_TEE_FreeTransientObject(manual_frame[0]);
+			internal_TEE_FreeTransientObject((TEE_ObjectHandle)manual_frame[0], ta_num);
 			break;
 		case FUNCTION_CLOSE_OBJECT:
-			internal_TEE_CloseObject(manual_frame[0]);
+			internal_TEE_CloseObject((TEE_ObjectHandle)manual_frame[0], ta_num);
 			break;
 		case FUNCTION_READ_OBJECT_DATA:
-			ret_val = internal_TEE_ReadObjectData(manual_frame[0], (void*)manual_frame[1], manual_frame[2], (size_t*)manual_frame[3], manual_frame[4]);
+			ret_val = (void *)internal_TEE_ReadObjectData((TEE_ObjectHandle)manual_frame[0], (void*)manual_frame[1], manual_frame[2], (size_t*)manual_frame[3], ta_num);
 			break;
 		case FUNCTION_WRITE_OBJECT_DATA:
-			ret_val = internal_TEE_WriteObjectData(manual_frame[0], (void*)manual_frame[1], manual_frame[2], manual_frame[3]);
+			ret_val = (void *)internal_TEE_WriteObjectData((TEE_ObjectHandle)manual_frame[0], (void*)manual_frame[1], manual_frame[2], ta_num);
 			break;
 		case FUNCTION_CREATE_PERSISTENT_OBJECT:
-			ret_val = internal_TEE_CreatePersistentObject(manual_frame[0], manual_frame[1], manual_frame[2], manual_frame[3], manual_frame[4], manual_frame[5], manual_frame[6], manual_frame[7]);
+			ret_val = (void *)internal_TEE_CreatePersistentObject(ta_num, (void *) manual_frame[1], manual_frame[2], manual_frame[3],(TEE_ObjectHandle) manual_frame[4],(void *)  manual_frame[5], manual_frame[6], (TEE_ObjectHandle *)manual_frame[7], ta_num);
 			break;
 		case FUNCTION_OPEN_PERSISTENT_OBJECT:
-			ret_val = internal_TEE_OpenPersistentObject(manual_frame[0], manual_frame[1], manual_frame[2], manual_frame[3], manual_frame[4]);
+			ret_val = (void *)internal_TEE_OpenPersistentObject(ta_num,(void *) manual_frame[1], manual_frame[2], manual_frame[3], (TEE_ObjectHandle *)manual_frame[4], ta_num);
 			break;
 		case FUNCTION_CLOSE_DELETE_PERSISTENT_OBJECT:
-			ret_val = internal_TEE_CloseAndDeletePersistentObject1(manual_frame[0], manual_frame[1]);
+			ret_val = (void *)internal_TEE_CloseAndDeletePersistentObject((TEE_ObjectHandle)manual_frame[0], ta_num);
 			break;
 		case FUNCTION_ALLOCATE_OPERATION:
-			ret_val = internal_TEE_AllocateOperation(manual_frame[0], manual_frame[1], manual_frame[2], manual_frame[3]);
+			ret_val = (void *)internal_TEE_AllocateOperation((TEE_OperationHandle *)manual_frame[0], manual_frame[1], manual_frame[2], manual_frame[3], ta_num);
 			break;
 		case FUNCTION_FREE_OPERATION:
-			internal_TEE_FreeOperation(manual_frame[0]);
+			internal_TEE_FreeOperation((TEE_OperationHandle)manual_frame[0], ta_num);
 			break;
 		case FUNCTION_SET_OPERATION_KEY:
-			ret_val = internal_TEE_SetOperationKey(manual_frame[0], manual_frame[1]);
+			ret_val = (void *)internal_TEE_SetOperationKey((TEE_OperationHandle)manual_frame[0], (TEE_ObjectHandle)manual_frame[1], ta_num);
 			break;
 		case FUNCTION_SET_OPERATION_KEY2:
 			// NOTE: This function is not implemented in the TEE Core API
 			//ret_val = internal_TEE_SetOperationKey2(manual_frame[0], manual_frame[1], manual_frame[2]);
 			break;
 		case FUNCTION_GENERATE_KEY:
-			ret_val = internal_TEE_GenerateKey(manual_frame[0], manual_frame[1], manual_frame[2], manual_frame[3], manual_frame[4]);
+			ret_val = (void *)internal_TEE_GenerateKey((TEE_ObjectHandle)manual_frame[0], manual_frame[1], (TEE_Attribute *)manual_frame[2], manual_frame[3], ta_num);
 			break;
 		case FUNCTION_GENERATE_RANDOM:
-			internal_TEE_GenerateRandom(manual_frame[0], manual_frame[1]);
+			internal_TEE_GenerateRandom((void *)manual_frame[0], manual_frame[1], ta_num);
 			break;
 		case FUNCTION_DERIVE_KEY:
 			// NOTE: This function is not implemented in the TEE Core API
 			//ret_val = internal_TEE_DeriveKey(manual_frame[0], manual_frame[1], manual_frame[2], manual_frame[3]);
 			break;
 		case FUNCTION_CIPHER_INIT:
-			internal_TEE_CipherInit(manual_frame[0], manual_frame[1], manual_frame[2]);
+			internal_TEE_CipherInit((TEE_OperationHandle)manual_frame[0], (void *)manual_frame[1], manual_frame[2], ta_num);
 			break;
 		case FUNCTION_CIPHER_UPDATE:
-			ret_val = internal_TEE_CipherUpdate(manual_frame[0], manual_frame[1], manual_frame[2], manual_frame[3], manual_frame[4]);
+			ret_val = (void *)internal_TEE_CipherUpdate((TEE_OperationHandle)manual_frame[0], (void *)manual_frame[1], manual_frame[2], (void *)manual_frame[3],(size_t *) manual_frame[4], ta_num);
 			break;
 		case FUNCTION_CIPHER_DO_FINAL:
-			ret_val = internal_TEE_CipherDoFinal(manual_frame[0], (void*)manual_frame[1], manual_frame[2], (void*)manual_frame[3], manual_frame[4]);
+			ret_val = (void *)internal_TEE_CipherDoFinal((TEE_OperationHandle)manual_frame[0], (void*)manual_frame[1], manual_frame[2], (void*)manual_frame[3], (size_t *) manual_frame[4], ta_num);
 			break;
 		case FUNCTION_MAC_INIT:
-			internal_TEE_MACInit(manual_frame[0], manual_frame[1], manual_frame[2]);
+			internal_TEE_MACInit((TEE_OperationHandle)manual_frame[0], (void *) manual_frame[1], manual_frame[2], ta_num);
 			break;
 		case FUNCTION_MAC_UPDATE:
-			internal_TEE_MACUpdate(manual_frame[0], manual_frame[1], manual_frame[2]);
+			internal_TEE_MACUpdate((TEE_OperationHandle)manual_frame[0],(void *)  manual_frame[1], manual_frame[2], ta_num);
 			break;
 		case FUNCTION_MAC_COMPUTE_FINAL:
-			ret_val = internal_TEE_MACComputeFinal(manual_frame[0], (void*)manual_frame[1], manual_frame[2], (void*)manual_frame[3], manual_frame[4]);
+			ret_val = (void *)internal_TEE_MACComputeFinal((TEE_OperationHandle)manual_frame[0], (void*)manual_frame[1], manual_frame[2], (void*)manual_frame[3], (size_t *)manual_frame[4], ta_num);
 			break;
 		case FUNCTION_DIGEST_UPDATE:
-			internal_TEE_DigestUpdate(manual_frame[0], (void*)manual_frame[1], manual_frame[2]);
+			internal_TEE_DigestUpdate((TEE_OperationHandle)manual_frame[0], (void*)manual_frame[1], manual_frame[2], ta_num);
 			break;
 		case FUNCTION_DIGEST_DO_FINAL:
-			ret_val = internal_TEE_DigestDoFinal(manual_frame[0], (void*)manual_frame[1], manual_frame[2], (void*)manual_frame[3], manual_frame[4]);
+			ret_val = (void *)internal_TEE_DigestDoFinal((TEE_OperationHandle)manual_frame[0], (void*)manual_frame[1], manual_frame[2], (void*)manual_frame[3], (size_t *)manual_frame[4], ta_num);
 			break;
 		case FUNCTION_DIGEST_EXTRACT:
-			ret_val = internal_TEE_DigestExtract(manual_frame[0], manual_frame[1], manual_frame[2]);
+			ret_val = (void *)internal_TEE_DigestExtract((TEE_OperationHandle)manual_frame[0], (void *)manual_frame[1], (size_t *)manual_frame[2], ta_num);
 			break;
 		case FUNCTION_ASYMMETRIC_SIGN_DIGEST:
-			ret_val = internal_TEE_AsymmetricSignDigest(manual_frame[0], manual_frame[1], manual_frame[2], manual_frame[3], manual_frame[4], manual_frame[5], manual_frame[6]);
+			ret_val = (void *)internal_TEE_AsymmetricSignDigest((TEE_OperationHandle)manual_frame[0],(TEE_Attribute *) manual_frame[1], manual_frame[2], (void*)manual_frame[3], manual_frame[4], (void*)manual_frame[5],(size_t *) manual_frame[6], ta_num);
 			break;
 		case FUNCTION_ASYMMETRIC_VERIFY_DIGEST:
-			ret_val = internal_TEE_AsymmetricVerifyDigest(manual_frame[0], manual_frame[1], manual_frame[2], manual_frame[3], manual_frame[4], manual_frame[5], manual_frame[6]);
+			ret_val = (void *)internal_TEE_AsymmetricVerifyDigest((TEE_OperationHandle)manual_frame[0], (TEE_Attribute *)manual_frame[1], manual_frame[2],(void*) manual_frame[3], manual_frame[4], (void*)manual_frame[5],  manual_frame[6], ta_num);
 			break;
 		default:
 			break;
 	}
-
+exit:
 	// Copy the return value to r4, where the value is expected by entry point of the TEE Core API
 	__asm__("MOV R0, %[ret_val]\n": : [ret_val] "r" (ret_val): "r0");
 }
@@ -450,7 +522,9 @@ void Microvisor_HardFault_Handler() {
 		/* Check for unprioritized access to PPB (Private Peripheral Bus) */
 		"push {r4,r5,r6,r7,r8,r9,r10,r11}\n" //push rest of registers to manual_frame
 		"mov r1, sp\n"
+		"cpsid i\n" // disable interrupts for critical section
 		"blx Recover_PPB_Access\n"  // branch to the recover PPB access function to perform the simulation 
+		"cpsie i\n" // enable interrupts after critical section
 
 		"cbnz r0, .PPB_RECOVERY_ERROR\n"		// error during recovery
 		"pop {r4,r5,r6,r7,r8,r9,r10,r11,lr}\n"  // in case of no errors, restore stack state
@@ -472,6 +546,16 @@ void Microvisor_HardFault_Handler() {
 * 	In that case the API call is performed and the execution is returned to the trusted application
 * - Otherwise the original SVC_Handler is performed
 * 
+* When an SVC call is made, the following registers are pushed on the stack automatically:
+* - r0: the return value of the SVC call
+* - r1: the first parameter of the SVC call
+* - r2: the second parameter of the SVC call
+* - r3: the third parameter of the SVC call
+* - r12:
+* - lr: the link register, which contains the return address
+* - pc: the program counter, which contains the address of the next instruction to execute
+* - xPSR: the program status register, which contains the current state of the processor
+
 * Notes on PARAMETER PASSING CONVENTION FOR SVC for both Client and Core API calls:
 * - use registers from r4 to r11 to pass parameters to SVC 
 * - save the current value of the registers used in a temporary variable before overwriting them
@@ -569,11 +653,12 @@ void Microvisor_SVC_Handler() {
 		// - Return to the original context before the SVC
 		".TEE_API:\n"
 
-		// copy the value of r0 (which contains information about the stack used at the moment of the call) to r2
+		// Fetch the PC value at the moment of the SVC call and store it into r2
 		// this information is extracted from the LR (link register) and it is used to test 
 		// if the SVC was invoked by a TA or by a CA by checking if the value is in the range
-		// of TAs RAM memory (0x20000000 - 0x200FFFFF). Only in this case the Core API is executed
-		"mov r2, r0\n"
+		// of TAs Code memory. Only in this case the Core API is executed. We also use it to
+		// distinguish between the two TAs
+		"ldr r2,[r0, #24]\n"	// load RetAddr
 
 		/* Set CTRL.nPRIV to 0 (TEE core call should happen in privileged mode) */
 		"mrs r0, CONTROL\n"

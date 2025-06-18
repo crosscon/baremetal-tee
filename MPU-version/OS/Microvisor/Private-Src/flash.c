@@ -4,7 +4,6 @@
 #include "flash.h"
 #include "cJSON.h"
 #include "tee_common.h"
-#include "tee_core_api.h"
 
 // Maximum number of objects that can be stored in the flash memory (for each TA)
 #define FLASH_MAX_OBJECT      32
@@ -106,7 +105,7 @@ int b64_isvalidchar(char c)
 	return 0;
 }
 
-// Encodes the input to the output according to the BASE64 encoding
+// Encodes the input to the output according to the BASE64 encoding. Output_len contains also the termination character
 int base64_encode(const unsigned char *input, size_t input_len, char *output, size_t output_len)
 {
     size_t required_size = b64_encoded_size(input_len);
@@ -145,7 +144,7 @@ int base64_encode(const unsigned char *input, size_t input_len, char *output, si
 int base64_decode(const unsigned char *input, size_t input_len, unsigned char *output, size_t output_len) 
 {   
     size_t v;
-    size_t required_size = b64_decoded_size(input);
+    size_t required_size = b64_decoded_size((const char *)input);
 
 	if (output_len < required_size || input_len % 4 != 0)
     {
@@ -154,9 +153,9 @@ int base64_decode(const unsigned char *input, size_t input_len, unsigned char *o
     }
 		
 
-	for (int i=0; i<input_len-1; i++) 
+	for (int i=0; i<input_len; i++) 
     {
-		if (b64_isvalidchar(input[i]) == 0) {
+		if (b64_isvalidchar((char)input[i]) == 0) {
 			//printf("Burada[%d] 123 %d\r\n", i, input[i]);
             return 0;
 		}
@@ -184,7 +183,7 @@ int base64_decode(const unsigned char *input, size_t input_len, unsigned char *o
 */
 static int search(char arr[], int n, int x, int y)
 {
-    for (int i=0; i<n; i++)
+    for (int i=0; i<n-1; i++)
         if ((arr[i] == x) && (arr[i+1] == y))
             return i;
     return -1;
@@ -227,7 +226,7 @@ int flash_erase(uint32_t ta_id)
         page_count = TA1_PAGE_COUNT;
         page_index = TA1_PAGE_INDEX;
     }else{
-        page_count = TA1_PAGE_COUNT;
+        page_count = TA2_PAGE_COUNT;
         page_index = TA2_PAGE_INDEX;
     }
     
@@ -295,7 +294,7 @@ static int flash_writeInternal(const char* ctx, int len, uint32_t ta_id)
         page_count = TA1_PAGE_COUNT;
         page_index = TA1_PAGE_INDEX;
     }else{
-        page_count = TA1_PAGE_COUNT;
+        page_count = TA2_PAGE_COUNT;
         page_index = TA2_PAGE_INDEX;
     }
 
@@ -324,7 +323,15 @@ static int flash_writeInternal(const char* ctx, int len, uint32_t ta_id)
     int i = 0;
     for (i=0; i<len; i += 8)
     {
-        memcpy(&temp, ctx + i, 8);
+        size_t remaining = len - i;
+        if (remaining >= 8)
+        {
+            memcpy(&temp, ctx + i, 8);
+        }else{
+            // Last partial block: zero-pad
+            memset(&temp, 0, sizeof(temp));
+            memcpy(&temp, ctx + i, remaining);
+        }
         if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, start_addr + i, temp) != HAL_OK)
         {
             HAL_FLASH_Lock();
@@ -397,7 +404,7 @@ int flash_readObject(const char* ctx, uint32_t len, int obj_id, char* out_buff, 
 
     cJSON *p = cJSON_ParseWithLength(ctx, len);
     if(!p)
-        return NULL;
+        return -1;
 
     cJSON *objects = cJSON_GetObjectItem(p, "objects");
     if(!objects)
@@ -432,7 +439,7 @@ int flash_readObject(const char* ctx, uint32_t len, int obj_id, char* out_buff, 
             goto end;
 
 
-        ret_val = base64_decode(data->valuestring, strlen(data->valuestring), (unsigned char*)out_buff, out_len);
+        ret_val = base64_decode((const unsigned char*)data->valuestring, strlen(data->valuestring), (unsigned char*)out_buff, out_len);
 
         break;
     }
@@ -469,23 +476,25 @@ int flash_writeNewObject(const char* ctx, uint32_t len, int obj_id, uint32_t ta_
         free_size = flash_getFreeSize(ta_id);
     }
 
-    if(free_size < len)
+
+    int encoded_len = 4 * ((len + 2) / 3); // base64 encode output length
+    if(free_size < encoded_len)
         return -1;
 
     unsigned char flash_content[total_size - free_size];
     
-    int encoded_len = 4 * ((len + 2) / 3); // base64 encode output length
+    
     memset(flash_content, 0, total_size - free_size);
 
     unsigned char buffer[encoded_len+1];
-    if(base64_encode(ctx, len, buffer, encoded_len + 1) <= 0)
+    if(base64_encode((const unsigned char*)ctx, len, (char*)buffer, encoded_len + 1) <= 0)
         return -1;
 
     flash_internalRead(flash_content, total_size - free_size, start_addr);
 
-    cJSON *p = cJSON_ParseWithLength(flash_content, free_size);
+    cJSON *p = cJSON_ParseWithLength((const char*)flash_content, total_size - free_size);
     if(!p)
-        return 0;
+        return -1;
 
     cJSON* objects = cJSON_GetObjectItem(p, "objects");
     if(!objects)
@@ -516,6 +525,13 @@ int flash_writeNewObject(const char* ctx, uint32_t len, int obj_id, uint32_t ta_
     const char *content = cJSON_PrintUnformatted(p);
     if(!content)
         goto end;
+
+    //Check if the size of the jeson content is larger than the flash area
+    if(strlen(content) > total_size)
+    {
+        ret_val = -1;
+        goto end;
+    }
 
     int f_err = flash_writeInternal(content, strlen(content), ta_id);
     if(f_err != 0){
@@ -596,7 +612,7 @@ int flash_deleteObject(uint32_t ta_id, int obj_id)
         goto end;
     
     int index;
-    for(index=0; index<32; ++index)
+    for(index=0; index<=32; ++index)
     {
         cJSON* item = cJSON_GetArrayItem(objects, index);
         if(!item)

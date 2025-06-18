@@ -8,6 +8,7 @@
 #include "stm32l4xx_hal.h"
 #include "mbedtls/entropy.h"
 #include "flash.h"
+#include "cJSON.h"
 
 
 /************************** RANDOM VALUES GENERATION FUNCTIONS ********************************* */
@@ -56,7 +57,7 @@ int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t 
 /************************** TEE MEMORY MANAGEMENT FUNCTIONS ********************************* */
 
 /**
- * Define the heap memory for each TA
+ * Define the heap memory for each TA and the core
  * 
  * The heap memory is allocated as static array and is managed with a list of Blocks
  * Each block contains information about the size and a pointer to the next block
@@ -67,31 +68,188 @@ int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len, size_t 
  * using the (heap_TA1 and heap_TA2) using the linker script file
  * 
  * This memory can be allocated using the TEE_Malloc function and freed using the TEE_Free function
+ * The Core will instead use internal_TEE_Malloc and internal_TEE_Free functions, passing 0 as the TA number
 */
 __attribute__((section(".heap_TA1"))) static uint32_t heapTA1[TA_HEAP_SIZE / sizeof(uint32_t)]; 
 __attribute__((section(".heap_TA2"))) static uint32_t heapTA2[TA_HEAP_SIZE / sizeof(uint32_t)];
+__attribute__((section(".heap_core"))) static uint32_t heapCore[CORE_HEAP_SIZE / sizeof(uint32_t)];
 
 __attribute__((section(".heap_TA1"))) static Block* freeListTA1 = {0};
 __attribute__((section(".heap_TA2"))) static Block* freeListTA2 = {0};
+__attribute__((section(".heap_core"))) static Block* freeListTEEcore = {0};
 
+//These will be used to keep track of the various objects and operations created by the TAs
+__attribute__((section(".ram-boot"))) __TEE_ObjectHandle * registeredObjects[MAX_HANDLES] = {0};
+__attribute__((section(".ram-boot"))) __TEE_OperationHandle * registeredOperations[MAX_HANDLES] = {0};
+ 
+
+
+/**
+ *  @brief Check if the memory address is within the range of the TA memory area
+ *   @param ta_num TA number (0 for TEE Core, 1 for TA1, 2 for TA2)
+ *   @param buffer Pointer to the memory area to check
+ *   @param size Size of the memory area to check
+ *   @return 1 if the memory area is within the range, 0 otherwise
+ */
+static uint8_t check_mem_ownership(uint8_t ta_num, void * buffer, size_t size)
+{
+    if(!buffer){
+        ERR_MSG("buffer does not exists");
+        return TEE_FAILED;
+    }
+    if(size == 0){
+        ERR_MSG("size is 0");
+        return TEE_FAILED;
+    }
+    uintptr_t object = (uintptr_t)buffer;
+    uintptr_t object_end = object + size;
+    if(ta_num == 0){
+        if((object < TEE_CORE_MEMORY_START_ADDR) || (object_end > TEE_CORE_MEMORY_END_ADDR)){
+            ERR_MSG("Memory access error");
+            return 0;
+        }
+    } else if (ta_num == 1) {
+        if((object < TA1_MEMORY_START_ADDR) || (object_end > TA1_MEMORY_END_ADDR)){
+            ERR_MSG("Memory access error");
+            return 0;
+        }
+    } else if (ta_num == 2) {
+        if((object < TA2_MEMORY_START_ADDR) || (object_end > TA2_MEMORY_END_ADDR)){
+            ERR_MSG("Memory access error");
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/**
+ *  @brief Check if the object or operation is owned by the TA
+ *   @param ta_num TA number (1 or 2)
+ *   @param object Pointer to the object or operation to check
+ *   @return 1 if the object or operation is owned by the TA, 0 otherwise
+ */
+static uint8_t check_object_ownership(uint8_t ta_num, TEE_ObjectHandle object)
+{
+    if(object == NULL){
+        ERR_MSG("Object is NULL");
+        return 0;
+    }
+    for (int i=0; i<MAX_HANDLES; i++)
+    {
+        if(registeredObjects[i] == (__TEE_ObjectHandle *)object){
+            if(((__TEE_ObjectHandle *)object)->ta_num == ta_num){
+                return 1;
+            }
+            break;
+        }
+    }
+    return 0;
+}
+
+/**
+ *  @brief Check if the operation is owned by the TA
+ *   @param ta_num TA number (1 or 2)
+ *   @param operation Pointer to the operation to check
+ *   @return 1 if the operation is owned by the TA, 0 otherwise
+ */
+static uint8_t check_operation_ownership(uint8_t ta_num, TEE_OperationHandle operation)
+{
+    if(operation == NULL){
+        ERR_MSG("Operation is NULL");
+        return 0;
+    }
+    for (int i=0; i<MAX_HANDLES; i++)
+    {
+        if(registeredOperations[i] == (__TEE_OperationHandle *)operation){
+            if(((__TEE_OperationHandle *)operation)->ta_num == ta_num){
+                return 1;
+            }
+            break;
+        }
+    }
+    return 0;
+}
+
+/**
+ *  @brief Free the object or operation from the registered list
+ *   @param temp_obj Pointer to the object or operation to free
+ */
+static void free_object(__TEE_ObjectHandle * temp_obj){
+    for(int i=0; i<MAX_HANDLES; i++){
+        if(registeredObjects[i] == temp_obj){
+            registeredObjects[i] = NULL;
+            break;
+        }
+    }
+}
+
+/**
+ *  @brief Populate the object or operation in the registered list
+ *   @param temp_obj Pointer to the object or operation to populate
+ *   @return 1 if the object or operation was successfully populated, 0 otherwise
+ */
+static uint8_t populate_object(__TEE_ObjectHandle * temp_obj){
+    uint8_t populated = 0;
+    for(int i=0; i<MAX_HANDLES; i++){
+        if(registeredObjects[i] == NULL){
+            registeredObjects[i] = temp_obj;
+            populated = 1;
+            break;
+        }
+    }
+    return populated;
+}
+
+/**
+ *  @brief Free the operation from the registered list
+ *   @param temp_op Pointer to the operation to free
+ */
+static void free_operation(__TEE_OperationHandle * temp_op){
+    for(int i=0; i<MAX_HANDLES; i++){
+        if(registeredOperations[i] == temp_op){
+            registeredOperations[i] = NULL;
+            break;
+        }
+    }
+}
+
+/**
+ *  @brief Populate the operation in the registered list
+ *   @param temp_op Pointer to the operation to populate
+ *   @return 1 if the operation was successfully populated, 0 otherwise
+ */
+static uint8_t populate_operation(__TEE_OperationHandle * temp_op){
+    uint8_t populated = 0;
+    for(int i=0; i<MAX_HANDLES; i++){
+        if(registeredOperations[i] == NULL){
+            registeredOperations[i] = temp_op;
+            populated = 1;
+            break;
+        }
+    }
+    return populated;
+}
 
 // Initialize the heap memory for each TA during the boot process
 void heap_erase() 
 {
     freeListTA1 = NULL;
     freeListTA2 = NULL;
+    freeListTEEcore = NULL;
 }
 
 // Set the correct values for the heap memory of each TA when they are first used
 static void init_memory(int ta_num) 
 {
-    if(ta_num == 1) {
+    if(ta_num == CORE_NUM){
+        freeListTEEcore->size = CORE_HEAP_SIZE - sizeof(Block);
+        freeListTEEcore->next = NULL;
+        freeListTEEcore->free = 1;
+    }else if(ta_num == 1) {
         freeListTA1->size = TA_HEAP_SIZE - sizeof(Block);
         freeListTA1->next = NULL;
         freeListTA1->free = 1;
-    } 
-    
-    if(ta_num == 2) {
+    } else if(ta_num == 2) {
         freeListTA2->size = TA_HEAP_SIZE - sizeof(Block);
         freeListTA2->next = NULL;
         freeListTA2->free = 1;
@@ -105,11 +263,17 @@ static void init_memory(int ta_num)
  * @param size Size of the memory area to allocate
  * @param hint Hint for the allocation (e.g., TEE_MALLOC_FILL_ZERO)
  */
-void* internal_TEE_Malloc(int ta_num, size_t size, uint32_t hint)
+void* internal_TEE_Malloc(size_t size, uint32_t hint, uint8_t ta_num)
 {   
     Block* curr = NULL;
 
-    if(ta_num == 1) {
+    if( ta_num == CORE_NUM){
+        if(!freeListTEEcore){
+            freeListTEEcore = (Block*)heapCore;
+            init_memory(ta_num);
+        }
+        curr = freeListTEEcore;
+    }else if(ta_num == 1) {
         if(!freeListTA1){
             freeListTA1 = (Block*)heapTA1;
             init_memory(ta_num);
@@ -125,8 +289,17 @@ void* internal_TEE_Malloc(int ta_num, size_t size, uint32_t hint)
 
     while (curr != NULL)
     {
+        
         if ((curr->free) && (curr->size >= size))
         {
+            if(
+                (ta_num == CORE_NUM && curr + sizeof(Block) > TEE_CORE_MEMORY_END_ADDR) ||
+                (ta_num == 1 && curr + sizeof(Block) > TA1_MEMORY_END_ADDR) ||
+                (ta_num == 2 && curr + sizeof(Block) > TA2_MEMORY_END_ADDR)
+            ){
+                //We ran out of memory!!
+                return NULL;
+            } 
             if (curr->size > size + sizeof(Block))
             {
                 Block* newBlock = (Block*)((uint32_t*)curr + sizeof(Block) + size); 
@@ -151,27 +324,32 @@ void* internal_TEE_Malloc(int ta_num, size_t size, uint32_t hint)
 /**
  * @brief Free a memory area allocated using the TEE_Malloc function
  * 
- * @param ta_num TA number (1 or 2)
  * @param buffer Pointer to the memory area to be freed
+ * @param ta_num TA number (1 or 2)
  */
-void internal_TEE_Free(int ta_num, void* buffer) 
+void internal_TEE_Free(void* buffer, uint8_t ta_num) 
 {
     if (buffer == NULL) {
-        goto err;
+        return;
     }
 
-    if (ta_num == 1) {
+    if(ta_num == CORE_NUM) {
+        if((buffer < TEE_CORE_MEMORY_START_ADDR) || (buffer > TEE_CORE_MEMORY_END_ADDR)){
+            ERR_MSG("Free function error");
+            return;
+        }
+    } else if (ta_num == 1) {
         if((buffer < TA1_MEMORY_START_ADDR) || (buffer > TA1_MEMORY_END_ADDR)){
             if (buffer < CA_MEMORY_START_ADDR || buffer > CA_MEMORY_END_ADDR) {
                 ERR_MSG("Free function error");
-    	        goto err;
+    	        return;
             }
         }
     } else if (ta_num == 2) {
         if((buffer < TA2_MEMORY_START_ADDR) || (buffer > TA2_MEMORY_END_ADDR)){
     	    if (buffer < CA_MEMORY_START_ADDR || buffer > CA_MEMORY_END_ADDR) {
                 ERR_MSG("Free function error");
-    	        goto err;
+    	        return;
             }
         }
     }
@@ -179,90 +357,116 @@ void internal_TEE_Free(int ta_num, void* buffer)
     Block* block = (Block*)((uint32_t*)buffer - sizeof(Block));
     block->free = 1;
 
-    Block* curr = NULL;
-    if (ta_num == 1) {
-        curr = freeListTA1;
+    // Get the head of the free list for this TA
+    Block* head = NULL;
+    if(ta_num == CORE_NUM){
+        head = freeListTEEcore;
+    } else if (ta_num == 1) {
+        head = freeListTA1;
     } else if (ta_num == 2) {
-        curr = freeListTA2;
+        head = freeListTA2;
     }
-    while (curr != NULL)
-    {
-        if (curr->free) {
+    
+
+    // Coalesce adjacent free blocks
+    Block* curr = head;
+    while (curr != NULL) {
+        // Merge with next if both are free
+        while (curr->free && curr->next && curr->next->free) {
             curr->size += sizeof(Block) + curr->next->size;
             curr->next = curr->next->next;
-            break;
         }
         curr = curr->next;
     }
 
-    err:
 }
 
 /**
  * @brief Move a memory area to another location
  * 
- * @param ta_num TA number (1 or 2)
+
  * @param dest Destination memory area
  * @param src Source memory area
  * @param size Size of the memory area to move
+ * @param ta_num TA number (1 or 2)
  */
-void internal_TEE_MemMove(int ta_num, void* dest, void* src, size_t size)
-{
-    // TODO: check also if buffer end is in the TA memory range
-    if (ta_num == 1) {
-        if((dest < TA1_MEMORY_START_ADDR) || (dest > TA1_MEMORY_END_ADDR)){
-            if (dest < CA_MEMORY_START_ADDR || dest > CA_MEMORY_END_ADDR) {
+void internal_TEE_MemMove(void* dest, void* src, size_t size, uint8_t ta_num)
+{    
+    if(ta_num == CORE_NUM){
+        if( 
+            (dest < TEE_CORE_MEMORY_START_ADDR) || (dest + size > TEE_CORE_MEMORY_END_ADDR) ||
+            (src < TEE_CORE_MEMORY_START_ADDR) || (src + size  > TEE_CORE_MEMORY_END_ADDR) 
+        ){
+            ERR_MSG("Mem move error");
+            return;
+        }
+    }else if (ta_num == 1) {
+        if(
+            (dest < TA1_MEMORY_START_ADDR) || (dest + size> TA1_MEMORY_END_ADDR) ||
+            (src < TA1_MEMORY_START_ADDR) || (src + size > TA1_MEMORY_END_ADDR) 
+        ){
+            if (dest < CA_MEMORY_START_ADDR || dest + size > CA_MEMORY_END_ADDR) {
                 ERR_MSG("Mem move error");
-    	        goto end;
+    	        return;
             }
         }
     } else if (ta_num == 2) {
-        if((dest < TA2_MEMORY_START_ADDR) || (dest > TA2_MEMORY_END_ADDR)){
-    	    if (dest < CA_MEMORY_START_ADDR || dest > CA_MEMORY_END_ADDR) {
+        if(
+            (dest < TA2_MEMORY_START_ADDR) || (dest + size  > TA2_MEMORY_END_ADDR) ||
+            (src < TA2_MEMORY_START_ADDR) || (src + size  > TA2_MEMORY_END_ADDR)
+        ){
+    	    if (dest < CA_MEMORY_START_ADDR || dest + size > CA_MEMORY_END_ADDR) {
                 ERR_MSG("Mem move function error");
-    	        goto end;
+    	        return;
             }
         }
     }
 
 	memmove(dest, src, size);
 
-    end:
-        // Do nothing
 }
 
 
 /**
  * @brief Fill a memory area with a given value
  * 
- * @param ta_num TA number (1 or 2)
  * @param buffer Pointer to the memory area to fill
  * @param x Value to fill the memory area with
  * @param size Size of the memory area to fill
+ * @param ta_num TA number (1 or 2)
  */
-void internal_TEE_MemFill(int ta_num, void* buffer, uint8_t x, size_t size)
+void internal_TEE_MemFill(void* buffer, uint8_t x, size_t size, uint8_t ta_num)
 {
-    // TODO: check also if buffer end is in the TA memory range
-    if (ta_num == 1) {
-        if((buffer < TA1_MEMORY_START_ADDR) || (buffer > TA1_MEMORY_END_ADDR)){
+
+    if (ta_num == CORE_NUM){
+        if(
+            (buffer < TEE_CORE_MEMORY_START_ADDR) || (buffer + size > TEE_CORE_MEMORY_END_ADDR)
+        ){
+            ERR_MSG("Mem fill function error");
+            return;
+        }
+    } else if (ta_num == 1) {
+        if(
+            (buffer < TA1_MEMORY_START_ADDR) || (buffer + size > TA1_MEMORY_END_ADDR)
+        ){
             if (buffer < CA_MEMORY_START_ADDR || buffer > CA_MEMORY_END_ADDR) {
                 ERR_MSG("Mem fill function error");
-    	        goto end;
+    	        return;
             }
         }
     } else if (ta_num == 2) {
-        if((buffer < TA2_MEMORY_START_ADDR) || (buffer > TA2_MEMORY_END_ADDR)){
+        if(
+            (buffer < TA2_MEMORY_START_ADDR) || (buffer + size  > TA2_MEMORY_END_ADDR) 
+        ){
     	    if (buffer < CA_MEMORY_START_ADDR || buffer > CA_MEMORY_END_ADDR) {
                 ERR_MSG("Mem fill function error");
-    	        goto end;
+    	        return;
             }
         }
     }
 
     memset(buffer, x, size);
 
-    end:
-        // Do nothing
 }
 
 
@@ -274,21 +478,36 @@ void internal_TEE_MemFill(int ta_num, void* buffer, uint8_t x, size_t size)
  * @param objectType please check the global platform documentation page 141, table 5.9
  * @param maxObjectSize max key size
  * @param object pointer to the object handle
+ * @param ta_num TA number (1 or 2)
  * 
  * @return TEE_SUCCESS if the object is allocated successfully, TEE_FAILED otherwise
  */
 TEE_Result internal_TEE_AllocateTransientObject(uint32_t objectType,
                                         uint32_t maxObjectSize,
-                                        TEE_ObjectHandle* object)
+                                        TEE_ObjectHandle* object,
+                                        uint8_t ta_num)
 {
-    if((!object) || (maxObjectSize <= 0)){
+    if( (maxObjectSize == 0 || maxObjectSize % 8 != 0)){
         ERR_MSG("Invalid key sizze or null parameter");
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    
+  
+    if(check_mem_ownership(ta_num, (void*)object, sizeof(TEE_ObjectHandle)) == 0){
+        ERR_MSG("Invalid object pointer");
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+
+
+    __TEE_ObjectHandle *obj = (__TEE_ObjectHandle*)internal_TEE_Malloc(sizeof(__TEE_ObjectHandle),TEE_MALLOC_NO_FILL,CORE_NUM);
+    if(!obj){
+        ERR_MSG("Object allocation is failed");
         return TEE_FAILED;
     }
 
-    __TEE_ObjectHandle *obj = (__TEE_ObjectHandle*)malloc(sizeof(__TEE_ObjectHandle));
-    if(!obj){
-        ERR_MSG("Object allocation is failed");
+    //Set the handle in the available handles array
+    if(!populate_object(obj)){
+        internal_TEE_Free(obj,CORE_NUM);
         return TEE_FAILED;
     }
 
@@ -303,9 +522,9 @@ TEE_Result internal_TEE_AllocateTransientObject(uint32_t objectType,
     }
 
     // Allocate memory area to store the key
-    obj->buffer = (char*)calloc(key_size, sizeof(char));
+    obj->buffer = (char*)internal_TEE_Malloc(key_size*sizeof(char), TEE_MALLOC_FILL_ZERO, CORE_NUM);
     if(!obj->buffer){
-        free(obj);
+        internal_TEE_Free(obj, CORE_NUM);
         ERR_MSG("Buffer allocation for transient object failed");
         return TEE_FAILED;
     }
@@ -314,6 +533,7 @@ TEE_Result internal_TEE_AllocateTransientObject(uint32_t objectType,
     obj->key_len = maxObjectSize;
     obj->obj_id = 0; //For transient objects it must be zero, it is just for persistent one
     obj->obj_storage_type = TEE_OBJ_TYPE_TRANSIENT;
+    obj->ta_num = ta_num;
     
     *object = (void*)obj;
 
@@ -327,23 +547,27 @@ TEE_Result internal_TEE_AllocateTransientObject(uint32_t objectType,
  * @param object pointer to the object handle
  * @param attrs pointer to the attributes
  * @param attrCount number of attributes
+ * @param ta_num TA number (1 or 2)
  * 
  * @return TEE_SUCCESS if the attributes are populated successfully, TEE_FAILED otherwise
  */
 
 TEE_Result internal_TEE_PopulateTransientObject(TEE_ObjectHandle object,
                                 /*unused*/      TEE_Attribute* attrs, 
-                                /*unused*/      uint32_t attrCount)
+                                /*unused*/      uint32_t attrCount,
+                                                uint8_t ta_num)
 {
-    if(!object){
-        ERR_MSG("Object does not exists");
-        return TEE_FAILED;
+    if(!check_object_ownership(ta_num, object)){
+        ERR_MSG("Object does not belong to the calling TA");
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+   
+    if(!check_mem_ownership(ta_num, (void*)attrs, sizeof(TEE_Attribute) * attrCount)){
+        ERR_MSG("Invalid attributes pointer");
+        return TEE_ERROR_BAD_PARAMETERS;
     }
 
-    if(!attrs){
-        ERR_MSG("Attributes does not exists");
-        return TEE_FAILED;
-    }
+
 
     __TEE_ObjectHandle *temp_obj = (__TEE_ObjectHandle*)object;
 
@@ -367,16 +591,23 @@ TEE_Result internal_TEE_PopulateTransientObject(TEE_ObjectHandle object,
  * @param attributeID attribute ID
  * @param buffer pointer to the buffer
  * @param length length of the buffer
+ * @param ta_num TA number
  */
 void internal_TEE_InitRefAttribute(TEE_Attribute* attr, uint32_t attributeID, 
-                            void* buffer, size_t length)
+                            void* buffer, size_t length, uint8_t ta_num)
 {
-    if(attr)
-    {
-        attr->attributeID = attributeID;
-        attr->content.ref.buffer = buffer;
-        attr->content.ref.length = length;
+
+    if(!check_mem_ownership(ta_num, buffer, length)){
+        return;
     }
+    if(!check_mem_ownership(ta_num, (void*)attr, sizeof(TEE_Attribute))){
+        return;
+    }
+    
+    attr->attributeID = attributeID;
+    attr->content.ref.buffer = buffer;
+    attr->content.ref.length = length;
+    
 }
 
 /**
@@ -386,16 +617,19 @@ void internal_TEE_InitRefAttribute(TEE_Attribute* attr, uint32_t attributeID,
  * @param attributeID attribute ID
  * @param a value a
  * @param b value b
+ * @param ta_num TA number
  */
 void internal_TEE_InitValueAttribute(TEE_Attribute* attr, uint32_t attributeID,
-                                uint32_t a, uint32_t b)
+                                uint32_t a, uint32_t b, uint8_t ta_num)
 {
-    if(attr)
-    {
-        attr->attributeID = attributeID;
-        attr->content.value.a = a;
-        attr->content.value.b = b;
+    if(!check_mem_ownership(ta_num, (void*)attr, sizeof(TEE_Attribute))){
+        ERR_MSG("Invalid attribute pointer");
+        return;
     }
+    attr->attributeID = attributeID;
+    attr->content.value.a = a;
+    attr->content.value.b = b;
+    
 }
 
 /**
@@ -405,17 +639,18 @@ void internal_TEE_InitValueAttribute(TEE_Attribute* attr, uint32_t attributeID,
  * @param attributeID attribute ID
  * @param buffer pointer to the buffer to store the attribute
  * @param size pointer to store the size of the attribute
+ * @param ta_num TA number
  * 
  * @return TEE_SUCCESS if the attribute is found and returned, TEE_FAILED otherwise
  * 
  */
 TEE_Result internal_TEE_GetObjectBufferAttribute(TEE_ObjectHandle object, uint32_t attributeID,
-                                 /*[outbuf]*/     void* buffer, size_t* size) 
+                                 /*[outbuf]*/     void* buffer, size_t* size, uint8_t ta_num) 
 {
-    if(!object){
-        ERR_MSG("Object does not exists");
-        return TEE_FAILED;
+    if(!check_object_ownership(ta_num, object)){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
+
 
     __TEE_ObjectHandle *obj = (__TEE_ObjectHandle*)object;
 
@@ -423,6 +658,12 @@ TEE_Result internal_TEE_GetObjectBufferAttribute(TEE_ObjectHandle object, uint32
     {
         if(obj->attrs[i].attributeID == attributeID)
         {
+            if(!check_mem_ownership(ta_num, (void*)obj->attrs[i].content.ref.buffer, obj->attrs[i].content.ref.length)){
+                return TEE_ERROR_BAD_PARAMETERS;
+            }
+            if(!check_mem_ownership(ta_num, (void*)size, sizeof(size_t))){
+                return TEE_ERROR_BAD_PARAMETERS;
+            }
             memcpy(buffer, obj->attrs[i].content.ref.buffer, obj->attrs[i].content.ref.length);
             *size = obj->attrs[i].content.ref.length;
             return TEE_SUCCESS;
@@ -444,11 +685,16 @@ TEE_Result internal_TEE_GetObjectBufferAttribute(TEE_ObjectHandle object, uint32
  * @return TEE_SUCCESS if the attribute is found and returned, TEE_FAILED otherwise
  */
 TEE_Result internal_TEE_GetObjectValueAttribute(TEE_ObjectHandle object, uint32_t attributeID,
-                                                            uint32_t* a, uint32_t* b)
+                                                            uint32_t* a, uint32_t* b, uint8_t ta_num)
 {
-    if(!object){
-        //TODO err
-        return TEE_FAILED;
+    if(!check_object_ownership(ta_num, object)){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, (void*)a, sizeof(uint32_t))){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, (void*)b, sizeof(uint32_t))){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
 
     __TEE_ObjectHandle *obj = (__TEE_ObjectHandle*)object;
@@ -472,25 +718,30 @@ TEE_Result internal_TEE_GetObjectValueAttribute(TEE_ObjectHandle object, uint32_
  * 
  * @param object pointer to the object handle
  */
-void internal_TEE_FreeTransientObject(TEE_ObjectHandle object)
+void internal_TEE_FreeTransientObject(TEE_ObjectHandle object, uint8_t ta_num)
 {
+    if(!check_object_ownership(ta_num, object)){
+        return;
+    }
     __TEE_ObjectHandle *temp_obj = (__TEE_ObjectHandle*)object;
 
-    if(temp_obj){
-        // Free the attributes if they are buffer
-        for (int i=0; i<4; i++)
-        {
-            if(temp_obj->attrs[i].content.ref.buffer != NULL){
-                temp_obj->attrs[i].content.ref.buffer = NULL;
-            }     
-        }
-        // Free the buffer if it is allocated
-        if (temp_obj->buffer != NULL){
-            free(temp_obj->buffer);
-            temp_obj->buffer = NULL;
-        }
-        free(temp_obj);
-    }  
+    
+    // Free the attributes if they are buffer
+    for (int i=0; i<4; i++)
+    {
+        if(temp_obj->attrs[i].content.ref.buffer != NULL){
+            temp_obj->attrs[i].content.ref.buffer = NULL;
+        }     
+    }
+    // Free the buffer if it is allocated
+    if (temp_obj->buffer != NULL){
+        internal_TEE_Free(temp_obj->buffer, CORE_NUM);
+        temp_obj->buffer = NULL;
+    }
+    free_object(temp_obj);
+    // Free the object itself
+    internal_TEE_Free(temp_obj, CORE_NUM);
+    
 }
 
 
@@ -499,21 +750,22 @@ void internal_TEE_FreeTransientObject(TEE_ObjectHandle object)
  * 
  * @param object pointer to the object handle
  */
-void internal_TEE_CloseObject(TEE_ObjectHandle object)
+void internal_TEE_CloseObject(TEE_ObjectHandle object, uint8_t ta_num)
 {
+    if(!check_object_ownership(ta_num, object)){
+        return;
+    }
     __TEE_ObjectHandle *temp_obj = (__TEE_ObjectHandle*)object;
 
-    //if(!temp_obj) {
-    //    ERR_MSG("Object does not exists");
-    //} 
-    if(temp_obj) {
-        // If buffer is allocated, release it
-        if(temp_obj->buffer != NULL)
-            free(temp_obj->buffer);
+    
+    // If buffer is allocated, release it
+    if(temp_obj->buffer != NULL)
+        internal_TEE_Free(temp_obj->buffer, CORE_NUM);
 
-        // Free the object itself
-        free(temp_obj);
-    }
+    free_object(temp_obj);
+    // Free the object itself
+    internal_TEE_Free(temp_obj, CORE_NUM);
+    
 }
 
 
@@ -532,13 +784,19 @@ TEE_Result internal_TEE_ReadObjectData(TEE_ObjectHandle object,
                             /*[out]*/   void* buffer,
                                         size_t size,
                             /*[out]*/   size_t* count, 
-                                        uint32_t ta_num) 
+                                        uint8_t ta_num) 
 {
     // Check the file reading access right
-    if(!object){
-        ERR_MSG("Object handle is null");
-        return TEE_FAILED;
+    if(!check_object_ownership(ta_num, object)){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
+    if(!check_mem_ownership(ta_num, (void*)count, sizeof(size_t))){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, (void*)buffer, size)){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+
 
     __TEE_ObjectHandle *obj = (__TEE_ObjectHandle*)object;
 
@@ -582,11 +840,13 @@ TEE_Result internal_TEE_ReadObjectData(TEE_ObjectHandle object,
 TEE_Result internal_TEE_WriteObjectData(TEE_ObjectHandle object,
                     /*[inbuf]*/ void* buffer, 
                                 size_t size, 
-                                uint32_t ta_num)
+                                uint8_t ta_num)
 {
-    if(!object){
-        ERR_MSG("Object handle is null");
-        return TEE_FAILED;
+    if(!check_object_ownership(ta_num, object)){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, (void*)buffer, size)){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
 
     __TEE_ObjectHandle *obj = (__TEE_ObjectHandle*)object;
@@ -598,7 +858,7 @@ TEE_Result internal_TEE_WriteObjectData(TEE_ObjectHandle object,
     if(obj->buffer) { // Check if the buffer is already allocated (object already exists)
         return TEE_FAILED;
     } else {
-        obj->buffer = (char*)malloc(size * sizeof(char));
+        obj->buffer = (char*)internal_TEE_Malloc(size * sizeof(char), TEE_MALLOC_NO_FILL, CORE_NUM);
         if(!obj->buffer){
             ERR_MSG("Buffer allocation failed");
             return TEE_FAILED;
@@ -607,9 +867,13 @@ TEE_Result internal_TEE_WriteObjectData(TEE_ObjectHandle object,
 
     if(obj->obj_storage_type == TEE_OBJ_TYPE_PERSISTENT) // Check if it is a persistent object
     {
-        if(flash_writeNewObject(buffer, size, obj->obj_id, ta_num) <= 0)
+        if(flash_writeNewObject(buffer, size, obj->obj_id, ta_num) <= 0){
+            internal_TEE_Free(obj->buffer, CORE_NUM);
+            obj->buffer = NULL;
+            ERR_MSG("Object writing failed");
             return TEE_FAILED;
-
+        }
+        
     }
 
     return TEE_SUCCESS;
@@ -637,26 +901,55 @@ TEE_Result internal_TEE_CreatePersistentObject(uint32_t storageID,
                                                TEE_ObjectHandle attributes,
                                  /*[inbuf]*/   void* initialData, 
                                                size_t initialDataLen,
-                                /*[outopt]*/   TEE_ObjectHandle* object) 
+                                /*[outopt]*/   TEE_ObjectHandle* object,
+                                               uint8_t ta_num) 
 {
     // Check if the initial data exists and the size is greater than 0
-    if((!initialData) || (initialDataLen <= 0))
-    {
-        ERR_MSG("Initial data param err");
-        return TEE_FAILED;
+    if(!check_mem_ownership(ta_num, objectID, objectIDLen)){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, initialData, initialDataLen)){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, (void*)object, sizeof(TEE_ObjectHandle))){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
 
-    __TEE_ObjectHandle *temp_obj = (__TEE_ObjectHandle*)malloc(sizeof(__TEE_ObjectHandle));
 
+    __TEE_ObjectHandle *temp_obj = (__TEE_ObjectHandle*)internal_TEE_Malloc(sizeof(__TEE_ObjectHandle), TEE_MALLOC_NO_FILL, CORE_NUM);
     if(!temp_obj){
-        ERR_MSG("Object hadle is null");
         return TEE_FAILED;
     }
 
+    if(objectIDLen > sizeof(temp_obj->obj_id)){
+        internal_TEE_Free(temp_obj, CORE_NUM);
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+
+    //Set the handle in the available handles array
+    for (int i=0; i<MAX_HANDLES; i++)
+    {
+        if(registeredObjects[i] == NULL){
+            registeredObjects[i] = temp_obj;
+            break;
+        }
+    }
+    
     memcpy(&temp_obj->obj_id, objectID, objectIDLen);
 
     //Allocate memory to store initial Data
-    temp_obj->buffer = (char*)malloc(initialDataLen * sizeof(char));
+    temp_obj->buffer = (char*)internal_TEE_Malloc(initialDataLen * sizeof(char), TEE_MALLOC_NO_FILL, CORE_NUM);
+    if(!temp_obj->buffer){
+        for (int i=0; i<MAX_HANDLES; i++){
+            if(registeredObjects[i] == temp_obj){
+                registeredObjects[i] = NULL;
+                break;
+            }
+        }
+        internal_TEE_Free(temp_obj, CORE_NUM);
+        ERR_MSG("Buffer allocation failed");
+        return TEE_FAILED;
+    }
     memcpy(temp_obj->buffer, initialData, initialDataLen);
     temp_obj->len = initialDataLen;
 
@@ -675,8 +968,19 @@ TEE_Result internal_TEE_CreatePersistentObject(uint32_t storageID,
         //memcpy(&temp_obj->obj_id, objectID, objectIDLen);
         //temp_obj->obj_id = atoi(objectID); 
 
-        if(flash_writeNewObject((const char*)initialData, initialDataLen, temp_obj->obj_id, storageID) < 0)
+        if(flash_writeNewObject((const char*)initialData, initialDataLen, temp_obj->obj_id, storageID) < 0){
+            for (int i=0; i<MAX_HANDLES; i++){
+                if(registeredObjects[i] == temp_obj){
+                    registeredObjects[i] = NULL;
+                    break;
+                }
+            }
+            internal_TEE_Free(temp_obj->buffer, CORE_NUM);
+            internal_TEE_Free(temp_obj, CORE_NUM);
+            ERR_MSG("Object creation failed");
             return TEE_FAILED;
+        }
+
     }
 
     // Set the object storage type
@@ -703,72 +1007,63 @@ TEE_Result internal_TEE_OpenPersistentObject(uint32_t storageID,
                     /*[in(objectIDLength)]*/ void* objectID,
                                              size_t objectIDLen,
                                              uint32_t flags,
-                                    /*[out]*/ TEE_ObjectHandle* object) 
+                                    /*[out]*/ TEE_ObjectHandle* object,
+                                             uint8_t ta_num) 
 {
-    // Check object_id and object_id_len to ensure if given object id value
-    if((objectIDLen <= 0) || (!objectID)){
-        ERR_MSG("Object ID was not given");
-        return TEE_FAILED;
+    if(!check_mem_ownership(ta_num, objectID, objectIDLen)){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, (void*)object, sizeof(TEE_ObjectHandle))){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
     
-    if(!object){
-        ERR_MSG("Null parameter");
-        return TEE_FAILED;
+    //Look for the object in the available handles array
+    __TEE_ObjectHandle *temp_obj = NULL;
+    for(int i=0; i<MAX_HANDLES; i++)
+    {
+        if(registeredObjects[i] != NULL){
+            if(registeredObjects[i]->obj_id == *(uint32_t*)objectID){
+                temp_obj = registeredObjects[i];
+                break;
+            }
+        }
     }
 
-    __TEE_ObjectHandle *temp_obj = (__TEE_ObjectHandle*)malloc(sizeof(__TEE_ObjectHandle));
     if(!temp_obj){
         ERR_MSG("Object handle is null");
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+
+    
+    // Initialize the cJSON hooks (to be able to use cJSON functions and avoid NULL pointer errors)
+    cJSON_InitHooks(NULL);
+
+    uint32_t start_addr = 0;
+    uint32_t total_size = 0;
+    // NOTE: storageID was not used in the current implementation so it is used to indicate the TA number
+    // Get information about the secure storage area
+    const int free_size = flash_getFreeSize(storageID);
+
+    if(free_size < 0){
         return TEE_FAILED;
     }
 
-    temp_obj->obj_storage_type = TEE_OBJ_TYPE_PERSISTENT;
-    temp_obj->flags = flags;
-    temp_obj->buffer = NULL;
+    flash_getConfig(storageID, &start_addr, &total_size);
+    char temp_buff[total_size - free_size];
+    memset(temp_buff, 0, total_size - free_size);
 
-    flags = flags & TEE_OBJ_READ_AND_WRITE;
-    if(((flags | TEE_OBJ_JUST_READ) == TEE_OBJ_JUST_READ) || ((flags | TEE_OBJ_READ_AND_WRITE) == TEE_OBJ_READ_AND_WRITE))
-    {
-        // Initialize the cJSON hooks (to be able to use cJSON functions and avoid NULL pointer errors)
-        cJSON_InitHooks(NULL);
+    *object = (void*)temp_obj;
 
-        uint32_t start_addr = 0;
-        uint32_t total_size = 0;
+    flash_internalRead((uint8_t*)temp_buff, total_size - free_size, start_addr);
 
-        // NOTE: storageID was not used in the current implementation so it is used to indicate the TA number
-        // Get information about the secure storage area
-        const int free_size = flash_getFreeSize(storageID);
-
-         if(free_size < 0){
-            free(temp_obj);
-            return TEE_FAILED;
-        }
-
-        flash_getConfig(storageID, &start_addr, &total_size);
-        char temp_buff[total_size - free_size];
-        memset(temp_buff, 0, total_size - free_size);
-
-        // NOTE: use int number as a string in objectID parameter
-        // If you want to use strings, please comment below: memcpy(&temp_obj->obj_id, objectID, objectIDLen);
-        //and use: temp_obj->obj_id = atoi(objectID);
-        memcpy(&temp_obj->obj_id, objectID, objectIDLen);  
-        temp_obj->obj_storage_type = TEE_OBJ_TYPE_PERSISTENT;
-        *object = (void*)temp_obj;
-
-        flash_internalRead((uint8_t*)temp_buff, total_size - free_size, start_addr);
-
-        temp_obj->buffer = (char*)malloc(temp_obj->len * sizeof(char));
-
-        int ret = flash_readObject((const char*)temp_buff, total_size - free_size, temp_obj->obj_id, temp_obj->buffer , &temp_obj->len);
-        if(ret <= 0)
-            return TEE_FAILED;
-
-        *object = (void*)temp_obj;
-
-        return TEE_SUCCESS;
+    int ret = flash_readObject((const char*)temp_buff, total_size - free_size, temp_obj->obj_id, temp_obj->buffer, temp_obj->len);
+    if(ret <= 0){
+        ERR_MSG("Failed to read object");
+        return TEE_FAILED;
     }
+        
+    return TEE_SUCCESS;
 
-    return TEE_FAILED;
 }
 
 
@@ -780,14 +1075,13 @@ TEE_Result internal_TEE_OpenPersistentObject(uint32_t storageID,
  * 
  * @return TEE_SUCCESS if the object is closed and deleted successfully, TEE_FAILED otherwise
  */
-TEE_Result internal_TEE_CloseAndDeletePersistentObject1(TEE_ObjectHandle object, uint32_t ta_num)
+TEE_Result internal_TEE_CloseAndDeletePersistentObject(TEE_ObjectHandle object, uint8_t ta_num)
 {
-    __TEE_ObjectHandle *temp_obj = (__TEE_ObjectHandle*)object;
-
-    if(!temp_obj){
-        ERR_MSG("Object does not exists");
-        return TEE_FAILED;
+    if(!check_object_ownership(ta_num, object)){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
+    __TEE_ObjectHandle * temp_obj = (__TEE_ObjectHandle*)object;
+
 
     // Check if the object is persistent and delete it
     if(temp_obj->obj_storage_type == TEE_OBJ_TYPE_PERSISTENT) {
@@ -800,9 +1094,11 @@ TEE_Result internal_TEE_CloseAndDeletePersistentObject1(TEE_ObjectHandle object,
 
     // Free the buffer and the object itself
     if(temp_obj->buffer)
-        free(temp_obj->buffer);
+        internal_TEE_Free(temp_obj->buffer, CORE_NUM);
 
-    free(temp_obj);
+    free_object(temp_obj);
+    // Free the object itself
+    internal_TEE_Free(temp_obj, CORE_NUM);
 
     return TEE_SUCCESS;
 }
@@ -818,8 +1114,14 @@ TEE_Result internal_TEE_CloseAndDeletePersistentObject1(TEE_ObjectHandle object,
  * 
  * @return TEE_SUCCESS if the conversion is successful, TEE_ERROR_OVERFLOW otherwise
  */
-TEE_Result internal_TEE_BigIntConvertToS32(int32_t *dest, TEE_BigInt *src)
+TEE_Result internal_TEE_BigIntConvertToS32(int32_t *dest, TEE_BigInt *src, uint8_t ta_num)
 {
+    if(!check_mem_ownership(ta_num, (void*)dest, sizeof(int32_t))){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, (void*)src, sizeof(TEE_BigInt))){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
     if(*src > 0x7FFFFFFF)
         return TEE_ERROR_OVERFLOW;
 
@@ -837,14 +1139,18 @@ TEE_Result internal_TEE_BigIntConvertToS32(int32_t *dest, TEE_BigInt *src)
  * @return -1 if the big integer is less than the short value, 0 if they are equal, 
  *          1 if the big integer is greater than the short value
  */
-int32_t internal_TEE_BigIntCmpS32(TEE_BigInt *op, int32_t shortVal)
+int32_t internal_TEE_BigIntCmpS32(TEE_BigInt *op, int32_t shortVal, uint8_t ta_num)
 {
+    if(!check_mem_ownership(ta_num, (void*)op, sizeof(TEE_BigInt))){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+
     if(*op < (uint32_t)shortVal){
         return -1;
     }
     
     if(*op > (uint32_t)shortVal){
-        return shortVal;
+        return 1;
     }
 
     return 0;
@@ -857,8 +1163,23 @@ int32_t internal_TEE_BigIntCmpS32(TEE_BigInt *op, int32_t shortVal)
  * @param op pointer to the first big integer that is the dividend
  * @param n pointer to the second big integer that is the divisor (modulus)
  */
-void internal_TEE_BigIntMod(TEE_BigInt *dest, TEE_BigInt *op, TEE_BigInt *n)
+void internal_TEE_BigIntMod(TEE_BigInt *dest, TEE_BigInt *op, TEE_BigInt *n, uint8_t ta_num)
 {
+    if(!check_mem_ownership(ta_num, (void*)dest, sizeof(TEE_BigInt))){
+        return;
+    }
+    if(!check_mem_ownership(ta_num, (void*)op, sizeof(TEE_BigInt))){
+        return;
+    }
+    if(!check_mem_ownership(ta_num, (void*)n, sizeof(TEE_BigInt))){
+        return;
+    }
+
+    if(*n == 0) {
+        ERR_MSG("Zero divided error");
+        return;
+    }
+
     *dest = *op % *n;
 }
 
@@ -870,8 +1191,22 @@ void internal_TEE_BigIntMod(TEE_BigInt *dest, TEE_BigInt *op, TEE_BigInt *n)
  * @param op1 pointer to the first big integer that is the dividend
  * @param op2 pointer to the second big integer that is the divisor
  */
-void internal_TEE_BigIntDiv(TEE_BigInt *dest_q, TEE_BigInt *dest_r, TEE_BigInt *op1, TEE_BigInt *op2)
+void internal_TEE_BigIntDiv(TEE_BigInt *dest_q, TEE_BigInt *dest_r, TEE_BigInt *op1, TEE_BigInt *op2, uint8_t ta_num)
 {
+    if(!check_mem_ownership(ta_num, (void*)dest_q, sizeof(TEE_BigInt)) ){
+        return;
+    }
+    if(!check_mem_ownership(ta_num, (void*)dest_r, sizeof(TEE_BigInt))){
+        return;
+    }
+    if(!check_mem_ownership(ta_num, (void*)op1, sizeof(TEE_BigInt)) ){
+        return;
+    }
+    if(!check_mem_ownership(ta_num, (void*)op2, sizeof(TEE_BigInt))){
+        return;
+    }
+
+    
     if (*op2 == 0) {
         ERR_MSG("Zero divided error");
         return;
@@ -892,8 +1227,16 @@ void internal_TEE_BigIntDiv(TEE_BigInt *dest_q, TEE_BigInt *dest_r, TEE_BigInt *
  * 
  * @return TEE_SUCCESS if the conversion is successful, TEE_ERROR_OVERFLOW otherwise
  */
-TEE_Result internal_TEE_BigIntConvertFromOctetString(TEE_BigInt *dest, uint8_t *buffer, size_t bufferLen, int32_t sign)
+TEE_Result internal_TEE_BigIntConvertFromOctetString(TEE_BigInt *dest, uint8_t *buffer, size_t bufferLen, int32_t sign, uint8_t ta_num)
 {
+    if(!check_mem_ownership(ta_num, (void*)dest, sizeof(TEE_BigInt)) ){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, (void*)buffer, bufferLen)){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+
+
     *dest = 0;
     if (bufferLen > sizeof(TEE_BigInt)) {
         return TEE_ERROR_OVERFLOW;
@@ -916,8 +1259,15 @@ TEE_Result internal_TEE_BigIntConvertFromOctetString(TEE_BigInt *dest, uint8_t *
  * @param bigInt pointer to the big integer
  * @param len length of the big integer
  */
-void internal_TEE_BigIntInit(TEE_BigInt *bigInt, size_t len)
+void internal_TEE_BigIntInit(TEE_BigInt *bigInt, size_t len, uint8_t ta_num)
 {
+    if(!check_mem_ownership(ta_num, (void*)bigInt, len)){
+        return;
+    }
+    
+    // Initialize the big integer to 0
+    *bigInt = 0;
+
     memset(bigInt, 0, len);
 }
 
@@ -1245,7 +1595,7 @@ static int8_t check_keySize(uint32_t alg, uint32_t key_len)
 */
 static psa_cipher_operation_t* cipher_operationInit(void)
 {
-    psa_cipher_operation_t* cipher_op = (psa_cipher_operation_t*)calloc(1, sizeof(psa_cipher_operation_t));
+    psa_cipher_operation_t* cipher_op = (psa_cipher_operation_t*)internal_TEE_Malloc(sizeof(psa_cipher_operation_t), TEE_MALLOC_FILL_ZERO, CORE_NUM);
     if(!cipher_op){
         return NULL;
     }
@@ -1264,7 +1614,7 @@ static psa_cipher_operation_t* cipher_operationInit(void)
 static void cipher_operationDeinit(psa_cipher_operation_t* cipher_op)
 {
     if(cipher_op)
-        free(cipher_op);
+        internal_TEE_Free(cipher_op, CORE_NUM);
 }
 
 /**
@@ -1274,13 +1624,13 @@ static void cipher_operationDeinit(psa_cipher_operation_t* cipher_op)
 */
 static psa_hash_operation_t* hash_operationInit(uint32_t alg)
 {
-    psa_hash_operation_t* hash_op = (psa_hash_operation_t*)calloc(1, sizeof(psa_hash_operation_t));
+    psa_hash_operation_t* hash_op = (psa_hash_operation_t*)internal_TEE_Malloc(sizeof(psa_hash_operation_t), TEE_MALLOC_FILL_ZERO, CORE_NUM);
     if(!hash_op)
         return NULL;
 
     hash_op->private_id = 0;
     if(psa_hash_setup(hash_op, alg) != 0){
-        free(hash_op);
+        internal_TEE_Free(hash_op, CORE_NUM);
         hash_op = NULL;
     }
 
@@ -1293,7 +1643,7 @@ static psa_hash_operation_t* hash_operationInit(uint32_t alg)
 static void hash_operationDeInit(psa_hash_operation_t* hash_op)
 {
     if(hash_op)
-        free(hash_op);
+        internal_TEE_Free(hash_op, CORE_NUM);
 }
 
 /**
@@ -1303,7 +1653,7 @@ static void hash_operationDeInit(psa_hash_operation_t* hash_op)
 */
 static psa_mac_operation_t* mac_operationInit(void)
 {
-    psa_mac_operation_t *mac_op = (psa_mac_operation_t*)calloc(1, sizeof(psa_mac_operation_t));
+    psa_mac_operation_t *mac_op = (psa_mac_operation_t*)internal_TEE_Malloc(sizeof(psa_mac_operation_t), TEE_MALLOC_FILL_ZERO, CORE_NUM);
     if(!mac_op)
         return NULL;
 
@@ -1320,7 +1670,7 @@ static psa_mac_operation_t* mac_operationInit(void)
 static void mac_operationDeInit(psa_mac_operation_t* mac_op)
 {
     if(mac_op)
-        free(mac_op);
+        internal_TEE_Free(mac_op, CORE_NUM);
 }
 
 
@@ -1417,9 +1767,10 @@ static void mbed_operationsDeInit(__TEE_OperationHandle *op, uint32_t mode)
 TEE_Result internal_TEE_AllocateOperation(TEE_OperationHandle* operation,           
                                     uint32_t algorithm,
                                     uint32_t mode, 
-                                    uint32_t maxKeySize) 
+                                    uint32_t maxKeySize,
+                                    uint8_t ta_num) 
 {
-    __TEE_OperationHandle *temp_op = (__TEE_OperationHandle*)malloc(sizeof(__TEE_OperationHandle));
+    __TEE_OperationHandle *temp_op = (__TEE_OperationHandle*)internal_TEE_Malloc(sizeof(__TEE_OperationHandle), TEE_MALLOC_NO_FILL, CORE_NUM);
     if(!temp_op){
         ERR_MSG("Allocate operation failed");
         return TEE_FAILED;
@@ -1428,7 +1779,7 @@ TEE_Result internal_TEE_AllocateOperation(TEE_OperationHandle* operation,
     // Intialize the PSA Crypto API
     if(psa_crypto_init() != PSA_SUCCESS){
         ERR_MSG("PSA  cryto init failed");
-        free(temp_op);
+        internal_TEE_Free(temp_op, CORE_NUM);
         return TEE_FAILED;
     }
 
@@ -1439,7 +1790,8 @@ TEE_Result internal_TEE_AllocateOperation(TEE_OperationHandle* operation,
     if(mbed_operationsInit(temp_op, mode, alg) != 0)
     {
         ERR_MSG("MOD initializing err");
-        free(temp_op);
+        internal_TEE_Free(temp_op, CORE_NUM);
+        mbedtls_psa_crypto_free();
         return TEE_FAILED;
     }
 
@@ -1447,6 +1799,15 @@ TEE_Result internal_TEE_AllocateOperation(TEE_OperationHandle* operation,
     temp_op->info.mode = mode;
     temp_op->info.keySize = maxKeySize;
     temp_op->key_id = 0;
+    temp_op->ta_num = ta_num;
+
+    if(!populate_operation(temp_op)){
+        ERR_MSG("Populate operation failed");
+        mbed_operationsDeInit(temp_op, mode);
+        internal_TEE_Free(temp_op, CORE_NUM);
+        mbedtls_psa_crypto_free();
+        return TEE_FAILED;
+    }
 
     *operation = (void*)temp_op;
 
@@ -1458,34 +1819,37 @@ TEE_Result internal_TEE_AllocateOperation(TEE_OperationHandle* operation,
  * 
  * @param operation pointer to the operation handle
  */
-void internal_TEE_FreeOperation(TEE_OperationHandle operation) 
+void internal_TEE_FreeOperation(TEE_OperationHandle operation, uint8_t ta_num) 
 {
-    if(operation)
+    
+    if(!check_operation_ownership(ta_num, operation)){
+        return;
+    }
+    __TEE_OperationHandle *op = (__TEE_OperationHandle*)operation;
+
+    // Asymmetric signing and verification proccess might not use the PSA API,
+    // if you want to set x and y values for eliptic curve for signature and verification. 
+    // The if statement is used to check if the key_id is set or not, which allows us to understand
+    // which PSA API was used for the operation and which elements should be freed.
+    if((op->key_id != 0) || (op->info.mode == TEE_MODE_DIGEST))
     {
-        __TEE_OperationHandle *op = (__TEE_OperationHandle*)operation;
+        mbed_operationsDeInit(op, op->info.mode);
+        if(op->key_id != 0) 
+            psa_destroy_key(op->key_id);
+        
+        mbedtls_psa_crypto_free();
+    }else{
+        mbedtls_ecdsa_free(&op->ctx_sign);
+        mbedtls_ecdsa_free(&op->ctx_verify);
+        mbedtls_ecp_point_free(&op->Q);
+        mbedtls_ctr_drbg_free(&op->ctr_drbg);
+        mbedtls_entropy_free(&op->entropy);
+    }       
 
-        // Asymmetric signing and verification proccess might not use the PSA API,
-        // if you want to set x and y values for eliptic curve for signature and verification. 
-        // The if statement is used to check if the key_id is set or not, which allows us to understand
-        // which PSA API was used for the operation and which elements should be freed.
-        if((op->key_id != 0) || (op->info.mode == TEE_MODE_DIGEST))
-        {
-            mbed_operationsDeInit(op, op->info.mode);
-            if(op->key_id != 0) 
-                psa_destroy_key(op->key_id);
-            
-            mbedtls_psa_crypto_free();
-        }else{
-            mbedtls_ecdsa_free(&op->ctx_sign);
-            mbedtls_ecdsa_free(&op->ctx_verify);
-            mbedtls_ecp_point_free(&op->Q);
-            mbedtls_ctr_drbg_free(&op->ctr_drbg);
-            mbedtls_entropy_free(&op->entropy);
-        }       
+    free_operation(op);
+    // Free the operation handle
+    internal_TEE_Free(op, CORE_NUM); 
 
-        // Free the operation handle
-        free(op); 
-    }            
 }
 
 /**
@@ -1497,16 +1861,14 @@ void internal_TEE_FreeOperation(TEE_OperationHandle operation)
  * @return TEE_SUCCESS if the key is set successfully, TEE_FAILED otherwise
  */
 TEE_Result internal_TEE_SetOperationKey(TEE_OperationHandle operation,              
-                                        TEE_ObjectHandle key)
+                                        TEE_ObjectHandle key,
+                                        uint8_t ta_num)
 {
-   if(!operation){
-        ERR_MSG("Operation is null");
-        return TEE_FAILED;
+   if(!check_operation_ownership(ta_num, operation)){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
-
-    if(!key){
-        ERR_MSG("Key is null");
-        return TEE_FAILED;
+    if(!check_object_ownership(ta_num, key)){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
 
     __TEE_OperationHandle *op = (__TEE_OperationHandle*)operation;  
@@ -1581,13 +1943,13 @@ TEE_Result internal_TEE_GenerateKey(TEE_ObjectHandle object,
                                     uint32_t keySize,
                   /*unused*/        TEE_Attribute* params,
                   /*unused*/        uint32_t paramCount,
-                                    uint32_t ta_num)
-        {
-    if(!object){
-        ERR_MSG("Object is null");
-        return TEE_FAILED;
+                                    uint8_t ta_num)
+{
+    if(!check_object_ownership(ta_num, object)){
+        ERR_MSG("Invalid object pointer");
+        return TEE_ERROR_BAD_PARAMETERS;
     }
-    
+    //Params will be checked in the internal_TEE_PopulateTransientObject function
     __TEE_ObjectHandle *obj = (__TEE_ObjectHandle*)object;
 
     char temp_buffer[keySize/8];
@@ -1602,7 +1964,7 @@ TEE_Result internal_TEE_GenerateKey(TEE_ObjectHandle object,
     if (mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0) != 0) {
         mbedtls_ctr_drbg_free(&ctr_drbg);
         ERR_MSG("Failed to seed RNG");
-        TEE_FAILED;
+        return TEE_FAILED;
     }
 
     // Generate Key
@@ -1613,19 +1975,27 @@ TEE_Result internal_TEE_GenerateKey(TEE_ObjectHandle object,
 
     // Initialize the parameters of the object
     if(paramCount != 0){
-        TEE_PopulateTransientObject(object, params, paramCount);
+        internal_TEE_PopulateTransientObject(object, params, paramCount, ta_num);
     }
     
     // If the object is not persistent, store the key in the object buffer
     if(obj->obj_storage_type != TEE_OBJ_TYPE_PERSISTENT)
     {   
+        if(obj->buffer == NULL){
+            ERR_MSG("Buffer is null");
+            return TEE_FAILED;
+        }
+        if(obj->len < keySize/8){
+            ERR_MSG("Buffer length is smaller than key size");
+            return TEE_FAILED;
+        }
         memcpy(obj->buffer, temp_buffer, keySize/8);
     }else{
 
         // If the object is persistent, write the key to the secure storage area
         obj->flags = TEE_DATA_FLAG_ACCESS_WRITE;
 
-        if(TEE_WriteObjectData(object, temp_buffer, keySize/8) != TEE_SUCCESS){
+        if(internal_TEE_WriteObjectData(object, temp_buffer, keySize/8, ta_num) != TEE_SUCCESS){
             ERR_MSG("Failed to write object data");
             mbedtls_ctr_drbg_free(&ctr_drbg);
             mbedtls_entropy_free(&entropy);
@@ -1634,7 +2004,7 @@ TEE_Result internal_TEE_GenerateKey(TEE_ObjectHandle object,
 
         obj->flags = 0;
     }
-   
+
     // Deinit entropy
     mbedtls_ctr_drbg_free(&ctr_drbg);
     mbedtls_entropy_free(&entropy);
@@ -1649,8 +2019,11 @@ TEE_Result internal_TEE_GenerateKey(TEE_ObjectHandle object,
  * @param randomBuffer pointer to the buffer where the random number will be stored
  * @param randomBufferLen length of the random number to be generated
  */
-void internal_TEE_GenerateRandom(void* randomBuffer, size_t randomBufferLen)
+void internal_TEE_GenerateRandom(void* randomBuffer, size_t randomBufferLen, uint8_t ta_num)
 {
+    if(!check_mem_ownership(ta_num, randomBuffer, randomBufferLen)){
+        return;
+    }
     uint32_t rnum = 0;
     unsigned char val[4] = {0};
     size_t len = 0;
@@ -1681,7 +2054,8 @@ void internal_TEE_GenerateRandom(void* randomBuffer, size_t randomBufferLen)
 void internal_TEE_DeriveKey(TEE_OperationHandle operation,
                     TEE_Attribute* params, 
                     uint32_t paramCount,
-                    TEE_ObjectHandle derivedKey)
+                    TEE_ObjectHandle derivedKey, 
+                    uint8_t ta_num)
 {
     return;
 }
@@ -1699,22 +2073,21 @@ void internal_TEE_DeriveKey(TEE_OperationHandle operation,
  */
 void internal_TEE_CipherInit(TEE_OperationHandle operation,
                         void* IV, 
-                        size_t IVLen)
+                        size_t IVLen,
+                        uint8_t ta_num)
 {
-    if(!operation){
-        ERR_MSG("Operation is null");    
+    if(!check_operation_ownership(ta_num, operation)){
+        return;
     }
 
     __TEE_OperationHandle *op = (__TEE_OperationHandle*)operation;
 
     if(op->key_id == 0){
-        ERR_MSG("Key ID is not set");
-        goto end;
+        return;
     }
 
-    if((!IV) || (IVLen <= 0)){
-        ERR_MSG("IV is null or IV length is zero");
-        goto end;
+    if(!check_mem_ownership(ta_num, IV, IVLen)){
+        return;
     }
 
     // Initialize the cipher operation of the PSA API
@@ -1727,7 +2100,7 @@ void internal_TEE_CipherInit(TEE_OperationHandle operation,
                                         algorithm) != PSA_SUCCESS)
         {
             ERR_MSG("Failed to setup cipher encrypt");
-            goto end;
+            return;
 
         }
     }else if(op->info.mode == TEE_MODE_DECRYPT){
@@ -1735,12 +2108,12 @@ void internal_TEE_CipherInit(TEE_OperationHandle operation,
                                         algorithm) != PSA_SUCCESS)
         {
             ERR_MSG("Failed to setup cipher decrypt");
-            goto end;
+            return;
         }
     } else {
         // Invalid mode (neither encrypt nor decrypt)
         ERR_MSG("Invalid mode in CipherInit");
-        goto end;
+        return;
     }
 
     // Set the IV for the PSA cipher operation
@@ -1751,8 +2124,6 @@ void internal_TEE_CipherInit(TEE_OperationHandle operation,
         psa_cipher_abort((psa_cipher_operation_t*)op->cipher_op);
     }
 
-end:
-    // Do nothing
 }
 
 
@@ -1771,20 +2142,25 @@ TEE_Result internal_TEE_CipherUpdate(TEE_OperationHandle operation,
                             /*[inbuf]*/ void* srcData, 
                                         size_t srcLen,
                             /*[outbuf]*/ void* destData, 
-                                        size_t *destLen)
+                                        size_t *destLen,
+                                        uint8_t ta_num)
 {
-    if((!srcData) || (!destData)){
-        ERR_MSG("Source data or Destination data is null");
-        return TEE_FAILED;
+    if(!check_operation_ownership(ta_num, operation)){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, srcData, srcLen)){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, (void *)destLen, sizeof(destLen))){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, destData, *destLen)){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
 
-    if((srcLen <= 0) || (*destLen <= 0)){ // destLen rapresent initially the physical size of the output buffer
-        ERR_MSG("Source length problem");
-        return TEE_FAILED;
-    }
 
     __TEE_OperationHandle *op = (__TEE_OperationHandle*)operation;
-    if((!op) || (!op->cipher_op)) {
+    if(!op->cipher_op) {
         ERR_MSG("Cipher operation is null");
         return TEE_FAILED;
     }
@@ -1824,21 +2200,26 @@ TEE_Result internal_TEE_CipherDoFinal(TEE_OperationHandle operation,
                             /*[inbuf]*/ void* srcData, 
                                         size_t srcLen,
                         /*[outbufopt]*/ void* destData, 
-                                        size_t *destLen)
-        {
-
-    if(!destData){
-        ERR_MSG("Destination data is null");
-        return TEE_FAILED;
+                                        size_t *destLen,
+                                        uint8_t ta_num)
+{   
+    if(!check_operation_ownership(ta_num, operation)){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
-
-    if(*destLen <= 0){
-        ERR_MSG("Source or Destination length problem");
-        return TEE_FAILED;
+    if(!check_mem_ownership(ta_num, srcData, srcLen)){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
+    if(!check_mem_ownership(ta_num, (void *)destLen, sizeof(size_t))){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, destData, *destLen)){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    
+
 
     __TEE_OperationHandle *op = (__TEE_OperationHandle*)operation;
-    if ((!op) || (!op->cipher_op)) {
+    if (!op->cipher_op) {
         ERR_MSG("Cipher operation is null");
         return TEE_FAILED;
     }
@@ -1885,11 +2266,15 @@ TEE_Result internal_TEE_CipherDoFinal(TEE_OperationHandle operation,
  * @note For HMAC with SHA, the IV is not used
  */
 void internal_TEE_MACInit(TEE_OperationHandle operation,                             
-                  void* IV, size_t IVLen) 
+                            void* IV, 
+                            size_t IVLen, 
+                            uint8_t ta_num) 
 {
-    if(!operation){
-        ERR_MSG("Operation is null");
-        goto end;
+    if(!check_operation_ownership(ta_num, operation)){
+        return;
+    }
+    if(IV != NULL && !check_mem_ownership(ta_num, IV, IVLen)){
+        return;
     }
 
     __TEE_OperationHandle *op = (__TEE_OperationHandle*)operation;
@@ -1923,11 +2308,15 @@ end:
  * @param chunkSize length of the input data
  */
 void internal_TEE_MACUpdate(TEE_OperationHandle operation,
-        /*[inbuf]*/ void* chunk, size_t chunkSize) 
+                        /*[inbuf]*/ void* chunk, 
+                            size_t chunkSize, 
+                            uint8_t ta_num) 
 {
-    if(!operation){
-        ERR_MSG("Error in MAC Update");
-        goto end;
+    if(!check_operation_ownership(ta_num, operation)){
+        return;
+    }
+    if(!check_mem_ownership(ta_num, chunk, chunkSize) ){
+        return;
     }
     __TEE_OperationHandle *op = (__TEE_OperationHandle*)operation;
     
@@ -1955,11 +2344,20 @@ end:
  */
 TEE_Result internal_TEE_MACComputeFinal(TEE_OperationHandle operation,
              /*[inbuf]*/        void* message, size_t messageLen,
-             /*[outbuf]*/       void* mac, size_t *macLen) 
+             /*[outbuf]*/       void* mac, size_t *macLen, 
+                                uint8_t ta_num) 
 {
-    if(!operation){
-        ERR_MSG("Operation is null");
-        return TEE_FAILED;
+    if(!check_operation_ownership(ta_num, operation)){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, message, messageLen)){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, (void *)macLen, sizeof(size_t)) ){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, mac, *macLen)){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
     __TEE_OperationHandle *op = (__TEE_OperationHandle*)operation;
 
@@ -1997,16 +2395,15 @@ TEE_Result internal_TEE_MACComputeFinal(TEE_OperationHandle operation,
  * @param chunkSize length of the input data
  */
 void internal_TEE_DigestUpdate(TEE_OperationHandle operation,
-        /*inbuf]*/     void* chunk, size_t chunkSize) 
+        /*inbuf]*/     void* chunk, 
+                        size_t chunkSize, 
+                        uint8_t ta_num) 
 {
-    if(!operation){
-        ERR_MSG("NULL parameter");
-        goto end;
+    if(!check_operation_ownership(ta_num, operation)){
+        return;
     }
-
-    if((!chunk) || (chunkSize <= 0)){
-        ERR_MSG("Invalid parameter");
-        goto end;
+    if(!check_mem_ownership(ta_num, chunk, chunkSize)){
+        return;
     }
 
     __TEE_OperationHandle *op = (__TEE_OperationHandle*)operation;
@@ -2032,16 +2429,20 @@ end:
  */
 TEE_Result internal_TEE_DigestDoFinal(TEE_OperationHandle operation,
             /*[inbuf]*/      void* chunk, size_t chunkLen,
-            /*[outbuf]*/     void* hash, size_t *hashLen) 
+            /*[outbuf]*/     void* hash, size_t *hashLen,
+                             uint8_t ta_num) 
 {
-    if(!operation){
-        ERR_MSG("Null operation");
-        return TEE_FAILED;
+    if(!check_operation_ownership(ta_num, operation)){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
-
-    if(!hash){
-        ERR_MSG("Null input or output parameter");
-        return TEE_FAILED;
+    if(!check_mem_ownership(ta_num, chunk, chunkLen) ){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, (void *)hashLen, sizeof(size_t)) ){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, hash, *hashLen) ){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
 
     __TEE_OperationHandle *op = (__TEE_OperationHandle*)operation;
@@ -2087,16 +2488,17 @@ TEE_Result internal_TEE_DigestDoFinal(TEE_OperationHandle operation,
  * @param hashLen length of the output data
  */
 TEE_Result internal_TEE_DigestExtract(TEE_OperationHandle operation,
-            /*[outbuf]*/       void* hash, size_t *hashLen) 
+            /*[outbuf]*/       void* hash, size_t *hashLen,
+                                uint8_t ta_num) 
 {
-    if(!operation){
-        ERR_MSG("Null operation");
-        return TEE_FAILED;
+    if(!check_operation_ownership(ta_num, operation) ){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
-
-    if((!hash) || (*hashLen <= 0)){
-        ERR_MSG("Null input parameter");
-        return TEE_FAILED;
+    if(!check_mem_ownership(ta_num, (void *)hashLen, sizeof(size_t)) ){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, hash, *hashLen) ){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
 
     __TEE_OperationHandle *op = (__TEE_OperationHandle*)operation;
@@ -2142,21 +2544,23 @@ TEE_Result internal_TEE_DigestExtract(TEE_OperationHandle operation,
 TEE_Result internal_TEE_AsymmetricSignDigest(TEE_OperationHandle operation,
                     /*[in]*/         TEE_Attribute* params, uint32_t paramCount,
                     /*[inbuf]*/      void* digest, size_t digestLen,
-                    /*[outbuf]*/     void* signature, size_t *signatureLen)
+                    /*[outbuf]*/     void* signature, size_t *signatureLen,
+                                    uint8_t ta_num)
 {
-    if(!operation){
-        ERR_MSG("Operation is null");
-        return TEE_FAILED;
+    if(!check_operation_ownership(ta_num, operation)){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
-
-    if((!digest) || (!signature)){
-        ERR_MSG("Digest or Signature is null");
-        return TEE_FAILED;
+    if(!check_mem_ownership(ta_num, (void *)params, sizeof(TEE_Attribute) * paramCount) ){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
-
-    if((digestLen <= 0) || (*signatureLen <= 0)){
-        ERR_MSG("Digest or Signature length is zero");
-        return TEE_FAILED;
+    if(!check_mem_ownership(ta_num, digest, digestLen) ){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, (void *)signatureLen, sizeof(size_t)) ){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, signature, *signatureLen)){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
 
     __TEE_OperationHandle *op = (__TEE_OperationHandle*)operation;
@@ -2207,21 +2611,20 @@ TEE_Result internal_TEE_AsymmetricSignDigest(TEE_OperationHandle operation,
 TEE_Result internal_TEE_AsymmetricVerifyDigest(TEE_OperationHandle operation, 
                     /*[in] */ TEE_Attribute* params, uint32_t paramCount,
                     /*[inbuf]*/ void* digest, size_t digestLen,
-                    /*[inbuf]*/ void* signature, size_t signatureLen) 
+                    /*[inbuf]*/ void* signature, size_t signatureLen,
+                                uint8_t ta_num) 
 {
-     if(!operation){
-        ERR_MSG("Operation is null");
-        return TEE_FAILED;
+    if(!check_operation_ownership(ta_num, operation)){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
-
-    if(!digest){
-        ERR_MSG("Digest is null");
-        return TEE_FAILED;
+    if(!check_mem_ownership(ta_num, (void *)params, sizeof(TEE_Attribute) * paramCount) ){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
-
-    if((digestLen <= 0) || (signatureLen <= 0)){
-        ERR_MSG("Digest or Signature length is zero");
-        return TEE_FAILED;
+    if(!check_mem_ownership(ta_num, digest, digestLen)){
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+    if(!check_mem_ownership(ta_num, signature, signatureLen)){
+        return TEE_ERROR_BAD_PARAMETERS;
     }
 
     __TEE_OperationHandle *op = (__TEE_OperationHandle*)operation;
