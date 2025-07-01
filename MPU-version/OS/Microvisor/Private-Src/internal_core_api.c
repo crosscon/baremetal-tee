@@ -95,20 +95,25 @@ static uint8_t check_mem_ownership(uint8_t ta_num, void * buffer, size_t size)
 {
     if(!buffer){
         ERR_MSG("buffer does not exists");
-        return TEE_FAILED;
+        return 0;
     }
     if(size == 0){
         ERR_MSG("size is 0");
-        return TEE_FAILED;
+        return 0;
     }
     uintptr_t object = (uintptr_t)buffer;
     uintptr_t object_end = object + size;
+    if(size > TA1_MEMORY_END_ADDR - TA1_MEMORY_START_ADDR){
+        return 0; //Invalid size
+    }
+    /* We will never check memory belonging to the TEE Core 
     if(ta_num == 0){
         if((object < TEE_CORE_MEMORY_START_ADDR) || (object_end > TEE_CORE_MEMORY_END_ADDR)){
             ERR_MSG("Memory access error");
             return 0;
         }
-    } else if (ta_num == 1) {
+    } else  */
+    if (ta_num == 1) {
         if((object < TA1_MEMORY_START_ADDR) || (object_end > TA1_MEMORY_END_ADDR)){
             ERR_MSG("Memory access error");
             return 0;
@@ -118,6 +123,8 @@ static uint8_t check_mem_ownership(uint8_t ta_num, void * buffer, size_t size)
             ERR_MSG("Memory access error");
             return 0;
         }
+    }else{
+        return 0; //Invalid TA number
     }
     return 1;
 }
@@ -301,7 +308,11 @@ void* internal_TEE_Malloc(size_t size, uint32_t hint, uint8_t ta_num)
 
     while (curr != NULL)
     {
-        
+        //Check whether the pointer is within the valid memory range for the TA
+        if(curr < (ta_num == CORE_NUM ? TEE_CORE_MEMORY_START_ADDR : (ta_num == 1 ? TA1_MEMORY_START_ADDR : TA2_MEMORY_START_ADDR)) ||
+            curr + sizeof(Block) > (ta_num == CORE_NUM ? TEE_CORE_MEMORY_END_ADDR : (ta_num == 1 ? TA1_MEMORY_END_ADDR : TA2_MEMORY_END_ADDR))){
+            return NULL;
+        }
         if ((curr->free) && (curr->size >= size))
         {
             if(

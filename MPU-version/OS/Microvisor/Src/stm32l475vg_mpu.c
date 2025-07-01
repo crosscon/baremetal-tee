@@ -91,7 +91,7 @@ void Configure_MPU(void) {
 
 	/************************************************************************/
 	/* RAM	(region for user app)																*/
-	/* Region 3		BASE = 0x20000000, SIZE = 0x4000						*/
+	/* Region 3		BASE = 0x20000000, SIZE = 0x8000						*/
 	/************************************************************************/
 	MPU_InitStruct.Enable = MPU_REGION_ENABLE;
 	MPU_InitStruct.Number = MPU_REGION_NUMBER3;

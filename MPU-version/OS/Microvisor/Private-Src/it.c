@@ -119,7 +119,7 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
 				if(ca_params->memref.parent != NULL) {
 					//Check if the various memory pointers are inside the CA memory area
 					if(ca_params->memref.parent->buffer < CA_MEMORY_START_ADDR || 
-					   ca_params->memref.parent->buffer + ca_params->memref.parent->size > CA_MEMORY_END_ADDR) {
+					   ca_params->memref.parent->size > (CA_MEMORY_END_ADDR - (uintptr_t) ca_params->memref.parent->buffer)) {
 						ret_val = TEE_FAILED;
 						goto exit;
 					}
@@ -131,9 +131,9 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
 
 				// Copy the temporary memory reference params from the TEEC_Param structure to TA_Param structure
 				if(ca_params->tmpref.buffer != NULL) {
-					// Check if the temporary memory reference is valid
+					// Check if the temporary memory reference is valid 
 					if(ca_params->tmpref.buffer < CA_MEMORY_START_ADDR || 
-					   ca_params->tmpref.buffer + ca_params->tmpref.size > CA_MEMORY_END_ADDR) {
+					   ca_params->tmpref.size > (CA_MEMORY_END_ADDR - (uintptr_t) ca_params->tmpref.buffer)) {
 						ret_val = TEE_FAILED;
 						goto exit;
 					}
@@ -570,6 +570,57 @@ void Microvisor_SVC_Handler() {
 		"ite eq\n"
 		"mrseq r0, msp\n"
 		"mrsne r0, psp\n"
+
+		/* Check R0 range depending on stack pointer used */
+		"tst lr, #4\n"               // Retest to choose comparison path
+		"bne .CHECK_PSP\n"            // If using MSP, jump to MSP check
+
+		/* MSP case: check if 0x20010000 <= R0 < 0x20017FE0 */
+		".CHECK_MSP:\n"
+		"ldr r1, =0x20010000\n"
+		//"ldr r2, =0x20017FE0\n" Going up to this value would trigger a HardFault (unmapped memory)
+		"cmp r0, r1\n"
+		"blo .INVALID_STACK\n"        // R0 < lower bound -> invalid
+		//"cmp r0, r2\n"
+		//"bhs .INVALID_STACK\n"        // R0 >= upper bound -> invalid
+		"b .VALID_STACK\n"
+
+		".CHECK_PSP:\n"
+		/* PSP case: check if 0x10000000 <= R0 < 0x10007FE0 */
+		"ldr r1, =0x10000000\n"
+		"ldr r2, =0x10007FE0\n"
+		"cmp r0, r1\n"
+		"blo .INVALID_STACK\n"
+		"cmp r0, r2\n"
+		"bhs .INVALID_STACK\n"
+		/* For the TAs we also need to ensure that the SP is in the correct TA's space */
+		"ldr r1, [r0, #24]\n"          // Return address (PC) into r1
+
+		/* Compare return address to 0x08060000, which is the boundary between the two TAs */
+		"ldr r2, =0x08060000\n"
+		"cmp r1, r2\n"
+		"bhs .CHECK_TA2\n"     // If PC >= 0x08060000 then it should be the TA2
+
+		".CHECK_TA1:\n"
+		/* PC < 0x08060000, then TA1 check SP < 0x10003fe0 */
+		"ldr r1, =0x10003fe0\n" //Load the lower bound for the stack pointer check
+		"cmp r0, r1\n"
+		"bhs .INVALID_STACK\n"
+		"b .VALID_STACK\n"
+
+
+		/* PC >= 0x08060000, check SP >= 0x10004000 */
+		".CHECK_TA2:\n"
+		"ldr r1, =0x10004000\n"
+		"cmp r0, r1\n"
+		"blo .INVALID_STACK\n"
+		"b .VALID_STACK\n"
+
+		".INVALID_STACK:\n"
+		/* R0 is out of valid range */
+		"b .INVALID_STACK\n" //TODO: handle invalid stack case, e.g., trigger a HardFault or reset the MCU
+
+		".VALID_STACK:\n"
 
 		/* Check for system instruction usage (after SVC instruction) */
 		"push {r4,r5,r6,r7,r8,r9,r10,r11,lr}\n" //push rest of registers to manual_frame
