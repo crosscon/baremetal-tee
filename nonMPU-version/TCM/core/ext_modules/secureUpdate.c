@@ -23,7 +23,12 @@
 #define BEGUG_ANALYSER 0
 
 //The number of bytes used by the TCM after the 0xffee address. 
-#define OVERFLOWTCM 70
+//SYNC IT WITH THE LINKERSCRIPT!
+#if FLASHADOW_ENABLED
+#define OVERFLOWTCM 246
+#else
+#define OVERFLOWTCM 136
+#endif
 
 
 //the lenght of the metadata encoding the image length
@@ -440,7 +445,10 @@ __attribute__((section(".tcm:codeUpper"))) bool load_elf_segment(uint32_t elfAdd
 
     //Empty section -> no need to load
     if(memsize == 0) return 1;
-
+    if(mempos+memsize < mempos){
+        //Overflow
+        return 0;
+    }
     /* Check in which memory the segment should be loaded to: RAM or FLASH */
 
     //Segment in RAM

@@ -120,10 +120,10 @@ emptyLines      = re.compile("^\s*$")
 def startParsing(outputFile,counter):
     inputFile = "code.tmp"
     ## Extract the code from the application
-    os.system("../toolchain/compiler/msp430-gcc-9.2.0.50_linux64/bin/msp430-elf-objdump -D -z -j .text -j .lower.text appWithNoMetadata.out > code.tmp")
+    os.system("../toolchain/compiler/msp430gcc-9.3.1.11-original/bin/msp430-elf-objdump -D -z -j .text -j .lower.text appWithNoMetadata.out > code.tmp")
 
     #result = subprocess.run(['../toolchain/compiler/msp430-gcc-9.2.0.50_linux64/bin/msp430-elf-objdump','-D','-z','-j','.text','-j','.lower.text','appWithNoMetadata.out','>','code.tmp'],shell=True,executable='/bin/bash',capture_output=True)
-    os.system("../toolchain/compiler/msp430-gcc-9.2.0.50_linux64/bin/msp430-elf-objdump -D -z -j .appText appWithNoMetadata.out > code2.tmp")
+    os.system("../toolchain/compiler/msp430gcc-9.3.1.11-original/bin/msp430-elf-objdump -D -z -j .appText appWithNoMetadata.out > code2.tmp")
     
     #NEW added parsing of the .appText section to fetch the labels and functions
     input = open("code2.tmp", 'r')

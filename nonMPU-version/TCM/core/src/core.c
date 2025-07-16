@@ -13,8 +13,6 @@
 #include "core.h"
 #include "secureUpdate.h"
 
-#define REJECT 1 /* IF SET to 1 THEN WE REJECT THE APPLICATION WHEN AN INSTRUCTION FAILS VERIFICATION*/
-#define DEBUG 0 /* IF SET TO 1 WE TAKE NOTE OF WHAT WORD CAUSED THE VERIFICATION TO FAIL*/
 
 /** These constants need to be synchronised with the linker script and the various toolchain scripts **/
 __attribute__((section(".tcm:rodata"))) const uint16_t appTopRam            = 0x43FF;
@@ -43,27 +41,28 @@ __attribute__((section(".tcm:rodata"))) const uint32_t vectorBottom         = 0x
 __attribute__((section(".tcm:rodata"))) const uint16_t safe_br      = 0xfc00;
 __attribute__((section(".tcm:rodata"))) const uint16_t safe_bra     = 0xfc26;
 __attribute__((section(".tcm:rodata"))) const uint16_t safe_call    = 0xfc4c;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_calla   = 0xfc72;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_ret     = 0xfc98;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_reti    = 0xfcc0;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_reta    = 0xfd08;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_calla   = FLASHADOW_ENABLED ? 0xfc54 : 0xfc72;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_ret     = FLASHADOW_ENABLED ? 0xfd0c : 0xfc98;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_reti    = FLASHADOW_ENABLED ? 0xfd66 : 0xfcc0;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_reta    = FLASHADOW_ENABLED ? 0xfdae : 0xfd08;
 
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_mov     = 0xfd30;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_movx    = 0xfd42;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_xor     = 0xfd56;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_xorx    = 0xfd68;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_add     = 0xfd7c;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_addx    = 0xfd8e;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_addc    = 0xfda2;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_addcx   = 0xfdb4;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_dadd    = 0xfdc8;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_daddx   = 0xfdda;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_sub     = 0xfdee;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_subx    = 0xfe00;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_subc    = 0xfe14;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_subcx   = 0xfe26;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_mov     = FLASHADOW_ENABLED ? 0xfdd6 : 0xfd30;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_movx    = FLASHADOW_ENABLED ? 0xfde8 : 0xfd46;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_xor     = FLASHADOW_ENABLED ? 0xfdfc : 0xfd5e;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_xorx    = FLASHADOW_ENABLED ? 0xfe0e : 0xfd74;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_add     = FLASHADOW_ENABLED ? 0xfe22 : 0xfd8c;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_addx    = FLASHADOW_ENABLED ? 0xfe34 : 0xfda2;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_addc    = FLASHADOW_ENABLED ? 0xfe48 : 0xfdba;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_addcx   = FLASHADOW_ENABLED ? 0xfe5a : 0xfdd0;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_dadd    = FLASHADOW_ENABLED ? 0xfe6e : 0xfde8;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_daddx   = FLASHADOW_ENABLED ? 0xfe80 : 0xfdfe;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_sub     = FLASHADOW_ENABLED ? 0xfe94 : 0xfe16;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_subx    = FLASHADOW_ENABLED ? 0xfea6 : 0xfe2c;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_subc    = FLASHADOW_ENABLED ? 0xfeba : 0xfe44;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_subcx   = FLASHADOW_ENABLED ? 0xfecc : 0xfe5a;
 
-__attribute__((section(".tcm:rodata"))) const uint16_t receive_update_address = 0xfe3e;
+__attribute__((section(".tcm:rodata"))) const uint16_t receive_update_address = FLASHADOW_ENABLED ? 0xfee4 : 0xfe76;
+
 
 __attribute__((section(".tcm:rodata"))) const uint16_t entryPointBSL = 0x1002;
 /* TODO: modify BSL to check whether return address is valid. 
@@ -92,6 +91,8 @@ volatile uint32_t cfiDataHolder;
 __attribute__((section(".tcm:codeStart"))) void secureBoot(){
     
     WDTCTL = WDTPW | WDTHOLD;   // stop watchdog timer
+    //Restore Stack
+    __asm("mov #0x43ff, r1"); 
 
     //TODO: disable interrupts inside the BSL.
     
@@ -103,10 +104,11 @@ __attribute__((section(".tcm:codeStart"))) void secureBoot(){
     //Turn on red led 10 times to indicate that the device is booting
     for(int i = 0; i < 10; i++){
         P1OUT ^= BIT0; // Toggle red LED
-        for(int j = 0; j < 10000; j++){ // Delay{
+        for(int j = 0; j < 10000; j++){ // Delay
             __asm("nop");
         }
     }
+
     P1OUT |= BIT0; // Set output to 1 (red LED)
 
     // check whether code has been instrumented correctly
@@ -115,10 +117,10 @@ __attribute__((section(".tcm:codeStart"))) void secureBoot(){
     // check whether control integrity is preserved
     bool cfiStatus = verify_app_cfi(appBottomText,appTopText);
 
-    //TODO: verify if addresses in User IVT corresponds to valid addresses
+    bool ivtStatus = verify_app_ivt();
 
     //If both verification succeed then launch the application
-    if(codeStatus == VERIFIED && cfiStatus == VERIFIED){
+    if(codeStatus == VERIFIED && cfiStatus == VERIFIED && ivtStatus == VERIFIED){
         launchAppCode();
     }else{
         //If verification fails then reset the device
@@ -144,12 +146,23 @@ __attribute__((section(".tcm:code"))) void launchAppCode(){
     // Turn off LEDs
     P4OUT &= 0x7f; // Turn off the green LED
     P1OUT &= 0xfe; // Turn off the red LED
-    
-    //Lock memory controller
-    FCTL3 = FWPW+LOCK;
 
     //Enable interrupts
     __eint();
+        
+#if FLASHADOW_ENABLED
+    //Restore Stack
+    __asm("mov #0x43ff, r1");
+
+    //Reset shadow stack
+    __asm("mov #0, r8");
+    FCTL3 = FWPW; //Unlock memory controller
+    FCTL1 = FWPW + ERASE; //Set erase mode BANK
+    __asm("MOV.W #0, &0xf600");
+    while ((FCTL3 & BUSY) == BUSY); //Wait for erasure
+#endif
+    //Lock memory controller
+    FCTL3 = FWPW+LOCK;
     
     //Jump to beginning of application
     __asm("\n\tBR #4400h");
@@ -193,6 +206,11 @@ __attribute__((section(".tcm:code"))) bool verify(uint16_t address, uint16_t las
     //Set default results
     bool outcome = VERIFIED;
     bool cfiResult = VERIFIED;
+
+    #if FLASHADOW_ENABLED
+    /* Shadow stack optimisation to skip verification of call main */
+    bool calledMain = 0;
+    #endif
 
     //Variables to store the most significant bits of instruction operands
     uint8_t MSBsrc = 0;
@@ -297,6 +315,12 @@ __attribute__((section(".tcm:code"))) bool verify(uint16_t address, uint16_t las
                 /* It is either a Indexed, Symbolic, Absolute, immediate instruction*/
                 wordStep +=1;
             }
+#if FLASHADOW_ENABLED
+            /* Shadow stack check for register */
+            if( (opCode & 0x000f) == SSP ){
+                outcome = REJECTED; 
+            }
+#endif
         }
         /****** PUSH (not byte version nor 20-bit) *********/
         else if((opCode & 0xffC0) == 0x1200 ){
@@ -350,6 +374,7 @@ __attribute__((section(".tcm:code"))) bool verify(uint16_t address, uint16_t las
         else if((opCode & 0xffc0) == 0x1280){
             /* Immediate Mode */
             if(!cfi){
+#if FLASHADOW_ENABLED == 0
                 if(
                     ((opCode & 0x0030) == 0x0000 /* Register mode */) ||
                     (   
@@ -382,6 +407,20 @@ __attribute__((section(".tcm:code"))) bool verify(uint16_t address, uint16_t las
                 ){
                     outcome = REJECTED; 
                 }
+#else
+                /* Shadow stack check for register */
+                //We check whether it is the first unsafe call
+                //We reject all of the uninstrumented calls! Only immediate to safe value allowed
+                if( (opCode & 0x003f) != 0x0030 /* immediate mode */ ||
+                    ( !isImmediateSafeValue(operand1))
+                ){
+                    if(calledMain){
+                        outcome = REJECTED;
+                    }else{
+                        calledMain = 1;
+                    }
+                }
+#endif
             }
             
             #if REJECT
@@ -696,7 +735,7 @@ __attribute__((section(".tcm:code"))) bool verify(uint16_t address, uint16_t las
                         } //End symbolic mode
                         /* Absolute mode */
                         else if((opCode & 0x003f) == 0x0012 ){
-                             if (!extendedWord){
+                            if (!extendedWord){
                                 /* Byte mode. */
                                 if((opCode & 0x0040) == 0x0040)
                                     cfiResult = cfiCheck((uint8_t)(*(uint16_t*)((int16_t)operand1) >> 8));
@@ -846,12 +885,19 @@ __attribute__((section(".tcm:code"))) bool verify(uint16_t address, uint16_t las
             #if REJECT    
             }
             #endif
+#if FLASHADOW_ENABLED
+            /* Shadow stack check for register */
+            if( (opCode & 0x000f) == SSP){
+                outcome = REJECTED; 
+            }
+#endif 
         } //End two operands instructions
         
         /***** ADDRESS and EXTENDED INSTRUCTIONS ******/
 
         /*** CALLA ***/
         else if((opCode & 0xff00) == 0x1300){
+#if FLASHADOW_ENABLED  == 0
             if( (opCode & 0x00f0) == 0x0040 || /*Register*/
                 ((opCode & 0x00f0) == 0x0050 /*&& (opCode & 0x000f)  != 0 --> gets converted to symbolic *//*&& (opCode & 0x000f) != 2 --> does not compile if R2 used*/)|| /*Indexed*/
                 ((opCode & 0x00f0) == 0x0060 /*&& (opCode & 0x000f) != 0x0000 --> does not compile*/) ||                  /*Indirect. No PC allowed*/
@@ -901,6 +947,28 @@ __attribute__((section(".tcm:code"))) bool verify(uint16_t address, uint16_t las
                     outcome = REJECTED;
                 }
             } //End immediate CALLA
+#else
+            /* Shadow stack check for register */
+            
+            // If only only immediate mode to our safe version            
+            if((opCode & 0x00f0) == 0x00b0){
+                // Get most important bits from word
+                MSBsrc = (uint8_t)opCode & 0x0f;
+                srcOperand20Bit = 0x00000000 | ((uint32_t)MSBsrc)<<16 | operand1;
+                /* Shadow stack check for register */
+                //We check whether it is the first call
+                if(!isImmediateSafeValue(srcOperand20Bit)){
+                    if(calledMain){
+                        outcome = REJECTED;
+                    }else{ 
+                        //Set call man to allow next verifications 
+                        //Check on wether it is in the app memory is done in the CFI
+                        calledMain = 1;
+                    }
+                }
+                
+            } //End immediate CALLA
+#endif
             #if REJECT
             if (outcome != REJECTED){
             #endif
@@ -1000,6 +1068,13 @@ __attribute__((section(".tcm:code"))) bool verify(uint16_t address, uint16_t las
                     ){
                         wordStep += 1;
                     }
+#if FLASHADOW_ENABLED
+                    /* Shadow stack check for register */
+                    if( (opCode & 0x00f0) != 0x0060 /*absolute mode */ &&
+                        (opCode & 0x000f) == SSP ){
+                        outcome = REJECTED; 
+                    } 
+#endif
                 #if REJECT
                 }
                 #endif
@@ -1012,6 +1087,29 @@ __attribute__((section(".tcm:code"))) bool verify(uint16_t address, uint16_t las
             else if((opCode & 0x00f0) >> 4 > 0x8 && (opCode & 0x00f0) >> 4 < 0xc){
                 wordStep +=1;
             }
+
+#if FLASHADOW_ENABLED  == 0
+            if( (opCode & 0x00ff) == 0x00a0 /* ADDA */ ||
+                (opCode & 0x00ff) == 0x00b0 /* SUBA */ ||
+                (opCode & 0x00ff) == 0x00e0 /* ADDA */ ||
+                (opCode & 0x00ff) == 0x00f0 /* SUBA */){
+                //Target is the PC
+                outcome = REJECTED;
+            }
+#else
+            /* Shadow stack check for register */
+            if( (opCode & 0x00f0) == 0x00a0 /* ADDA */ ||
+                (opCode & 0x00f0) == 0x00b0 /* SUBA */ ||
+                (opCode & 0x00f0) == 0x00e0 /* ADDA */ ||
+                (opCode & 0x00f0) == 0x00f0 /* SUBA */ ||
+                (opCode & 0x00f0) == 0x0040 /* RR.. */ ||
+                (opCode & 0x00f0) == 0x0050 /* RR.. */ ){
+                
+                if( (opCode & 0x000f) == SSP ){
+                    outcome = REJECTED; 
+                }
+            }
+#endif
         }
         /* POPM */
         else if( !cfi && ((opCode & 0xff00) == 0x1600 /* word mode */ || (opCode & 0xff00) == 0x1700 /* address mode */)){
@@ -1023,6 +1121,14 @@ __attribute__((section(".tcm:code"))) bool verify(uint16_t address, uint16_t las
             targeting the PC. This is possible because the compiler won't allow the SR to be restored (thus protecting the PC which
             is below)*/
             /* Currently this operation is not virtualised and always rejected. Nothing forbids us from virtualising it */
+
+#if FLASHADOW_ENABLED 
+            /* Shadow stack check for register */
+            //TODO: double check wether it is right
+            if( (opCode & 0x000f) == SSP ){
+                outcome = REJECTED; 
+            }
+#endif            
         }
         /* anything else */
 
@@ -1075,7 +1181,6 @@ __attribute__((section(".tcm:code"))) bool verify(uint16_t address, uint16_t las
 ** - REJECTED: the destination is NOT a valid instruction
 **/
 __attribute__((section(".tcm:code"))) bool cfiCheck(uint32_t destination){
-    
     if(
         //It is a safe value (e.g. virtual function)
         isImmediateSafeValue(destination) ||
@@ -1095,7 +1200,7 @@ __attribute__((section(".tcm:code"))) bool cfiCheck(uint32_t destination){
 
 
 //Binary search algorithm
-__attribute__((section(".tcm:code"))) int8_t binarySearch(int16_t low, int16_t high, uint16_t key){
+__attribute__((section(".tcm:codeUpper"))) int8_t binarySearch(int16_t low, int16_t high, uint16_t key){
     while (low <= high) {
         uint16_t mid = (low + high);
         mid /= 2;
@@ -1120,7 +1225,7 @@ __attribute__((section(".tcm:code"))) int8_t binarySearch(int16_t low, int16_t h
 ** - 1: the destination is a valid instruction
 ** - 0: the destination is NOT a valid instruction
 **/
-__attribute__((section(".tcm:code"))) bool isImmediateSafeValue(uint32_t destination){
+__attribute__((section(".tcm:codeUpper"))) bool isImmediateSafeValue(uint32_t destination){
     return (destination == safe_br          
         || destination == safe_bra
         || destination == safe_call
@@ -1148,7 +1253,7 @@ __attribute__((section(".tcm:code"))) bool isImmediateSafeValue(uint32_t destina
 /**
 ** Function that writes the buffer for CFI into flash to preserve RAM. 
 **/
-__attribute__((section(".tcm:code"))) void flushBufferToFlash(){
+__attribute__((section(".tcm:codeUpper"))) void flushBufferToFlash(){
     uint32_t destFlush = cfiDataHolder+(counterBuffAlwDst*512);
     // Destination already empty
     FCTL3 = FWPW;
@@ -1165,6 +1270,32 @@ __attribute__((section(".tcm:code"))) void flushBufferToFlash(){
     }
     return;
 }
+
+/**
+ * Function that verifies the integrity of the IVT. It checks that every entry in the IVT points to
+ * a function that starts with a NOP slide. 
+ * 
+**/
+__attribute__((section(".tcm:codeUpper"))) bool verify_app_ivt(){
+    //Check every IVT entry and make sure there is a NOP slide at the beginning of the function
+    uint16_t * appIVT = (uint16_t *)vectorBottom;
+    uint16_t * appIVTEnd = (uint16_t *)vectorTop;
+    while(appIVT < appIVTEnd){
+        //If the entry is empty, skip it
+        if(*appIVT == (uint16_t *)0xFFFF){
+            continue;
+        }
+        //Fetch the two instructions pointed by the IVT entry
+        uint16_t * instruction = (uint16_t *) *appIVT;
+        if(instruction[0] != 0x4303 || instruction[1] != 0x4303){
+            //Not a NOP slide
+            return 0;
+        }
+        appIVT+=2;
+    }
+    return 1;
+}
+
 #ifdef KEY_APIS
 /**
 ** Function that reads the secret key from the key storage area

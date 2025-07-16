@@ -11,8 +11,8 @@ RESERVED_REGISTER_CHECK = True
 # replaces CALLA and RETA with CALL and RET. CALL and RET are less expensive when instrumented
 REPLACE_ADDR_INSTR = True 
 
-if len(sys.argv) < 2:
-    print("The number of arguments is inappropriate.\nCorrect syntax is: python {} debug=[1|0] asmFiles.s ....".format(sys.argv[0]))
+if len(sys.argv) < 3:
+    print("The number of arguments is inappropriate.\nCorrect syntax is: python {} debug=[1|0] flashadow=[0|1] asmFiles.s ....".format(sys.argv[0]))
     exit(1)
 
 
@@ -22,12 +22,13 @@ if sys.argv[1] == "1":
 else:
     logging.basicConfig(stream=sys.stderr, level=logging.ERROR)
 
-
+flashadow = sys.argv[2] == "1" # If flashadow is 1 then we use the shadow stack, otherwise we use the NOP slides
 reject = 0
 
 ### The following address must be synchronised with the linker script.
 bottomInstructionMemory   = 0x4400
 topInstructionMemory      = 0xc3ff
+receiveUpdateAPI          = "0xfe34" if flashadow == 0 else "0xfee4" #Receive update API address
 
 # Check wheter the given address is contained between the bottom and top addresses
 #PARAMS:
@@ -97,41 +98,41 @@ def hexToDec(number):
 
 
 # Address regex used inside the rest of the functions
-adRe = "((-|\+)?\s*(0x[\da-f]+|[\da-f]+h|\d+))"
+adRe = r"((-|\+)?\s*(0x[\da-f]+|[\da-f]+h|\d+))"
 #TODO: increase compatibility of the postprocessor by allowing also the use of the '+' and '-' operands to modify the address. 
 # This is not strictly required since false positives here will for sure be rejected at verification time.
 
 ###  EXECUTION CONTROL ####
 # Only take care of static addresses. Absolute version read protection not implemented.
 # We do not take care of aliases of the PC. They will be rejected anyway
-staticBr        = re.compile('BRA?\s+(#)\s*{}\s+'.format(adRe),re.I)
-staticCall      = re.compile('CALLA?\s+(#)\s*{}\s+'.format(adRe),re.I)
-staticMovPc     = re.compile('MOV(.W)?\s+(#)\s*{}\s*,\s*(R0|PC)\s+'.format(adRe),re.I)
-staticMovBPc    = re.compile('MOV.B\s+(#)\s*{}\s*,\s*(R0|PC)\s+'.format(adRe),re.I)
-staticMovaPc    = re.compile('MOVA\s+(#)\s*{}\s*,\s*(R0|PC)\s+'.format(adRe),re.I)
-staticMovxPc    = re.compile('MOVX(.W)?\s+(#)\s*{}\s*,\s*(R0|PC)\s+'.format(adRe),re.I)
-staticMovxBPc   = re.compile('MOVX.B\s+(#)\s*{}\s*,\s*(R0|PC)\s+'.format(adRe),re.I)
-staticMovxAPc   = re.compile('MOVX.A?\s+(#)\s*{}\s*,\s*(R0|PC)\s+'.format(adRe),re.I)
+staticBr        = re.compile(r'BRA?\s+(#)\s*{}\s+'.format(adRe),re.I)
+staticCall      = re.compile(r'CALLA?\s+(#)\s*{}\s+'.format(adRe),re.I)
+staticMovPc     = re.compile(r'MOV(.W)?\s+(#)\s*{}\s*,\s*(R0|PC)\s+'.format(adRe),re.I)
+staticMovBPc    = re.compile(r'MOV.B\s+(#)\s*{}\s*,\s*(R0|PC)\s+'.format(adRe),re.I)
+staticMovaPc    = re.compile(r'MOVA\s+(#)\s*{}\s*,\s*(R0|PC)\s+'.format(adRe),re.I)
+staticMovxPc    = re.compile(r'MOVX(.W)?\s+(#)\s*{}\s*,\s*(R0|PC)\s+'.format(adRe),re.I)
+staticMovxBPc   = re.compile(r'MOVX.B\s+(#)\s*{}\s*,\s*(R0|PC)\s+'.format(adRe),re.I)
+staticMovxAPc   = re.compile(r'MOVX.A?\s+(#)\s*{}\s*,\s*(R0|PC)\s+'.format(adRe),re.I)
 
 ### WRITE CONTROL ###
 #Math operations (+ and -) are not included because if they are used to elude the rejection the Verifier will reject the image.
-fctl3Re = "((&\s*(FCTL3|0x0*144|0*144h|324))|FCTL3)" 
-unlockMemory = re.compile("(((XOR|ADD|ADDC|DADD|SUB|SUBC|MOV)X?(.W)?\s+\S+\s*,)|POP)\s*{}\s+".format(fctl3Re),re.I)
-indirectPcAccess = re.compile("(((INCDA?|INV|SWPB|SXT)X?(.W|.B)?)|((ADDA?|ADDC|AND|BIC|BIS|DADD|SUBA?|SUBC|XOR)X?(.W)?\s+\S+\s*,))\s*(PC|R0)\s+",re.I)
-popToPc = re.compile("POPM(\.(W|A))?\s+((#(0x)?2h?\s*,\s*(SP|R1))|(#(0x)?1h?\s*,\s*(R0|PC)))\s+",re.I) 
+fctl3Re = r"((&\s*(FCTL3|0x0*144|0*144h|324))|FCTL3)" 
+unlockMemory = re.compile(r"(((XOR|ADD|ADDC|DADD|SUB|SUBC|MOV)X?(.W)?\s+\S+\s*,)|POP)\s*{}\s+".format(fctl3Re),re.I)
+indirectPcAccess = re.compile(r"(((INCDA?|INV|SWPB|SXT)X?(.W|.B)?)|((ADDA?|ADDC|AND|BIC|BIS|DADD|SUBA?|SUBC|XOR)X?(.W)?\s+\S+\s*,))\s*(PC|R0)\s+",re.I)
+popToPc = re.compile(r"POPM(\.(W|A))?\s+((#(0x)?2h?\s*,\s*(SP|R1))|(#(0x)?1h?\s*,\s*(R0|PC)))\s+",re.I) 
 
 
 ### RESERVED REGISTER CONTROL ###
-reservedReg = re.compile("^(?!(\s*;)).*R(4|5|6)",re.I) #use of reserved register outside of comments
+reservedReg = re.compile(r"^(?!(\s*;)).*R(4|5|6)",re.I) if flashadow == 0 else  re.compile(r"^(?!(\s*;)).*R(4|5|6|8)",re.I) #use of reserved register outside of comments
 
 
-curlyBracket = re.compile("{\s?",re.I)
-commentRemover = re.compile(";.*",re.I)
+curlyBracket = re.compile(r"{\s?",re.I)
+commentRemover = re.compile(r";.*",re.I)
 
 ### REMOVE ALL COMMENTS FROM THE FILE SO THAT WE CAN PERFORM THE RIGHT MODIFICATIONS
 
 #Cycle through the source files
-for f in sys.argv[2:]:
+for f in sys.argv[3:]:
     inputName = f
     input = open(inputName, 'r')
     logging.debug("Parsing file {} removing all comments".format(inputName))
@@ -156,7 +157,7 @@ for f in sys.argv[2:]:
 #   Only by removing the comments we ensure that the exclusively the real curly brackets get replaced
 
 #Cycle through the source files
-for f in sys.argv[2:]:
+for f in sys.argv[3:]:
     inputName = f
     input = open(inputName, 'r')
     logging.debug("Parsing file {} replacing curly bracket symbols with tab and new line".format(inputName))
@@ -181,12 +182,12 @@ for f in sys.argv[2:]:
 ### Replace all of the PUSHM.W/A with the normal mode. 
 # This is required because we cannot emulate the original instruction. 
 # In fact, we would need to save the name of the register rather than some content.
-regPushm = re.compile("PUSHM(.W)?\s+#((0*([1-9]|1[0-6]))|(0x0*([1-9]|[abcdef]|10))|(0*([1-9]|[abcdef]|10))h)\s*,\s*(R(\d{1,2})|PC|SP|SR)",re.I)
-regPushma = re.compile("PUSHM.A\s+#((0*([1-9]|1[0-6]))|(0x0*([1-9]|[abcdef]|10))|(0*([1-9]|[abcdef]|10))h)\s*,\s*(R(\d{1,2})|PC|SP|SR)",re.I)
+regPushm = re.compile(r"PUSHM(.W)?\s+#((0*([1-9]|1[0-6]))|(0x0*([1-9]|[abcdef]|10))|(0*([1-9]|[abcdef]|10))h)\s*,\s*(R(\d{1,2})|PC|SP|SR)",re.I)
+regPushma = re.compile(r"PUSHM.A\s+#((0*([1-9]|1[0-6]))|(0x0*([1-9]|[abcdef]|10))|(0*([1-9]|[abcdef]|10))h)\s*,\s*(R(\d{1,2})|PC|SP|SR)",re.I)
 
 # CALLA and RETA regex
-callaInstr = re.compile("^\s*(CALLA)\s+",re.I)
-retaInstr = re.compile("^\s*(RETA)\s+",re.I)
+callaInstr = re.compile(r"^\s*(CALLA)\s+",re.I)
+retaInstr = re.compile(r"^\s*(RETA)\s+",re.I)
 
 
 def replacePushm(toBeReplaced):
@@ -243,7 +244,7 @@ def replacePushma(toBeReplaced):
 
 
 #Cycle through the source files
-for f in sys.argv[2:]:
+for f in sys.argv[3:]:
     inputName = f
     input = open(inputName, 'r')
     logging.debug("Parsing file {} replacing PUSHM instructions".format(inputName))
@@ -254,19 +255,22 @@ for f in sys.argv[2:]:
         newEntry = line
 
         #Replace the pushm, pushma,  instructions
-        # TODO:CALLA and RETA are not replaced because tehy mess up the stack: we need to replace them when we are still using labels, not addresses --> use -msmall in the makefile to use them, but then we need to fix the libraries. 
+        
         if(regPushm.search(line)):
             newEntry = re.sub(regPushm,replacePushm,line)
         elif(regPushma.search(line)):
             newEntry = re.sub(regPushma,replacePushma,line)
-        """ elif(match := callaInstr.search(line)):
-            if (REPLACE_ADDR_INSTR):
-                logging.debug("Found CALLA")
-                newEntry = re.sub(match.group(1),"CALL",line)
-        elif(match := retaInstr.search(line)):
-            if (REPLACE_ADDR_INSTR):
-                logging.debug("Found RETA")
-                newEntry = re.sub(match.group(1),"RET",line) """
+        else: 
+            if(flashadow == 1):
+                if(match := callaInstr.search(line)):
+                    if (REPLACE_ADDR_INSTR):
+                        logging.debug("Found CALLA")
+                        newEntry = re.sub(match.group(1),"CALL",line)
+                elif(match := retaInstr.search(line)):
+                    if (REPLACE_ADDR_INSTR):
+                        logging.debug("Found RETA")
+                        newEntry = re.sub(match.group(1),"RET",line)
+                # TODO:CALLA and RETA are not replaced because tehy mess up the stack: we need to replace them when we are still using labels, not addresses --> use -msmall in the makefile to use them, but then we need to fix the libraries. 
         modifiedMain.write(newEntry)
         line = input.readline()
     
@@ -276,20 +280,27 @@ for f in sys.argv[2:]:
 #####################################
 # Insert the NOP slides
 #####################################
-callInstruction = re.compile("CALLA?\s+\S*\s*",re.I)
-functionInstruction = re.compile("@function\n(\_|\w|\d)*:\n",re.I|re.M)
+callInstruction = re.compile(r"CALLA?\s+\S*\s*",re.I)
+functionInstruction = re.compile(r"\@function\n((?!\.).*):\n")
 
-for f in sys.argv[2:]:
+def insertNopFunction(match):
+    logging.debug("Found function defition or call: {} ".format(match.group(0)))
+    return match.group(0) + "\t; NOP slide!\n\tNOP\n\tNOP\n\t; End NOP slide\n\t"
+for f in sys.argv[3:]:
     inputName = f
     input = open(inputName, 'r')
-    logging.debug("Parsing file {} adding NOP slides after CALL instructions".format(inputName))
+    logging.debug("Parsing file {} adding NOP slides ".format(inputName))
     modifiedMain = open(inputName+".tmp", 'w')
 
     file_contents = input.read()
-    modified_content = re.sub(callInstruction,lambda x: x.group(0) + "\t; NOP slide!\n\tNOP\n\tNOP\n\t; End NOP slide\n\t",file_contents)
+    
+    if flashadow == 0: # In flashadow we use the shadow stack instead of the nOP slides after the call
+        modified_content = re.sub(callInstruction,insertNopFunction,file_contents)
+    else:
+        modified_content = file_contents
     
     #TODO: Only insert the NOP slide if there are dynamic calls. Otherwise, it is useless because the function will always be called with a static call (that does not check for the NOP slide)
-    modified_content = re.sub(functionInstruction,lambda x: x.group(0) + "\t; NOP slide!\n\tNOP\n\tNOP\n\t; End NOP slide\n\t",modified_content)
+    modified_content = re.sub(functionInstruction,insertNopFunction,modified_content)
     
     modifiedMain.write(modified_content)
     
@@ -304,7 +315,7 @@ for f in sys.argv[2:]:
 
 # Verify the file for some forbidden operation
 
-for f in sys.argv[2:]:
+for f in sys.argv[3:]:
     inputName = f
     input = open(inputName, 'r')
     logging.debug("Parsing file {} for illegal instructions".format(inputName))
@@ -335,16 +346,15 @@ for f in sys.argv[2:]:
         ######  BR + BRA checks #######
         
         elif(match := staticBr.search(line)):
-            if(match.group(2) != "0xfe3e" and not checkAddress(match.group(2),bottomInstructionMemory,topInstructionMemory,20)): #BR won't allow more than 16 bits
+            if(match.group(2) != receiveUpdateAPI and not checkAddress(match.group(2),bottomInstructionMemory,topInstructionMemory,20)): #BR won't allow more than 16 bits
                 #Either jump to forbidden area or read from bootloader
                 logging.debug("Violating memory isolation with a BR/BRA #{}: '{}'".format(cnt,match.group(0)))
                 reject = 1
                 break
         
         ######  CALL + CALLA checks #######
-        
         elif(match := staticCall.search(line)):
-            if( not checkAddress(match.group(2),bottomInstructionMemory,topInstructionMemory,20)): #BR won't allow more than 16 bits
+            if(not checkAddress(match.group(2),bottomInstructionMemory,topInstructionMemory,20)): #BR won't allow more than 16 bits
                 #Either jump to forbidden area or read from bootloader
                 logging.debug("Violating memory isolation with a CALL/CALLA #{}: '{}'".format(cnt,match.group(0)))
                 reject = 1

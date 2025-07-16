@@ -5,7 +5,11 @@
 # '-c' Compile and assemble, but do not link.
 # '-mdata-region=lower' the compiler assumes data is in the lower region of memory
 ASSEMBLER_ARGS_CORE := -c -mmcu=msp430f5529 -mhwmult=f5series -I"$(INCLUDE_GCC)" -I"$(ROOT_DIR)" -I"$(COMP_INCLUDE)" \
--O3 -w -mlarge -mcode-region=none -mdata-region=none -Wl,--no-relax -Wl,--disable-sec-transformation
+-O3 -w -mlarge -mcode-region=none -mdata-region=none -Wl,--no-relax -Wl,--disable-sec-transformation 
+
+ifeq ($(FLASHADOW),1)
+ASSEMBLER_ARGS_CORE += -DFLASHADOW_DISABLED=0
+endif
 
 
 COREOBJS_DIR = ./core/obj
@@ -17,10 +21,15 @@ EXTMODULES_SRC = ./core/ext_modules
 
 #Modules to be loaded into the TCM
 CORE_OBJS += $(COREOBJS_DIR)/core.o
-CORE_OBJS += $(COREOBJS_DIR)/virt_fun.o
 CORE_OBJS += $(COREOBJS_DIR)/secureUpdate.o
 CORE_OBJS += $(COREOBJS_DIR)/protected_isr.o
 CORE_OBJS += $(COREOBJS_DIR)/secureContextSwitch.o
+
+ifeq ($(FLASHADOW),1)
+CORE_OBJS += $(COREOBJS_DIR)/virt_fun_flashadow.o
+else
+CORE_OBJS += $(COREOBJS_DIR)/virt_fun.o
+endif
 
 #CORE_OBJS += $(COREOBJS_DIR)/ra.o
 #CORE_OBJS += $(COREOBJS_DIR)/Hacl_HMAC.o

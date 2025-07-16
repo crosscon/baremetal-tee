@@ -154,43 +154,42 @@ MEMORY {
   
   /** New segments for the allocation of the virtual functions */
 
-  VIRT_FUN         : ORIGIN = 0xFC00, LENGTH = 0x0288 
+  VIRT_FUN         : ORIGIN = 0xFC00, LENGTH = 0x02e8 
   SAFE_BR          : ORIGIN = 0xFC00, LENGTH = 0x0026
   SAFE_BRA         : ORIGIN = 0xFC26, LENGTH = 0x0026
-  SAFE_CALL        : ORIGIN = 0xFC4C, LENGTH = 0x0026
-  SAFE_CALLA       : ORIGIN = 0xFC72, LENGTH = 0x0026
-  SAFE_RET         : ORIGIN = 0xFC98, LENGTH = 0x002a
-  SAFE_RETI        : ORIGIN = 0xFCC0, LENGTH = 0x004a
-  SAFE_RETA        : ORIGIN = 0xFD08, LENGTH = 0x0028
+  SAFE_CALL        : ORIGIN = 0xFC4C, LENGTH = 0x0060
+  SAFE_CALLA       : ORIGIN = 0xFC54, LENGTH = 0x0060
+  SAFE_RET         : ORIGIN = 0xfd0C, LENGTH = 0x005a
+  SAFE_RETI        : ORIGIN = 0xfd66, LENGTH = 0x004a
+  SAFE_RETA        : ORIGIN = 0xfdae, LENGTH = 0x0028
   
-  WRITE_MOV        : ORIGIN = 0xFD30, LENGTH = 0x0016
-  WRITE_MOVX       : ORIGIN = 0xFD46, LENGTH = 0x0018
+  WRITE_MOV        : ORIGIN = 0xfdd6, LENGTH = 0x0012
+  WRITE_MOVX       : ORIGIN = 0xfdE8, LENGTH = 0x0014
   
-  WRITE_XOR        : ORIGIN = 0xFD5e, LENGTH = 0x0016
-  WRITE_XORX       : ORIGIN = 0xFD74, LENGTH = 0x0018
+  WRITE_XOR        : ORIGIN = 0xfdfc, LENGTH = 0x0012
+  WRITE_XORX       : ORIGIN = 0xfe0e, LENGTH = 0x0014
   
-  WRITE_ADD        : ORIGIN = 0xFD8c, LENGTH = 0x0016
-  WRITE_ADDX       : ORIGIN = 0xFDa2, LENGTH = 0x0018
+  WRITE_ADD        : ORIGIN = 0xfe22, LENGTH = 0x0012
+  WRITE_ADDX       : ORIGIN = 0xfe34, LENGTH = 0x0014
   
-  WRITE_ADDC       : ORIGIN = 0xFDba, LENGTH = 0x0016
-  WRITE_ADDCX      : ORIGIN = 0xFDd0, LENGTH = 0x0018
+  WRITE_ADDC       : ORIGIN = 0xfe48, LENGTH = 0x0012
+  WRITE_ADDCX      : ORIGIN = 0xfe5a, LENGTH = 0x0014
   
-  WRITE_DADD       : ORIGIN = 0xFDe8, LENGTH = 0x0016
-  WRITE_DADDX      : ORIGIN = 0xFDfe, LENGTH = 0x0018
+  WRITE_DADD       : ORIGIN = 0xfe6e, LENGTH = 0x0012
+  WRITE_DADDX      : ORIGIN = 0xfe80, LENGTH = 0x0014
   
-  WRITE_SUB        : ORIGIN = 0xFE16, LENGTH = 0x0016
-  WRITE_SUBX       : ORIGIN = 0xFE2C, LENGTH = 0x0018
+  WRITE_SUB        : ORIGIN = 0xfe94, LENGTH = 0x0012
+  WRITE_SUBX       : ORIGIN = 0xfea6, LENGTH = 0x0014
   
-  WRITE_SUBC       : ORIGIN = 0xFE44, LENGTH = 0x0016
-  WRITE_SUBCX      : ORIGIN = 0xFE5A, LENGTH = 0x0018
+  WRITE_SUBC       : ORIGIN = 0xfeba, LENGTH = 0x0012
+  WRITE_SUBCX      : ORIGIN = 0xfecc, LENGTH = 0x0014
   
-  STOP_MCU         : ORIGIN = 0xFE72, LENGTH = 0x0004
+  STOP_MCU         : ORIGIN = 0xfee0, LENGTH = 0x0004
   
   /** Auxiliary functions which can be called by the untrusted application **/
-  RECEIVE_UPDATE   : ORIGIN = 0xFE76, LENGTH = 0x0004 /* Sync it with the TCMhook*/
-
-  CHECK_SP         : ORIGIN = 0xFE7A, LENGTH = 0x000E
+  RECEIVE_UPDATE   : ORIGIN = 0xfee4, LENGTH = 0x0004 /* Sync it with the TCMhook*/
   
+  CHECK_SP         : ORIGIN = 0xfee8, LENGTH = 0x000E
 
   /** New safe IVT integrity protected **/
   
@@ -477,9 +476,7 @@ SECTIONS
   .secure_reset_vector : 
   {
     /* THIS NEEDS TO BE THE FIRST ADDRESS OF THE TCM CODE */
-    /* TODO: this is a bug. It should be c400 but it crashes. The receive secureUpdate
-    function will set it to c400 so it's not an issue if we deploy the app through that */
-    SHORT(0x4400) 
+    SHORT(0xc400)
   } > RESETVEC
 
 

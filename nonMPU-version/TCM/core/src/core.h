@@ -14,6 +14,11 @@
 #define false 0
 #define KEY_SIZE 64
 #define KEY_LOCATION 0x1400
+#define SSP 0x8 //Shadow stack register
+
+#define REJECT 1 /* IF SET to 1 THEN WE REJECT THE APPLICATION WHEN AN INSTRUCTION FAILS VERIFICATION*/
+#define DEBUG 0 /* IF SET TO 1 WE TAKE NOTE OF WHAT WORD CAUSED THE VERIFICATION TO FAIL*/
+#define FLASHADOW_ENABLED 0 // Whether or not the FLASHADOW extension, for shadow stack, is disabled
 
 
 typedef unsigned char uint8_t;
@@ -38,6 +43,7 @@ bool isImmediateSafeValue(uint32_t destination);
 static void flushBufferToFlash();
 void getSecureKey(uint8_t * key);
 void setSecureKey(uint8_t * key);
+bool verify_app_ivt();
 
 /* VIRTUAL FUNCTIONS */
 //They are declared in assembly in the virt_fun.s file

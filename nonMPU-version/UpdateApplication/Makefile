@@ -1,19 +1,33 @@
 #    Author: Michele Grisafi
 #    Email: michele.grisafi@unitn.it
 #    License: MIT 
-GCC_TOOL_ROOT := ../toolchain/compiler/msp430-gcc-9.2.0.50_linux64
-LIBRARIES_BACKUP_DIR = $(GCC_TOOL_ROOT)/../msp430-gcc-9.2.0.50_linux64_backup
-COMPILER := $(GCC_TOOL_ROOT)/bin/msp430-elf-gcc-9.2.0
-#COMPILER := ../toolchain/compiler/msp430-gcc-9.3.0.31_linux64/bin/msp430-elf-gcc-9.3.0
+TOOLCHAIN_DIR = ../toolchain
+GCC_TOOL_ROOT_INSTRUMENTED := $(TOOLCHAIN_DIR)/compiler/msp430-gcc-9.2.0.50_linux64_instrumentedLibraries
+GCC_TOOL_ROOT_ORIGINAL := $(TOOLCHAIN_DIR)/compiler/msp430-gcc-9.2.0.50_linux64_backup
+GCC_TOOL_FLASHADOW := $(TOOLCHAIN_DIR)/compiler/msp430gcc-9.3.1.11-instrumented
+
+
+FLASHADOW := 0
+
+# variable used for the verification process
+VERIFY:=1
+
+GCC_TOOL_ROOT := $(GCC_TOOL_ROOT_INSTRUMENTED)
+
+
+ifeq ($(FLASHADOW),1)
+GCC_TOOL_ROOT := $(GCC_TOOL_FLASHADOW)
+endif
+
+COMPILER := $(GCC_TOOL_ROOT)/bin/msp430-elf-gcc
 OBJ_COPY := $(GCC_TOOL_ROOT)/bin/msp430-elf-objcopy
 COMP_INCLUDE := $(GCC_TOOL_ROOT)/msp430-elf/include
-INCLUDE_GCC := $(GCC_TOOL_ROOT)/../include_gcc
+INCLUDE_GCC := $(TOOLCHAIN_DIR)/compiler/include_gcc
+
 
 #Python 3 executable
 PYTHON := python3
 
-#Override paths
-#include paths.mk
 
 #Add to the PATH the various binaries
 export PATH := $(PATH):$(GCC_TOOL_ROOT)/bin/:$(GCC_TOOL_ROOT)/libexec/gcc/msp430-elf/9.2.0:$(GCC_TOOL_ROOT)/msp430-elf/bin/
@@ -21,7 +35,6 @@ export PATH := $(PATH):$(GCC_TOOL_ROOT)/bin/:$(GCC_TOOL_ROOT)/libexec/gcc/msp430
 
 ROOT_DIR := .
 
-TOOLCHAIN_DIR = ../toolchain
 
 VERIFIER := $(TOOLCHAIN_DIR)/postprocessor.py
 MODIFIER := $(TOOLCHAIN_DIR)/modifier.py
@@ -35,17 +48,20 @@ OPTIMISATION := 3
 #Additional flags to be used in compilation
 EXTRA_FLAGS := #-fno-peel-loops #-fpeel-loops #-fgcse-after-reload -fipa-cp-clone -floop-interchange -floop-unroll-and-jam -fpredictive-commoning -fsplit-loops -fsplit-paths -ftree-loop-distribution -ftree-loop-vectorize -ftree-partial-pre -ftree-slp-vectorize -funswitch-loops -fvect-cost-model -fvect-cost-model=dynamic -fversion-loops-for-strides -fpeel-loops 
 
-# variable used for the verification process
-VERIFY:=1
+#Registers blocked by the compiler
+FIXED_REGS = -ffixed-R4 -ffixed-R5 -ffixed-R6
+
+ifeq ($(FLASHADOW),1)
+FIXED_REGS += -ffixed-R8
+EXTRA_FLAGS += -finline-functions -finline-limit=2000
+endif
+
 
 # use addresses rather than variables for the virtual functions
 VIRTUAL_LABELS = 0
 
-# use modified gcc libraries #TODO: set to 0 when verify = 0?
+# use modified gcc libraries 
 USE_NEW_LIB := 1
-
-# replace reta and calla with ret and ret
-SMALL_MEMORY=1
 
 #Enable debug info for the post processor script
 DEBUG_POST_PROCESSOR=0
@@ -70,6 +86,8 @@ DEFAULT=\033[0m
 
 # Linker script
 LD_SRCS += $(TOOLCHAIN_DIR)/linkerScript.ld
+LD_ORIG := $(TOOLCHAIN_DIR)/linkerScriptNoMod.ld
+
 
 ############# THE FOLLOWING FILES DETERMINE THE SOURCE FILES TO BE COMPILED
 
@@ -81,36 +99,6 @@ APPSRC_DIR = ./src
 #The hook for the various PISTIS functions
 PISTIS_HOOK = ../TCM/core/src/TCMhook.h
 
-###### Load all the modified libraries
-LIBRARIES_NEW_DIR = ../toolchain/gccLibraries
-
-#Determine which version of LIBCRT to use depending on choosen memory layout
-ifeq ($(SMALL_MEMORY), 1)
-	LIBCRT_NEW = $(LIBRARIES_NEW_DIR)/libcrt.a.small 
-else
-	LIBCRT_NEW = $(LIBRARIES_NEW_DIR)/libcrt.a.large 
-endif
-LIBC_NEW = $(LIBRARIES_NEW_DIR)/libc.a 
-LIBGCC_NEW = $(LIBRARIES_NEW_DIR)/libgcc.a 
-LIBNOSYS_NEW = $(LIBRARIES_NEW_DIR)/libnosys.a 
-LIBSIM_NEW = $(LIBRARIES_NEW_DIR)/libsim.a 
-LIBM_NEW = $(LIBRARIES_NEW_DIR)/libm.a 
-
-
-LIBCRT_OLD = $(LIBRARIES_BACKUP_DIR)/msp430-elf/lib/large/full-memory-range/libcrt.a 
-LIBC_OLD = $(LIBRARIES_BACKUP_DIR)/msp430-elf/lib/large/full-memory-range/libc.a 
-LIBGCC_OLD = $(LIBRARIES_BACKUP_DIR)/lib/gcc/msp430-elf/9.2.0/large/full-memory-range/libgcc.a 
-LIBNOSYS_OLD = $(LIBRARIES_BACKUP_DIR)/msp430-elf/lib/large/full-memory-range/libnosys.a 
-LIBSIM_OLD = $(LIBRARIES_BACKUP_DIR)/msp430-elf/lib/large/full-memory-range/libsim.a 
-LIBM_OLD = $(LIBRARIES_BACKUP_DIR)/msp430-elf/lib/large/full-memory-range/libm.a 
-
-
-LIBCRT_DIR = $(GCC_TOOL_ROOT)/msp430-elf/lib/large/full-memory-range
-LIBC_DIR = $(GCC_TOOL_ROOT)/msp430-elf/lib/large/full-memory-range
-LIBGCC_DIR = $(GCC_TOOL_ROOT)/lib/gcc/msp430-elf/9.2.0/large/full-memory-range
-LIBNOSYS_DIR = $(GCC_TOOL_ROOT)/msp430-elf/lib/large/full-memory-range
-LIBSIM_DIR = $(GCC_TOOL_ROOT)/msp430-elf/lib/large/full-memory-range
-LIBM_DIR = $(GCC_TOOL_ROOT)/msp430-elf/lib/large/full-memory-range
 
 
 ####### Load the files to be compiled
@@ -132,7 +120,7 @@ LIBS := -lgcc -lc -lm
 # '--no-relax' disable linker relaxation
 # '--disable-sec-transformation' Prevent the transformation of sections as specified by the --code-region and --data-region options
 # '--allow-multiple-definition' Allow multiple definition of functions, so that the custom ones replace the default ones.
-LINKER_ARGS := -mhwmult=f5series -mmcu=msp430f5529 -O$(OPTIMISATION) -w -mcode-region=none -mdata-region=none -mlarge -T"$(LD_SRCS)" \
+LINKER_ARGS := -mhwmult=none -mmcu=msp430f5529 -O$(OPTIMISATION) -w -mcode-region=none -mdata-region=none -mlarge -T"$(LD_SRCS)" \
 -Wl,-Map,"$(OUTPUT_MAP)" -L"$(INCLUDE_GCC)" -Wl,--no-relax -Wl,--disable-sec-transformation -Wl,--allow-multiple-definition \
 
 
@@ -140,17 +128,33 @@ LINKER_ARGS := -mhwmult=f5series -mmcu=msp430f5529 -O$(OPTIMISATION) -w -mcode-r
 # '-mdata-region=lower' the compiler assumes data is in the lower region of memory
 # '-ffixed-R4 -ffixed-R5 -ffixed-R6' prevent the use of R4, R5 and R6 registers
 # '-fno-function-cse' Reduce number of dynamic calls
-ASSEMBLER_ARGS_APP := -c -mmcu=msp430f5529 -mhwmult=f5series -I"$(INCLUDE_GCC)" -I"$(ROOT_DIR)" -I"$(APPSRC_DIR)" \
--I"$(COMP_INCLUDE)" -O$(OPTIMISATION) -w -mlarge -mcode-region=none -mdata-region=none \
--ffixed-R4 -ffixed-R5 -ffixed-R6 -fno-function-cse $(EXTRA_FLAGS)
+ASSEMBLER_ARGS_APP := -c -mmcu=msp430f5529 -mhwmult=none -I"$(INCLUDE_GCC)" -I"$(ROOT_DIR)" -I"$(APPSRC_DIR)" \
+-I"$(COMP_INCLUDE)" -O$(OPTIMISATION) -w -mlarge $(FIXED_REGS)  -mcode-region=none -mdata-region=none \
+-fno-function-cse $(EXTRA_FLAGS)
 
 
 # All Target
 all: verification
 
+
+check-compiler:
+ifeq (, $(shell which $(COMPILER) 2>/dev/null))
+  ifeq (, $(wildcard ../toolchain/compiler))
+    ifeq (, $(wildcard ../toolchain/compiler.zip))
+	$(error Neither compiler nor compiler.zip found!)
+    else
+	@echo "Unzipping compiler.zip..."
+	unzip -q ../toolchain/compiler.zip -d ../toolchain
+    endif
+  else
+	$(error Compiler not available even though compiler dir exists)
+  endif
+endif
+
+
 #Original application without any modification
 original:
-	$(COMPILER) -mhwmult=f5series -mmcu=msp430f5529 -O$(OPTIMISATION) -w -mlarge -T"$(LD_SRCS)" -Wl,-Map,"$(OUTPUT_MAP)" -I"$(INCLUDE_GCC)" -Wl,--no-relax -Wl,--disable-sec-transformation -Wl,--allow-multiple-definition $(APPSRC_FILES) $(LIBS) -o"$(OUTPUT_FILE_NO_METADATA)"
+	$(GCC_TOOL_ROOT_ORIGINAL)/bin/msp430-elf-gcc -mhwmult=none -mmcu=msp430f5529 -O$(OPTIMISATION) -w -mlarge -T"$(LD_ORIG)" -Wl,-Map,"$(OUTPUT_MAP)" -I"$(INCLUDE_GCC)" -Wl,--no-relax -Wl,--disable-sec-transformation -Wl,--allow-multiple-definition $(APPSRC_FILES) $(LIBS) -o"$(OUTPUT_FILE_NO_METADATA)"
 	$(MAKE) addMeta 
 
 #$(eval FILE_LENGTH := $(shell stat -c "%s" $(OUTPUT_FILE_NO_METADATA)))
@@ -160,15 +164,7 @@ addMeta: $(OUTPUT_FILE_NO_METADATA)
 	$(PYTHON) $(METADATA) $^ $(OUTPUT_FILE) $(BSS_SIZE)
 	@echo -e '${GREEN}Metadata added --> created file $(OUTPUT_FILE)${DEFAULT}'
 	@chmod +x $(OUTPUT_FILE)
-ifeq ($(USE_NEW_LIB),1)
-	@echo -e '${BLUE}Restoring old libraries${DEFAULT}'
-	@cp $(LIBCRT_OLD) $(LIBCRT_DIR)/
-	@cp $(LIBC_OLD) $(LIBC_DIR)/
-	@cp $(LIBGCC_OLD) $(LIBGCC_DIR)/
-	@cp $(LIBNOSYS_OLD) $(LIBNOSYS_DIR)/
-	@cp $(LIBSIM_OLD) $(LIBSIM_DIR)/	
-	@cp $(LIBM_OLD) $(LIBM_DIR)/	
-endif
+
 
 
 # Tool invocations
@@ -182,36 +178,21 @@ $(OUTPUT_FILE_NO_METADATA): $(LD_SRCS) $(OBJ_FILES)
 
 REJECT := 0
 
-build_folders:  
+build_folders:
 	#Copying the asm files from srcdir or app
 	@echo "Creating ASM directories and copying .s files"
 	-mkdir $(APPASM_DIR)
 	-mkdir $(APPOBJ_DIR) 
 	-cp $(APPSRC_DIR)/*.s $(APPASM_DIR)/
 	-cp $(PISTIS_HOOK) $(APPSRC_DIR)/
-	#Replace them with new safe ones
-ifeq ($(USE_NEW_LIB),1)
-	@echo -e "${ORANGE}########## Using new Libs ###########${DEFAULT}"
-ifeq ($(wildcard $(LIBRARIES_BACKUP_DIR)/.*),)
-	$(error Please, create a backup copy of the msp430gcc compiler and link it in the Makefile)
-endif
-	#echo Libcrts is $(LIBCRT_NEW)
-	@cp $(LIBCRT_NEW) $(LIBCRT_DIR)/libcrt.a
-	@cp $(LIBC_NEW) $(LIBC_DIR)/
-	@cp $(LIBGCC_NEW) $(LIBGCC_DIR)/
-	@cp $(LIBNOSYS_NEW) $(LIBNOSYS_DIR)/
-	@cp $(LIBSIM_NEW) $(LIBSIM_DIR)/
-	@cp $(LIBM_NEW) $(LIBM_DIR)/
-else
-	@echo -e "${ORANGE}########## Using original Libs ###########${DEFAULT}"
-endif
+
 
 # Perform the first verification by running the Rejecter module. Call the make file again with the result
-verification: build_folders $(APPASM_FILES)
+verification: check-compiler build_folders $(APPASM_FILES)
 	$(eval OBJ_FILES += $(patsubst $(APPASM_DIR)/%.s,$(APPOBJ_DIR)/%.o,$(APPASM_FILES)))
 ifeq ($(VERIFY),1) 
 	@echo -e '${BLUE}Checking for the presence of unsafe instructions in $(APPASM_FILES)${DEFAULT}'
-	$(eval REJECT = $(shell $(PYTHON) $(VERIFIER) $(DEBUG_POST_PROCESSOR) $(APPASM_FILES)))
+	$(eval REJECT = $(shell $(PYTHON) $(VERIFIER) $(DEBUG_POST_PROCESSOR) $(FLASHADOW) $(APPASM_FILES) ))
 	@echo Reject is "$(REJECT)"
 ifeq ($(REJECT),1)
 	@echo -e '${RED}REJECTED${DEFAULT}'
@@ -236,7 +217,7 @@ ifeq ($(VERIFY),1)
 	#@cp main.s old_main.s
 	#backup the old asm file
 	@cp $< $<.old
-	@$(PYTHON) $(MODIFIER) $< $<.modified $(VIRTUAL_LABELS)
+	@$(PYTHON) $(MODIFIER) $< $<.modified $(VIRTUAL_LABELS) $(FLASHADOW)
 	@mv $<.modified $<
 	@echo -e '${GREEN}Instructions replaced${DEFAULT}'
 endif
@@ -279,13 +260,6 @@ clean:
 	-$(RM) $(OUTPUT_MAP)
 	-$(RM) $(APPSRC_DIR)/TCMhook.h
 	-$(RM) *.s *.tmp
-	@echo 'Restoring old libraries'
-	@cp $(LIBCRT_OLD) $(LIBCRT_DIR)/
-	@cp $(LIBC_OLD) $(LIBC_DIR)/
-	@cp $(LIBGCC_OLD) $(LIBGCC_DIR)/
-	@cp $(LIBNOSYS_OLD) $(LIBNOSYS_DIR)/
-	@cp $(LIBSIM_OLD) $(LIBSIM_DIR)/
-	@cp $(LIBM_OLD) $(LIBM_DIR)/	
 	-@echo 'Finished clean'
 	-@echo ' '
 

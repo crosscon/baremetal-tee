@@ -4,8 +4,8 @@
 import sys,re,logging
 from string import Template
 
-if len(sys.argv) < 4:
-    print("The number of arguments is inappropriate.\nCorrect syntax is: python {} src.s dst.s virtualLabel[0|1]".format(sys.argv[0]))
+if len(sys.argv) < 5:
+    print("The number of arguments is inappropriate.\nCorrect syntax is: python {} src.s dst.s virtualLabel[0|1] flashadow[0|1]".format(sys.argv[0]))
     exit(1)
 logging.basicConfig(stream=sys.stderr, level=logging.ERROR)
 inputName = sys.argv[1]
@@ -14,6 +14,7 @@ logging.debug("Parsing file {} and creating file {}".format(inputName, outputNam
 reject = 0
 
 virtualLabel = int(sys.argv[3])
+flashadow = int(sys.argv[4])
 
 input = open(inputName, 'r')
 modifiedMain = open(outputName, 'w')
@@ -23,30 +24,30 @@ flashTopAdd = 0x243ff
 flashBotAdd = 0x4400
 
 ##### COMMON PATTERNS #####
-label = "((-|\+)?\s*(?!(\s*R(1[0-5]|[0-9])|PC|SR|SP))(\.?\w(\w|\.)*))"
-address = "((-|\+)?\s*(0x[\da-f]+|[\da-f]+h|\d+))"
-mathOp = "(\s*((-|\+)\s*(0x[\da-f]+|[\da-f]+h|\d+)))*" #operands can be incremented and drecremented!
+label = r"((-|\+)?\s*(?!(\s*R(1[0-5]|[0-9])|PC|SR|SP))(\.?\w(\w|\.)*))"
+address = r"((-|\+)?\s*(0x[\da-f]+|[\da-f]+h|\d+))"
+mathOp = r"(\s*((-|\+)\s*(0x[\da-f]+|[\da-f]+h|\d+)))*" #operands can be incremented and drecremented!
 
 ### Addressing modes ###
 # We split the regex in modules so that we can later refer to the single modules more easily
 # Any modification to the following regex might require further modification in the execReplace group counting
-regMode = "(R(1[0-5]|[0-9])|PC|SR|SP)" 
+regMode = r"(R(1[0-5]|[0-9])|PC|SR|SP)" 
 
 offsetPart_IndexMode="(({}|{}){})".format(address,label,mathOp) 
-registerPart_IndexMode="(R(1[0-5]|[13-9]))"
-indexMode = "(\s?{}\s*\(\s*{}\s*\))".format(offsetPart_IndexMode,registerPart_IndexMode) 
+registerPart_IndexMode=r"(R(1[0-5]|[13-9]))"
+indexMode = r"(\s?{}\s*\(\s*{}\s*\))".format(offsetPart_IndexMode,registerPart_IndexMode) 
 
-registerPart_IndrectMode="(R\d\d?)"
-indirectMode = "(@\s*{}?\+?)".format(registerPart_IndrectMode)
+registerPart_IndrectMode=r"(R\d\d?)"
+indirectMode = r"(@\s*{}?\+?)".format(registerPart_IndrectMode)
 
-offsetPart_SymbolicMode="(({}|{}){})".format(address,label,mathOp) 
-symbolicMode= "({}(\s*\((R0|PC)\))?)".format(offsetPart_SymbolicMode)
+offsetPart_SymbolicMode=r"(({}|{}){})".format(address,label,mathOp) 
+symbolicMode= r"({}(\s*\((R0|PC)\))?)".format(offsetPart_SymbolicMode)
 
-normalSyntax="(&\s*(({}|{}){}))".format(address,label,mathOp)
-registerSyntax="((({}|{}){})\s*\((R2|SR)\))".format(address,label,mathOp)
-absoluteMode= "({}|{})".format(normalSyntax,registerSyntax) 
+normalSyntax=r"(&\s*(({}|{}){}))".format(address,label,mathOp)
+registerSyntax=r"((({}|{}){})\s*\((R2|SR)\))".format(address,label,mathOp)
+absoluteMode= r"({}|{})".format(normalSyntax,registerSyntax) 
 
-immediateMode= "(#\s*(({}|{}){}))".format(label,address,mathOp)
+immediateMode= r"(#\s*(({}|{}){}))".format(label,address,mathOp)
 
 
 # The following expressions group the different modes on the base of the number of words they require
@@ -63,45 +64,45 @@ plusZeroMode = "({}|{})".format(regMode,indirectMode)
 
 #############################  EXECUTION CONTROL  #####################
 # Replace unsafe instructions. False positive here will reject the application --> try to avoid as many as possible
-unsafeBr    = re.compile('BR\s+({}|{}|{}|{}|{})\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I)
-unsafeBra   = re.compile('BRA\s+({}|{}|{}|{}|{})\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I)
-unsafeMov   = re.compile('MOV(.W)?\s+({}|{}|{}|{}|{})\s*,\s*(PC|R0)\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I)
-unsafeMovB  = re.compile('MOV.B\s+({}|{}|{}|{}|{})\s*,\s*(PC|R0)\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I)###
-unsafeMova  = re.compile('MOVA\s+({}|{}|{}|{}|{})\s*,\s*(PC|R0)\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I)
-unsafeMovx  = re.compile('MOVX(.W)?\s+({}|{}|{}|{}|{})\s*,\s*(PC|R0)\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I)
-unsafeMovxB = re.compile('MOVX.B\s+({}|{}|{}|{}|{})\s*,\s*(PC|R0)\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I)
-unsafeMovxA = re.compile('MOVX.A\s+({}|{}|{}|{}|{})\s*,\s*(PC|R0)\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I)
-unsafeCall  = re.compile('CALL\s+({}|{}|{}|{}|{})\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I)
-unsafeCalla = re.compile('CALLA\s+({}|{}|{}|{}|{})\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I)
-unsafeRet   = re.compile('RET\s+',re.I)
-unsafeReti  = re.compile('RETI\s+',re.I)
-unsafeReta  = re.compile('RETA\s+',re.I)
+unsafeBr    = re.compile(r'BR\s+({}|{}|{}|{}|{})\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I)
+unsafeBra   = re.compile(r'BRA\s+({}|{}|{}|{}|{})\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I)
+unsafeMov   = re.compile(r'MOV(.W)?\s+({}|{}|{}|{}|{})\s*,\s*(PC|R0)\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I)
+unsafeMovB  = re.compile(r'MOV.B\s+({}|{}|{}|{}|{})\s*,\s*(PC|R0)\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I)###
+unsafeMova  = re.compile(r'MOVA\s+({}|{}|{}|{}|{})\s*,\s*(PC|R0)\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I)
+unsafeMovx  = re.compile(r'MOVX(.W)?\s+({}|{}|{}|{}|{})\s*,\s*(PC|R0)\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I)
+unsafeMovxB = re.compile(r'MOVX.B\s+({}|{}|{}|{}|{})\s*,\s*(PC|R0)\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I)
+unsafeMovxA = re.compile(r'MOVX.A\s+({}|{}|{}|{}|{})\s*,\s*(PC|R0)\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I)
+unsafeCall  = re.compile(r'CALL\s+({}|{}|{}|{}|{})\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I) if flashadow == 0 else re.compile(r'CALL\s+({}|{}|{}|{}|{}|{})\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode,immediateMode),re.I) 
+unsafeCalla = re.compile(r'CALLA\s+({}|{}|{}|{}|{})\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode),re.I) if flashadow == 0 else re.compile(r'CALLA\s+({}|{}|{}|{}|{}|{})\s+'.format(regMode,indexMode,indirectMode,symbolicMode,absoluteMode,immediateMode),re.I)
+unsafeRet   = re.compile(r'RET\s+',re.I)
+unsafeReti  = re.compile(r'RETI\s+',re.I)
+unsafeReta  = re.compile(r'RETA\s+',re.I)
 
 #print(unsafeBr.pattern)
 #############################  WRITE CONTROL  ##################### 
 # Replace unsafe instructions. False positive here will reject the application --> try to avoid as many as possible
-writeMov    = re.compile("MOV(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
-writeMovx   = re.compile("MOVX(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
-writeXor    = re.compile("XOR(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
-writeXorx   = re.compile("XORX(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
-writeAdd    = re.compile("ADD(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
-writeAddx   = re.compile("ADDX(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
-writeAddc   = re.compile("ADDC(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
-writeAddcx  = re.compile("ADDCX(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
-writeDadd   = re.compile("DADD(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
-writeDaddx  = re.compile("DADDX(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
-writeSub    = re.compile("SUB(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
-writeSubx   = re.compile("SUBX(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
-writeSubc   = re.compile("SUBC(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
-writeSubcx  = re.compile("SUBCX(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
-writePop    = re.compile("POP(.W)?\s+({}|{})\s+".format(plusOneModeNoImm,indirectMode),re.I)
-writePopx   = re.compile("POPX(.W)?\s+({}|{})\s+".format(plusOneModeNoImm,indirectMode),re.I)
-writePush   = re.compile("PUSH(.W)?\s+({}|{})\s+".format(plusOneMode,plusZeroMode),re.I)
-writePushx  = re.compile("PUSHX(.W)?\s+({}|{})\s+".format(plusOneMode,plusZeroMode),re.I)
+writeMov    = re.compile(r"MOV(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
+writeMovx   = re.compile(r"MOVX(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
+writeXor    = re.compile(r"XOR(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
+writeXorx   = re.compile(r"XORX(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
+writeAdd    = re.compile(r"ADD(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
+writeAddx   = re.compile(r"ADDX(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
+writeAddc   = re.compile(r"ADDC(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
+writeAddcx  = re.compile(r"ADDCX(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
+writeDadd   = re.compile(r"DADD(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
+writeDaddx  = re.compile(r"DADDX(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
+writeSub    = re.compile(r"SUB(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
+writeSubx   = re.compile(r"SUBX(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
+writeSubc   = re.compile(r"SUBC(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
+writeSubcx  = re.compile(r"SUBCX(.W)?\s+({}|{})\s*,\s*({}|{})\s+".format(plusOneMode,plusZeroMode,plusOneModeNoImm,indirectMode),re.I)
+writePop    = re.compile(r"POP(.W)?\s+({}|{})\s+".format(plusOneModeNoImm,indirectMode),re.I)
+writePopx   = re.compile(r"POPX(.W)?\s+({}|{})\s+".format(plusOneModeNoImm,indirectMode),re.I)
+writePush   = re.compile(r"PUSH(.W)?\s+({}|{})\s+".format(plusOneMode,plusZeroMode),re.I)
+writePushx  = re.compile(r"PUSHX(.W)?\s+({}|{})\s+".format(plusOneMode,plusZeroMode),re.I)
 # Emulated ones
-writeRlax   = re.compile("RLAX(.W)?\s+({}|{})\s+".format(plusOneMode,plusZeroMode),re.I)
-writeRlcx   = re.compile("RLCX(.W)?\s+({}|{})\s+".format(plusOneMode,plusZeroMode),re.I)
-writeAdcx   = re.compile("ADCX(.W)?\s+({}|{})\s+".format(plusOneMode,plusZeroMode),re.I)
+writeRlax   = re.compile(r"RLAX(.W)?\s+({}|{})\s+".format(plusOneMode,plusZeroMode),re.I)
+writeRlcx   = re.compile(r"RLCX(.W)?\s+({}|{})\s+".format(plusOneMode,plusZeroMode),re.I)
+writeAdcx   = re.compile(r"ADCX(.W)?\s+({}|{})\s+".format(plusOneMode,plusZeroMode),re.I)
 #print(writeMov.pattern)
 
 ## Function for retrieving the current paranthesis count
@@ -128,21 +129,21 @@ def getOffsetMode(pattern,mode,src=False,syntax=None,label=None):
 
     if syntax is not None:
         if label is not None:
-            labelParanthesis = syntax[0:syntax.find(label)].replace("\(","").replace("(?!","").count("(")
-        syntaxParenthesis = mode[0:mode.find(syntax)].replace("\(","").replace("(?!","").count("(") + labelParanthesis
+            labelParanthesis = syntax[0:syntax.find(label)].replace(r"\(","").replace(r"(?!","").count("(")
+        syntaxParenthesis = mode[0:mode.find(syntax)].replace(r"\(","").replace(r"(?!","").count("(") + labelParanthesis
         #logging.warning("Syntax parenthesis = {} with label {}.".format(syntaxParenthesis,labelParanthesis))
 
 
     if(src is True):
         substr = pattern[0:pattern.find(mode)]
-        substr = substr.replace("\(","").replace("(?!","") #Remove real parenthesis and negative lookahead
+        substr = substr.replace(r"\(","").replace(r"(?!","") #Remove real parenthesis and negative lookahead
         return substr.count("(") + syntaxParenthesis + initialParenthesis
 
     else:
-        modeTmp = mode.replace("\(","").replace("(?!","").count("(")
+        modeTmp = mode.replace(r"\(","").replace(r"(?!","").count("(")
         substr = pattern.replace(mode,"",1)
         substr = substr[0:substr.find(mode)]
-        substr = substr.replace("\(","").replace("(?!","") #Remove real parenthesis
+        substr = substr.replace(r"\(","").replace(r"(?!","") #Remove real parenthesis
         return substr.count("(") + modeTmp + syntaxParenthesis + initialParenthesis
 
 #### TCM ####
@@ -177,29 +178,29 @@ secure_update= "receiveUpdate"
 #If the virtual labels should not be used, use absolute addresses (to be synched!)
 if(virtualLabel == 0):
     safe_br     = 0xfc00
-    safe_bra    = 0xfc26
-    safe_call   = 0xfc4c
-    safe_calla  = 0xfc72
-    safe_ret    = 0xfc98
-    safe_reti   = 0xfcc0
-    safe_reta   = 0xfd08
+    safe_bra    = 0xfc26 
+    safe_call   = 0xfc4c 
+    safe_calla  = 0xfc72 if flashadow == 0 else 0xFC54
+    safe_ret    = 0xfc98 if flashadow == 0 else 0xfd0C
+    safe_reti   = 0xfcc0 if flashadow == 0 else 0xfd66
+    safe_reta   = 0xfd08 if flashadow == 0 else 0xfdae
 
-    write_mov   = 0xfd30
-    write_movx  = 0xfd42
-    write_xor   = 0xfd56
-    write_xorx  = 0xfd68
-    write_add   = 0xfd7c
-    write_addx  = 0xfd8e
-    write_addc  = 0xfda2
-    write_addcx = 0xfdb4
-    write_dadd  = 0xfdc8
-    write_daddx = 0xfdda
-    write_sub   = 0xfdee
-    write_subx  = 0xfe00
-    write_subc  = 0xfe14
-    write_subcx = 0xfe26
+    write_mov   = 0xfd30 if flashadow == 0 else 0xfdd6
+    write_movx  = 0xFD46 if flashadow == 0 else 0xfdE8
+    write_xor   = 0xFD5e if flashadow == 0 else 0xfdfc
+    write_xorx  = 0xFD74 if flashadow == 0 else 0xfe0e
+    write_add   = 0xFD8c if flashadow == 0 else 0xfe22
+    write_addx  = 0xFDa2 if flashadow == 0 else 0xfe34
+    write_addc  = 0xFDba if flashadow == 0 else 0xfe48
+    write_addcx = 0xFDd0 if flashadow == 0 else 0xfe5a
+    write_dadd  = 0xFDe8 if flashadow == 0 else 0xfe6e
+    write_daddx = 0xFDfe if flashadow == 0 else 0xfe80
+    write_sub   = 0xFE16 if flashadow == 0 else 0xfe94
+    write_subx  = 0xFE2C if flashadow == 0 else 0xfea6
+    write_subc  = 0xFE44 if flashadow == 0 else 0xfeba
+    write_subcx = 0xFE5A if flashadow == 0 else 0xfecc
 
-    secure_update= 0xfe3e
+    secure_update= 0xFE76 if flashadow == 0 else 0xfee4
 
 
 
@@ -212,7 +213,7 @@ store_sr_pointer = "R4"
 def replaceAddressH(match):
     return "0x"+match.group(1)
 
-hAddress = "([\da-f]+)h"
+hAddress = r"([\da-f]+)h"
 def evalAddress(string):
     return(eval(re.sub(hAddress,replaceAddressH,string,flags=re.IGNORECASE)))
 
@@ -493,8 +494,8 @@ while line:
     elif(match := unsafeCall.search(line)):
         newEntry = execReplace(match,safe_call,mode=WORD,offset=0)
         dynamicJumps+=1
-    elif(match := unsafeCalla.search(line)):
-        newEntry = execReplace(match,safe_calla,mode=ADDRESS,offset=0)
+    elif(match := unsafeCalla.search(line)): #We use CALL instead of CALLA
+        newEntry = execReplace(match,safe_call,mode=ADDRESS,offset=0)
         dynamicJumps+=1
     elif(match := unsafeRet.search(line)):
         newEntry = execReplace(match,safe_ret,mode=NONE,offset=0)
@@ -502,8 +503,8 @@ while line:
     elif(match := unsafeReti.search(line)):
         newEntry = execReplace(match,safe_reti,mode=NONE,offset=0)
         returnInstructions+=1
-    elif(match := unsafeReta.search(line)):
-        newEntry = execReplace(match,safe_reta,mode=NONE,offset=0)
+    elif(match := unsafeReta.search(line)): #We use RET instead of RETA
+        newEntry = execReplace(match,safe_ret,mode=NONE,offset=0)
         returnInstructions+=1
 
     ## WRITE CONTROL

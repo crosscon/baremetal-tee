@@ -10,7 +10,8 @@
 #define HEADER_FILE_TCM_HOOK
 
 //This address must be synched with #receiveUpdate in the rest of the repository
-#define callReceiveUpdate() ({asm("BR #0xfe3e");})
+//#define callReceiveUpdate() ({asm("BR #0x0xFE76");})
+#define callReceiveUpdate() ({asm("BR #receiveUpdate");})
 
 
 #endif

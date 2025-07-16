@@ -3,8 +3,8 @@
 #    License: MIT 
 import sys,logging, os, subprocess, re
 
-objcopy = "msp430-elf-objcopy"
-readelf = "msp430-elf-readelf"
+objcopy = "../toolchain/compiler/msp430gcc-9.3.1.11-original/bin/msp430-elf-objcopy"
+readelf = "../toolchain/compiler/msp430gcc-9.3.1.11-original/bin/msp430-elf-readelf"
 debugFiles = False # set to True if we want to inspect the content of the various temporary files.
 if len(sys.argv) < 3:
     print("The number of arguments is inappropriate.\nCorrect syntax is: {} inputFile.out outputFile.out [bssSize]".format(sys.argv[0]))

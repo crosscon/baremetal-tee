@@ -4,18 +4,22 @@
 #    License: MIT 
 
 # paths to libraries and binaries for the various tools
-GCC_TOOL_ROOT := ../toolchain/compiler/msp430-gcc-9.2.0.50_linux64
-LIBRARIES_BACKUP_DIR = $(GCC_TOOL_ROOT)/../msp430-gcc-9.2.0.50_linux64_backup
-COMPILER := $(GCC_TOOL_ROOT)/bin/msp430-elf-gcc-9.2.0
+GCC_TOOL_ROOT := ../toolchain/compiler/msp430gcc-9.3.1.11-original
+COMPILER := $(GCC_TOOL_ROOT)/bin/msp430-elf-gcc
 OBJ_COPY := $(GCC_TOOL_ROOT)/bin/msp430-elf-objcopy
 COMP_INCLUDE := $(GCC_TOOL_ROOT)/msp430-elf/include
 INCLUDE_GCC := $(GCC_TOOL_ROOT)/../include_gcc
 
+
+
+
+
+
+
 #Python 3 executable
 PYTHON := python3
 
-#Override paths
-#include paths.mk
+FLASHADOW := 0
 
 ROOT_DIR := .
 
@@ -30,8 +34,6 @@ RM := rm -rf
 # variable used for the verification process
 VERIFY:=1
 
-# Whether to compile exclusively PISTIS without the APP
-ONLY_PISTIS := 0
 
 # use labels rather than addresses for the virtual functions
 VIRTUAL_LABELS = 1
@@ -47,6 +49,10 @@ OUTPUT_MAP := $(FILE_NAME).map
 
 # Linker script
 LD_SRCS += $(TOOLCHAIN_DIR)/linkerScriptWithCore.ld
+
+ifeq ($(FLASHADOW),1)
+LD_SRCS = $(TOOLCHAIN_DIR)/linkerScriptWithCoreFlashadow.ld
+endif
 
 #Include the makefiles for the core and the user application
 include core/Makefile.include
@@ -83,21 +89,37 @@ LIBS := -lgcc -lc
 # All Target
 all: verification
 
-# Tool invocations
+
+check-compiler:
+ifeq (, $(shell which $(COMPILER) 2>/dev/null))
+  ifeq (, $(wildcard ../toolchain/compiler))
+    ifeq (, $(wildcard ../toolchain/compiler.zip))
+	$(error Neither compiler nor compiler.zip found!)
+    else
+	@echo "Unzipping compiler.zip..."
+	unzip -q ../toolchain/compiler.zip -d ../toolchain
+    endif
+  else
+	$(error Compiler not available even though compiler dir exists)
+  endif
+endif
+
+
+# Tool invocations, called at the second invocation of make
 $(OUTPUT_FILE): $(LD_SRCS) $(OBJ_FILES) $(CORE_OBJS) 
 	@echo "USING OBJ: $(OBJ_FILES)"
 	@echo 'The application is safe'
 	@echo 'Building target: "$@"'
 	@echo 'Invoking: GNU Linker'
-	$(COMPILER) $(COMPILER_ARGS) -T"$(LD_SRCS)" -Wl,--start-group $(LIBS) -Wl,--end-group -o"$@" $(OBJ_FILES) -Wl,--whole-archive $(CORE_OBJS) -Wl,-no-whole-archive
+	$(COMPILER) $(COMPILER_ARGS) -T"$(LD_SRCS)" -Wl,--start-group $(LIBS) -Wl,--end-group -o"$@" -DFLASHADOW_DISABLED=$(FLASHADOW) $(OBJ_FILES) -Wl,--whole-archive $(CORE_OBJS) -Wl,-no-whole-archive
 	@echo 'Finished building target: "$@"'
 	@echo ' '
 
 REJECT := 0
 
 build_folders: 
-	#Copying the asm files from srcdir or app
-	@echo "Creating ASM directories and copying .s files"
+#Copying the asm files from srcdir or app
+	@echo "Creating ASM $(APPASM_DIR) $(COREASM_DIR) $(COREOBJS_DIR) $(CORE_COMP_SRC_DIR) directories and copying .s files"
 	@-mkdir $(APPASM_DIR) $(COREASM_DIR) $(COREOBJS_DIR) $(CORE_COMP_SRC_DIR)
 	@-cp $(APPSRC_DIR)/*.s $(APPASM_DIR)/ 2>/dev/null
 	@-cp $(CORESRC_DIR)/*.s $(COREASM_DIR)/
@@ -110,20 +132,18 @@ build_folders:
 
 
 # Perform the first verification by running the Rejecter module. Call the make file again with the result
-verification: build_folders $(APPASM_FILES)
-ifeq ($(ONLY_PISTIS),0)	
+verification: check-compiler  build_folders $(APPASM_FILES)
 	$(eval OBJ_FILES += $(patsubst $(APPASM_DIR)/%.s,$(APPOBJ_DIR)/%.o,$(APPASM_FILES)))
+	@echo 'Going to create all objects: $(OBJ_FILES)'
 ifeq ($(VERIFY),1)
 	@echo 'Checking for the presence of unsafe instructions in $(APPASM_FILES)'
-	$(eval REJECT = $(shell $(PYTHON) $(VERIFIER) 0 $(APPASM_FILES)))
+	$(eval REJECT = $(shell $(PYTHON) $(VERIFIER) 0 $(FLASHADOW) $(APPASM_FILES)))
 	@echo Reject is "$(REJECT)"
-endif
 endif
 	$(MAKE) $(OUTPUT_FILE) REJECT=$(REJECT) OBJ_FILES="$(OBJ_FILES)"
 
 
 # Create objects files without invoking the linker
-# the following flags are not documented and, apparently, not needed... -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)"
 $(APPOBJ_DIR)/%.o: $(APPASM_DIR)/%.s
 	-mkdir $(APPOBJ_DIR)
 ifeq ($(REJECT),1)
@@ -132,10 +152,11 @@ ifeq ($(REJECT),1)
 else
 ifeq ($(VERIFY),1) 
 	@echo 'Replacing unsafe instructions'
-	#@cp main.s old_main.s
-	#backup the old asm file
+#@cp main.s old_main.s
+#backup the old asm file
 	@cp $< $<.old
-	@$(PYTHON) $(MODIFIER) $< $<.modified $(VIRTUAL_LABELS)
+	@echo Calling the instrumented!
+	@$(PYTHON) $(MODIFIER) $< $<.modified $(VIRTUAL_LABELS) $(FLASHADOW)
 	@mv $<.modified $<
 	@echo 'Instructions replaced'
 endif
