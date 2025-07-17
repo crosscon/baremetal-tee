@@ -296,12 +296,12 @@ void Reconfigure_MPU(int TA_number) {
 	MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
 	// 1) give full access to the RAM of TAs
 	// 2) disable the subregions dedicated to other TAs	
-	// Region 128K -> each subregion is 16K
-	// RAM 2 is 96K -> 6 subregions used in reality
+	// Region 32K -> each subregion is 4K
+	// RAM 1 is 32K 
 	// Case of 2 TA: 
-	// Only TA 1 active: 0b11111000 = 0xF8; 
-	// Only TA 2: 0b11000111 = 0xC7 
-	MPU_InitStruct.SubRegionDisable = (TA_number == 1) ? 0xF8 : 0xC7;
+	// Only TA 1 active: 0b11110000 = 0xF0; 
+	// Only TA 2: 0b00001111 = 0x0F; 
+	MPU_InitStruct.SubRegionDisable = (TA_number == 1) ? 0xF0 : 0x0F;
 	/* Cache properties and shareability  */
 	/* Device type: Normal	Cache: WBWA */
 	MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL1;
