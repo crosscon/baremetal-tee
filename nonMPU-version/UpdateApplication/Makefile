@@ -7,7 +7,8 @@ GCC_TOOL_ROOT_ORIGINAL := $(TOOLCHAIN_DIR)/compiler/msp430-gcc-9.2.0.50_linux64_
 GCC_TOOL_FLASHADOW := $(TOOLCHAIN_DIR)/compiler/msp430gcc-9.3.1.11-instrumented
 
 
-FLASHADOW := 0
+FLASHADOW := $(shell grep -o '^#define[[:space:]]\+FLASHADOW_ENABLED[[:space:]]\+[01]' ../TCM/core/src/core.h | sed 's/.*[[:space:]]//')
+
 
 # variable used for the verification process
 VERIFY:=1
@@ -17,6 +18,8 @@ GCC_TOOL_ROOT := $(GCC_TOOL_ROOT_INSTRUMENTED)
 
 ifeq ($(FLASHADOW),1)
 GCC_TOOL_ROOT := $(GCC_TOOL_FLASHADOW)
+else
+GCC_TOOL_ROOT := $(GCC_TOOL_ROOT_INSTRUMENTED)
 endif
 
 COMPILER := $(GCC_TOOL_ROOT)/bin/msp430-elf-gcc

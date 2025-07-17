@@ -16,10 +16,13 @@
 #define KEY_LOCATION 0x1400
 #define SSP 0x8 //Shadow stack register
 
+/**** CONFIGURATION MACROS */
+
 #define REJECT 1 /* IF SET to 1 THEN WE REJECT THE APPLICATION WHEN AN INSTRUCTION FAILS VERIFICATION*/
 #define DEBUG 0 /* IF SET TO 1 WE TAKE NOTE OF WHAT WORD CAUSED THE VERIFICATION TO FAIL*/
 #define FLASHADOW_ENABLED 0 // Whether or not the FLASHADOW extension, for shadow stack, is disabled
 
+/**** END OF CONFIGURATION MACROS ****/
 
 typedef unsigned char uint8_t;
 typedef unsigned int uint16_t;

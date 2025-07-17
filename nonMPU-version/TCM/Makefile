@@ -19,7 +19,7 @@ INCLUDE_GCC := $(GCC_TOOL_ROOT)/../include_gcc
 #Python 3 executable
 PYTHON := python3
 
-FLASHADOW := 0
+FLASHADOW := $(shell grep -o '^#define[[:space:]]\+FLASHADOW_ENABLED[[:space:]]\+[01]' ../TCM/core/src/core.h | sed 's/.*[[:space:]]//')
 
 ROOT_DIR := .
 
@@ -48,10 +48,11 @@ OUTPUT_FILE := $(FILE_NAME).out
 OUTPUT_MAP := $(FILE_NAME).map
 
 # Linker script
-LD_SRCS += $(TOOLCHAIN_DIR)/linkerScriptWithCore.ld
 
 ifeq ($(FLASHADOW),1)
-LD_SRCS = $(TOOLCHAIN_DIR)/linkerScriptWithCoreFlashadow.ld
+LD_SRCS += $(TOOLCHAIN_DIR)/linkerScriptWithCoreFlashadow.ld
+else
+LD_SRCS += $(TOOLCHAIN_DIR)/linkerScriptWithCore.ld
 endif
 
 #Include the makefiles for the core and the user application

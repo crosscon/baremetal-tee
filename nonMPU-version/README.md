@@ -206,6 +206,9 @@ The software-based isolation of Flash, RAM and MMIO is achieved by means of a cu
 - (optional) IAR workbench msp430 Kickstart edition [official link](https://www.iar.com/products/architectures/iar-embedded-workbench-for-msp430/#containerblock_3096)
 - (optional) Java for the execution of powerConsumption measurement scripts.
 
+## Configuration
+Before deploying the baremetal-TEE we have to configure its TCM. This can be done through the `TCM/core/src/core.h` header file which contains several macros that define the behaviour of the TEE. In particular, we have the `FLASHADOW_ENABLE` macro that allows the TEE to be shipped with the control flow integrity module for the protection of the backward edges, i.e. a shadow stack. 
+
 
 ## Loading nonMPU-BareMetal-TEE TCM (with the default untrusted application)
 In order to secure the microcontroller, the TCM (i.e. the root of trust for our architecture) needs to be loaded before any other program. The folder `TCM/` contains all of the required files for the compilation of nonMPU-BareMetal-TEE TCM. Although it is possible to also load an untrusted application right away, to be loaded with the TCM, currently the toolchain does not fully support it. The first initialisation should be perfomed with the default application. 
@@ -294,6 +297,9 @@ In order to debug nonMPU-BareMetal-TEE or to run measurements, it might be usefu
 Measurements can be computed using the internal clocks as well in debug mode, or with a logical analyser for a more accurate evaluation.
 
 
+
+## Debugging the project
+The repository comes with two Code Composer Studio projects, zipped in two separate files: `defaultCCSProject.zip` and `flashadowCCSProject.zip`. Both can be unzipped and imported within CCS to allow the debugging. The two version are used, respectively, to debug the TEE without CFI and the TEE with CFI.
 
 # APIs Description
 nonMPU-BareMetal-TEE is a TEE composed of three different interfaces: the Trusted Applications APIs, the Private TCM APIs and the Public TCM APIs. The Trusted Applications APIs are endpoints offered by the various Trusted Applications deployed on nonMPU-BareMetal-TEE. The Private TCM APIs are only exposed to Trusted Applications while the Public TCM APIs can be invoked by the Untrusted Application.
