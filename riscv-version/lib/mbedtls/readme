@@ -1,0 +1,4 @@
+trimmed version with support for:
+- chachapoly
+- MBEDTLS_RSA_C
+- MBEDTLS_PKCS1_V15

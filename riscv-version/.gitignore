@@ -1,0 +1,19 @@
+#files extension to ignore
+*.o
+*.elf
+*.bin
+*.hex
+*.lst
+*.svd
+*.map
+*.gdb*
+*.txt
+*.py
+*.csv
+*.project
+
+
+#folder directories to ignore
+bin/*
+build/*
+.vscode/
