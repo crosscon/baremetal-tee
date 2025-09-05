@@ -9,6 +9,16 @@
 #include "mbedtls/entropy.h"
 #include "flash.h"
 #include "cJSON.h"
+#include "tee_common.h"
+
+#define TEE_HEAP_START_ADDR     ((void*) heapCore)
+#define TEE_HEAP_END_ADDR       (TEE_HEAP_START_ADDR + CORE_HEAP_SIZE)
+
+#define TA1_HEAP_START_ADDR     ((void*) heapTA1)
+#define TA1_HEAP_END_ADDR       (TA1_HEAP_START_ADDR + TA_HEAP_SIZE)
+
+#define TA2_HEAP_START_ADDR     ((void*) heapTA2)
+#define TA2_HEAP_END_ADDR       (TA2_HEAP_START_ADDR + TA_HEAP_SIZE)
 
 
 /************************** RANDOM VALUES GENERATION FUNCTIONS ********************************* */
@@ -102,7 +112,6 @@ static uint8_t check_mem_ownership(uint8_t ta_num, void * buffer, size_t size)
         return 0;
     }
     uintptr_t object = (uintptr_t)buffer;
-    uintptr_t object_end = object + size;
     if(size > TA1_MEMORY_END_ADDR - TA1_MEMORY_START_ADDR){
         return 0; //Invalid size
     }
@@ -114,12 +123,14 @@ static uint8_t check_mem_ownership(uint8_t ta_num, void * buffer, size_t size)
         }
     } else  */
     if (ta_num == 1) {
-        if((object < TA1_MEMORY_START_ADDR) || (object_end > TA1_MEMORY_END_ADDR)){
+        // NOTE: Checked this way to avoid integer overflow. Assuming TA1_MEMORY_START_ADDR <= TA1_MEMORY_END_ADDR.
+        if((object < TA1_MEMORY_START_ADDR) || (TA1_MEMORY_END_ADDR - object < size)){
             ERR_MSG("Memory access error");
             return 0;
         }
     } else if (ta_num == 2) {
-        if((object < TA2_MEMORY_START_ADDR) || (object_end > TA2_MEMORY_END_ADDR)){
+        // NOTE: Checked this way to avoid integer overflow. Assuming TA2_MEMORY_START_ADDR <= TA2_MEMORY_END_ADDR.
+        if((object < TA2_MEMORY_START_ADDR) || (TA2_MEMORY_END_ADDR - object < size)){
             ERR_MSG("Memory access error");
             return 0;
         }
@@ -127,6 +138,64 @@ static uint8_t check_mem_ownership(uint8_t ta_num, void * buffer, size_t size)
         return 0; //Invalid TA number
     }
     return 1;
+}
+
+/**
+ *  @brief Check if the memory address is within the range of the heap memory for the given ta_num.
+ *   @param ta_num TA number (0 for TEE Core, 1 for TA1, 2 for TA2)
+ *   @param buffer Pointer to the memory area to check
+ *   @param size Size of the memory area to check
+ *   @return 1 if the memory area is within the range, 0 otherwise
+ */
+static uint8_t check_heap_ownership(uint8_t ta_num, void * buffer, size_t size)
+{
+    if(size == 0){
+        ERR_MSG("size is 0");
+        return 0;
+    }
+
+    void *start, *end;
+    switch (ta_num) {
+        case 0: {
+            start = TEE_HEAP_START_ADDR;
+            end = TEE_HEAP_END_ADDR;
+            break;
+        }
+        case 1: {
+            start = TA1_HEAP_START_ADDR;
+            end = TA1_HEAP_END_ADDR;
+            break;
+        }
+        case 2: {
+            start = TA2_HEAP_START_ADDR;
+            end = TA2_HEAP_END_ADDR;
+            break;
+        }
+        default: return 0;
+    }
+
+    if (buffer < start || end - buffer < size) {
+        ERR_MSG("Heap access error");
+        return 0;
+    }
+
+    return 1;
+}
+
+/**
+ *  @brief  Check if a block correctly refers to the heap data or has been tampered.
+ *          Both the block content and the referenced area are checked.
+ *  @param ta_num TA number (0 for TEE Core, 1 for TA1, 2 for TA2)
+ *  @param block Pointer to the block to check
+ *  @return 1 if the memory area is within the range, 0 otherwise
+ */
+static int check_block_ownership(uint8_t ta_num, Block *block) {
+    if (block == NULL) {
+        return 0;
+    }
+
+    return  check_heap_ownership(ta_num, block, sizeof(Block)) &&
+            check_heap_ownership(ta_num, (void*) block + sizeof(Block), block->size);
 }
 
 /**
@@ -271,22 +340,22 @@ static void init_memory(int ta_num)
  * @param hint Hint for the allocation (e.g., TEE_MALLOC_FILL_ZERO)
  */
 void* internal_TEE_Malloc(size_t size, uint32_t hint, uint8_t ta_num)
-{   
+{
     Block* curr = NULL;
 
     if( ta_num == CORE_NUM){
-        if(!freeListTEEcore){
+        if (!freeListTEEcore) {
             freeListTEEcore = (Block*)heapCore;
             init_memory(ta_num);
         }
         curr = freeListTEEcore;
     }else if(ta_num == 1) {
-        if(!freeListTA1){
+        if (!freeListTA1) {
             freeListTA1 = (Block*)heapTA1;
             init_memory(ta_num);
-        }else{
+        } else {
             //Check if freeListTA1 points to TA1's memory area
-            if((uintptr_t)freeListTA1 < TA1_MEMORY_START_ADDR || (uintptr_t)freeListTA1 > TA1_MEMORY_END_ADDR){
+            if (!check_block_ownership(ta_num, freeListTA1)) {
                 ERR_MSG("Free list for TA1 is not initialized correctly");
                 return NULL;
             }
@@ -296,36 +365,28 @@ void* internal_TEE_Malloc(size_t size, uint32_t hint, uint8_t ta_num)
         if (!freeListTA2) {
             freeListTA2 = (Block*)heapTA2;
             init_memory(ta_num);
-        }else{
+        } else {
             //Check if freeListTA2 points to TA2's memory area
-            if((uintptr_t)freeListTA2 < TA2_MEMORY_START_ADDR || (uintptr_t)freeListTA2 > TA2_MEMORY_END_ADDR){
+            if (!check_block_ownership(ta_num, freeListTA2)) {
                 ERR_MSG("Free list for TA2 is not initialized correctly");
                 return NULL;
             }
         }
-        curr = freeListTA2;   
+        curr = freeListTA2;
     }
 
     while (curr != NULL)
     {
         //Check whether the pointer is within the valid memory range for the TA
-        if(curr < (ta_num == CORE_NUM ? TEE_CORE_MEMORY_START_ADDR : (ta_num == 1 ? TA1_MEMORY_START_ADDR : TA2_MEMORY_START_ADDR)) ||
-            curr + sizeof(Block) > (ta_num == CORE_NUM ? TEE_CORE_MEMORY_END_ADDR : (ta_num == 1 ? TA1_MEMORY_END_ADDR : TA2_MEMORY_END_ADDR))){
+        if (!check_block_ownership(ta_num, curr)) {
             return NULL;
         }
         if ((curr->free) && (curr->size >= size))
         {
-            if(
-                (ta_num == CORE_NUM && curr + sizeof(Block) > TEE_CORE_MEMORY_END_ADDR) ||
-                (ta_num == 1 && curr + sizeof(Block) > TA1_MEMORY_END_ADDR) ||
-                (ta_num == 2 && curr + sizeof(Block) > TA2_MEMORY_END_ADDR)
-            ){
-                //We ran out of memory!!
-                return NULL;
-            } 
-            if (curr->size > size + sizeof(Block))
+            if (curr->size - size > sizeof(Block))
             {
-                Block* newBlock = (Block*)((uint32_t*)curr + sizeof(Block) + size); 
+                // TODO: with uint32_t we reserve the quadruple of the required memory.
+                Block* newBlock = (Block*)((uint32_t*)curr + sizeof(Block) + size);
                 newBlock->size = curr->size - size - sizeof(Block);
                 newBlock->next = curr->next;
                 newBlock->free = 1;
@@ -334,10 +395,12 @@ void* internal_TEE_Malloc(size_t size, uint32_t hint, uint8_t ta_num)
             }
             curr->free = 0;
 
-            if(hint == TEE_MALLOC_FILL_ZERO)
-            	memset((uint32_t*)curr + sizeof(Block) , 0, size); 
+            if(hint == TEE_MALLOC_FILL_ZERO) {
+                // NOTE: it is necessary to cast to void* otherwise pointer arithmetic could not work as expected.
+            	memset((void*) curr + sizeof(Block) , 0, size);
+            }
 
-            return (void*)((uint32_t*)curr + sizeof(Block));
+            return (void*) curr + sizeof(Block);
         }
         curr = curr->next;
     }
