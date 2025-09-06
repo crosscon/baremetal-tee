@@ -3,7 +3,10 @@
 
 #include <tee_common.h> 
 #define MAX_HANDLES 10
-#define CORE_NUM 0
+
+#define CORE_NUM    0
+#define TA1_NUM     1
+#define TA2_NUM     2
 
 extern  __TEE_ObjectHandle * registeredObjects[MAX_HANDLES];
 extern  __TEE_OperationHandle * registeredOperations[MAX_HANDLES];

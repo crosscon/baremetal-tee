@@ -21,6 +21,7 @@
 #define TA2_HEAP_END_ADDR       (TA2_HEAP_START_ADDR + TA_HEAP_SIZE)
 
 
+
 /************************** RANDOM VALUES GENERATION FUNCTIONS ********************************* */
 
 // Functions to generate random values using the RNG peripheral of the STM32L475
@@ -149,24 +150,19 @@ static uint8_t check_mem_ownership(uint8_t ta_num, void * buffer, size_t size)
  */
 static uint8_t check_heap_ownership(uint8_t ta_num, void * buffer, size_t size)
 {
-    if(size == 0){
-        ERR_MSG("size is 0");
-        return 0;
-    }
-
     void *start, *end;
     switch (ta_num) {
-        case 0: {
+        case CORE_NUM: {
             start = TEE_HEAP_START_ADDR;
             end = TEE_HEAP_END_ADDR;
             break;
         }
-        case 1: {
+        case TA1_NUM: {
             start = TA1_HEAP_START_ADDR;
             end = TA1_HEAP_END_ADDR;
             break;
         }
-        case 2: {
+        case TA2_NUM: {
             start = TA2_HEAP_START_ADDR;
             end = TA2_HEAP_END_ADDR;
             break;
@@ -183,19 +179,31 @@ static uint8_t check_heap_ownership(uint8_t ta_num, void * buffer, size_t size)
 }
 
 /**
+ *  @brief  Returns the base pointer for the area associated with the given block.
+ *
+ *  @param  block The block the area is owned by.
+ *  @return The area of the block.
+ */
+static inline void* area_of(Block* block) {
+    return (void*) (block + 1);
+}
+
+
+/**
  *  @brief  Check if a block correctly refers to the heap data or has been tampered.
  *          Both the block content and the referenced area are checked.
  *  @param ta_num TA number (0 for TEE Core, 1 for TA1, 2 for TA2)
  *  @param block Pointer to the block to check
  *  @return 1 if the memory area is within the range, 0 otherwise
  */
-static int check_block_ownership(uint8_t ta_num, Block *block) {
+static int check_block_ownership(uint8_t ta_num, Block *block)
+{
     if (block == NULL) {
         return 0;
     }
 
     return  check_heap_ownership(ta_num, block, sizeof(Block)) &&
-            check_heap_ownership(ta_num, (void*) block + sizeof(Block), block->size);
+            check_heap_ownership(ta_num, (void*) area_of(block), block->size);
 }
 
 /**
@@ -250,7 +258,8 @@ static uint8_t check_operation_ownership(uint8_t ta_num, TEE_OperationHandle ope
  *  @brief Free the object or operation from the registered list
  *   @param temp_obj Pointer to the object or operation to free
  */
-static void free_object(__TEE_ObjectHandle * temp_obj){
+static void free_object(__TEE_ObjectHandle * temp_obj)
+{
     for(int i=0; i<MAX_HANDLES; i++){
         if(registeredObjects[i] == temp_obj){
             registeredObjects[i] = NULL;
@@ -264,7 +273,8 @@ static void free_object(__TEE_ObjectHandle * temp_obj){
  *   @param temp_obj Pointer to the object or operation to populate
  *   @return 1 if the object or operation was successfully populated, 0 otherwise
  */
-static uint8_t populate_object(__TEE_ObjectHandle * temp_obj){
+static uint8_t populate_object(__TEE_ObjectHandle * temp_obj)
+{
     uint8_t populated = 0;
     for(int i=0; i<MAX_HANDLES; i++){
         if(registeredObjects[i] == NULL){
@@ -307,7 +317,7 @@ static uint8_t populate_operation(__TEE_OperationHandle * temp_op){
 }
 
 // Initialize the heap memory for each TA during the boot process
-void heap_erase() 
+void heap_erase()
 {
     freeListTA1 = NULL;
     freeListTA2 = NULL;
@@ -315,92 +325,82 @@ void heap_erase()
 }
 
 // Set the correct values for the heap memory of each TA when they are first used
-static void init_memory(int ta_num) 
+static void init_memory(int ta_num)
 {
     if(ta_num == CORE_NUM){
+        freeListTEEcore = (Block*) heapCore;
         freeListTEEcore->size = CORE_HEAP_SIZE - sizeof(Block);
         freeListTEEcore->next = NULL;
         freeListTEEcore->free = 1;
-    }else if(ta_num == 1) {
+    }else if(ta_num == TA1_NUM) {
+        freeListTA1 = (Block*) heapTA1;
         freeListTA1->size = TA_HEAP_SIZE - sizeof(Block);
         freeListTA1->next = NULL;
         freeListTA1->free = 1;
-    } else if(ta_num == 2) {
+    } else if(ta_num == TA2_NUM) {
+        freeListTA2 = (Block*) heapTA2;
         freeListTA2->size = TA_HEAP_SIZE - sizeof(Block);
         freeListTA2->next = NULL;
         freeListTA2->free = 1;
     }
 }
 
+static Block *get_heap_head_for(uint8_t ta_num) {
+    switch (ta_num) {
+        case CORE_NUM: return freeListTEEcore;
+        case TA1_NUM: return freeListTA1;
+        case TA2_NUM: return freeListTA2;
+        default: return NULL;
+    }
+}
+
 /**
  * @brief Allocate a memory area of a given size using the heap memory of the TA
- * 
+ *
  * @param ta_num TA number (1 or 2)
  * @param size Size of the memory area to allocate
  * @param hint Hint for the allocation (e.g., TEE_MALLOC_FILL_ZERO)
  */
 void* internal_TEE_Malloc(size_t size, uint32_t hint, uint8_t ta_num)
 {
-    Block* curr = NULL;
+    Block *curr = get_heap_head_for(ta_num);
 
-    if( ta_num == CORE_NUM){
-        if (!freeListTEEcore) {
-            freeListTEEcore = (Block*)heapCore;
-            init_memory(ta_num);
-        }
-        curr = freeListTEEcore;
-    }else if(ta_num == 1) {
-        if (!freeListTA1) {
-            freeListTA1 = (Block*)heapTA1;
-            init_memory(ta_num);
-        } else {
-            //Check if freeListTA1 points to TA1's memory area
-            if (!check_block_ownership(ta_num, freeListTA1)) {
-                ERR_MSG("Free list for TA1 is not initialized correctly");
-                return NULL;
-            }
-        }
-        curr = freeListTA1;
-    } else if(ta_num == 2) {
-        if (!freeListTA2) {
-            freeListTA2 = (Block*)heapTA2;
-            init_memory(ta_num);
-        } else {
-            //Check if freeListTA2 points to TA2's memory area
-            if (!check_block_ownership(ta_num, freeListTA2)) {
-                ERR_MSG("Free list for TA2 is not initialized correctly");
-                return NULL;
-            }
-        }
-        curr = freeListTA2;
+    // Memory could be uninitialized.
+    if (curr == NULL) {
+        init_memory(ta_num);
+        curr = get_heap_head_for(ta_num);
     }
 
     while (curr != NULL)
     {
-        //Check whether the pointer is within the valid memory range for the TA
         if (!check_block_ownership(ta_num, curr)) {
+            // TODO: This means the heap memory has been tampered or was corrupted.
             return NULL;
         }
-        if ((curr->free) && (curr->size >= size))
+
+        // Avoid TOCTOU on the size that could force a buffer overwrite.
+        size_t block_size = curr->size;
+
+        if ((curr->free) && (block_size >= size))
         {
-            if (curr->size - size > sizeof(Block))
+            if (block_size - size > sizeof(Block))
             {
-                // TODO: with uint32_t we reserve the quadruple of the required memory.
-                Block* newBlock = (Block*)((uint32_t*)curr + sizeof(Block) + size);
-                newBlock->size = curr->size - size - sizeof(Block);
+                Block* newBlock = (Block*)(area_of(curr) + size);
+                newBlock->size = block_size - size - sizeof(Block);
                 newBlock->next = curr->next;
                 newBlock->free = 1;
                 curr->size = size;
                 curr->next = newBlock;
             }
             curr->free = 0;
+            void *ptr = area_of(curr);
 
             if(hint == TEE_MALLOC_FILL_ZERO) {
                 // NOTE: it is necessary to cast to void* otherwise pointer arithmetic could not work as expected.
-            	memset((void*) curr + sizeof(Block) , 0, size);
+            	memset(ptr, 0, size);
             }
 
-            return (void*) curr + sizeof(Block);
+            return ptr;
         }
         curr = curr->next;
     }
@@ -409,62 +409,45 @@ void* internal_TEE_Malloc(size_t size, uint32_t hint, uint8_t ta_num)
 
 /**
  * @brief Free a memory area allocated using the TEE_Malloc function
- * 
+ *
  * @param buffer Pointer to the memory area to be freed
  * @param ta_num TA number (1 or 2)
  */
-void internal_TEE_Free(void* buffer, uint8_t ta_num) 
+void internal_TEE_Free(void* buffer, uint8_t ta_num)
 {
     if (buffer == NULL) {
         return;
     }
 
-    if(ta_num == CORE_NUM) {
-        if((buffer  - sizeof(Block) < TEE_CORE_MEMORY_START_ADDR) || (buffer - sizeof(Block) > TEE_CORE_MEMORY_END_ADDR)){
-            ERR_MSG("Free function error");
-            return;
-        }
-    } else if (ta_num == 1) {
-        if((buffer - sizeof(Block) < TA1_MEMORY_START_ADDR) || (buffer - sizeof(Block) > TA1_MEMORY_END_ADDR)){
-            if (buffer - sizeof(Block) < CA_MEMORY_START_ADDR || buffer - sizeof(Block) > CA_MEMORY_END_ADDR) {
-                ERR_MSG("Free function error");
-    	        return;
-            }
-        }
-    } else if (ta_num == 2) {
-        if((buffer - sizeof(Block) < TA2_MEMORY_START_ADDR) || (buffer - sizeof(Block) > TA2_MEMORY_END_ADDR)){
-    	    if (buffer - sizeof(Block) < CA_MEMORY_START_ADDR || buffer - sizeof(Block) > CA_MEMORY_END_ADDR) {
-                ERR_MSG("Free function error");
-    	        return;
-            }
-        }
+    // TODO: possible integer overflow (will probably not pass the next check).
+    Block *block = (Block*) (buffer - sizeof(Block));
+
+    if (!check_block_ownership(ta_num, block)) {
+        ERR_MSG("Free function error");
+        return;
     }
 
-    Block* block = (Block*)((uint32_t*)buffer - sizeof(Block));
-    if(block){
-        block->free = 1;
-    }
-    
+    block->free = 1;
 
-    // Get the head of the free list for this TA
-    Block* head = NULL;
-    if(ta_num == CORE_NUM){
-        head = freeListTEEcore;
-    } else if (ta_num == 1) {
-        head = freeListTA1;
-    } else if (ta_num == 2) {
-        head = freeListTA2;
-    }
-    
 
     // Coalesce adjacent free blocks
-    Block* curr = head;
-    while (curr != NULL) {
-        // Merge with next if both are free
-        while (curr->free && curr->next && curr->next->free) {
-            curr->size += sizeof(Block) + curr->next->size;
-            curr->next = curr->next->next;
+    Block *curr = get_heap_head_for(ta_num);
+    while (check_block_ownership(ta_num, curr)) {
+
+        if (curr->free) {
+            // Merge with next if both are free
+            // First check if the block is a valid block to avoid leaking memory information.
+
+            // Otherwise a TOCTOU atk can obtain information about memory pointed by curr->next.
+            Block *next = curr->next;
+            while (check_block_ownership(ta_num, next) && next->free) {
+                // This assumes that the blocks are contiguous. This is correct unless the implementation
+                // has bugs or the heap structure is corrupted (tampering).
+                curr->size += sizeof(Block) + next->size;
+                curr->next = next = next->next;
+            }
         }
+
         curr = curr->next;
     }
 
@@ -472,17 +455,16 @@ void internal_TEE_Free(void* buffer, uint8_t ta_num)
 
 /**
  * @brief Move a memory area to another location
- * 
-
+ *
  * @param dest Destination memory area
  * @param src Source memory area
  * @param size Size of the memory area to move
  * @param ta_num TA number (1 or 2)
  */
 void internal_TEE_MemMove(void* dest, void* src, size_t size, uint8_t ta_num)
-{    
+{
     if(ta_num == CORE_NUM){
-        if( 
+        if(
             (dest < TEE_CORE_MEMORY_START_ADDR) || (dest + size > TEE_CORE_MEMORY_END_ADDR) ||
             (src < TEE_CORE_MEMORY_START_ADDR) || (src + size  > TEE_CORE_MEMORY_END_ADDR) 
         ){
