@@ -12,7 +12,7 @@ MICROVISOR_ELF = $(PROJECT_NAME).elf
 ######################################
 # GNU Arm Embedded Toolchain Path
 ######################################
-GCC_PATH = /opt/st/stm32cubeide_1.18.1/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.linux64_1.0.0.202410170706/tools/bin
+GCC_PATH = /opt/stm32cubeide/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.13.3.rel1.linux64_1.0.0.202410170706/tools/bin
 PREFIX = arm-none-eabi-
 
 ######################################
@@ -125,7 +125,7 @@ Microvisor/Private-Src/error.c \
 Microvisor/Private-Src/sec_comm.c \
 Microvisor/Private-Src/wifi_wrapper.c \
 Microvisor/Private-Src/internal_core_api.c \
-Microvisor/Private-Src/flash.c 
+Microvisor/Private-Src/flash.c
 
 
 MICROVISOR_LIB_ASM_SOURCES = \
@@ -177,8 +177,8 @@ $(TA1_INCLUDE) \
 $(TA2_INCLUDE) \
 
 # compile gcc flags
-ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
-CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
+ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -Wextra -fdata-sections -ffunction-sections
+CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -Wextra -fdata-sections -ffunction-sections
 
 ifeq ($(DEBUG), 1)
 CFLAGS += -g -gdwarf-2
