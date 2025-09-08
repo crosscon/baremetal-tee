@@ -125,13 +125,13 @@ static uint8_t check_mem_ownership(uint8_t ta_num, void * buffer, size_t size)
     } else  */
     if (ta_num == 1) {
         // NOTE: Checked this way to avoid integer overflow. Assuming TA1_MEMORY_START_ADDR <= TA1_MEMORY_END_ADDR.
-        if((object < TA1_MEMORY_START_ADDR) || (TA1_MEMORY_END_ADDR - object < size)){
+        if(object < TA1_MEMORY_START_ADDR || object > TA1_MEMORY_END_ADDR || TA1_MEMORY_END_ADDR - object < size) {
             ERR_MSG("Memory access error");
             return 0;
         }
     } else if (ta_num == 2) {
         // NOTE: Checked this way to avoid integer overflow. Assuming TA2_MEMORY_START_ADDR <= TA2_MEMORY_END_ADDR.
-        if((object < TA2_MEMORY_START_ADDR) || (TA2_MEMORY_END_ADDR - object < size)){
+        if(object < TA2_MEMORY_START_ADDR || object > TA2_MEMORY_END_ADDR || TA2_MEMORY_END_ADDR - object < size) {
             ERR_MSG("Memory access error");
             return 0;
         }
@@ -170,7 +170,7 @@ static uint8_t check_heap_ownership(uint8_t ta_num, void * buffer, size_t size)
         default: return 0;
     }
 
-    if (buffer < start || end - buffer < size) {
+    if (buffer < start || buffer > end || end - buffer < size) {
         ERR_MSG("Heap access error");
         return 0;
     }
@@ -2144,7 +2144,7 @@ void internal_TEE_DeriveKey(TEE_OperationHandle operation,
  * @param IVLen length of the initialization vector
  */
 void internal_TEE_CipherInit(TEE_OperationHandle operation,
-                        void* IV, 
+                        void* IV,
                         size_t IVLen,
                         uint8_t ta_num)
 {
