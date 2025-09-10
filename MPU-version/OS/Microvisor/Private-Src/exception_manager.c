@@ -251,7 +251,7 @@ __attribute__((naked)) void Exception_Return_Handler(unsigned int* auto_frame) {
 		"bhi .NO_API_RET_REQUESTED\n" // PC is greater than API_RET_END, no return from api call was requested (return)
 
 		/* API return requested */
-		"add sp, #4\n"	// remove pushed LR (before function call) form MSP
+		"add sp, #4\n"	// remove pushed LR (before function call) from MSP
 		"cmp sp, r0\n"	// check where auto_frame is stored
 		"itee eq\n"
 		"addeq sp, #32\n"	// auto_frame stored on MSP, remove it
@@ -262,6 +262,11 @@ __attribute__((naked)) void Exception_Return_Handler(unsigned int* auto_frame) {
 		"ldr r2, =0xE000ED28\n" 
 		"ldr r3, =0xFFFFFFFF\n" // clear all bits
 		"str r3, [r2]\n"
+
+        "add sp, #4\n" // remove pushed r4 (during API call) from MSP as we don't want to restore it (return value).
+        /* Restore the pre call context to avoid leaks. */
+        "pop {r5,r6,r7,r8,r9,r10,r11}\n"
+
 
 		/* Read and set BASEPRI */
 		"pop {r3}\n"

@@ -14,7 +14,7 @@ TEE_Param  __attribute__((section(".data_TA2 "))) ta_params_2[4] = {0};
 
 
 /**
- * @brief Check if the given memory block is in the CA memory.
+ * @brief Check if the given memory block is in the CA memory accounting for integer overflows.
  * @param ptr The memory base pointer.
  * @param size The size of the memory block.
  */
@@ -32,26 +32,17 @@ static inline int is_in_CA_memory(void *ptr, size_t size) {
  * and it is responsible to manage the switch of context from the non secure world to the secure world,
  * including the MPU reconfiguration and the stack pointer change
  * 
- * @param auto_frame: pointer to the auto frame (stack frame) 
+ * @param auto_frame: pointer to the auto frame (stack frame)
  * @param manual_frame: pointer to the manual frame (stack frame)
+ * @param _: a filler to shift svc_num as it is passed in r3.
+ * @param svc_num: the requested svc number.
  */
-__attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* auto_frame, unsigned int* manual_frame) {
-
-	/* Restore the partial context (r4-r11) that was there at the moment of the API call */
-	__asm__(
-		"pop {r4,r5,r6,r7,r8,r9,r10,r11}\n"
-	);
+// TODO: move the svc_num argument to r2.
+// TODO: naked only allows basic asm.
+__attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* auto_frame, unsigned int* manual_frame, int _, int svc_num) {
 
 	int ret_val = -1; // Declare a variable to store the return value
 	int ta_num = 1; // Declare a variable to store the TA number (default value is 1, but can also be 2)
-
-	// Recover the value of SVC number, which was stored in r3 in the SVC Handler
-	// Store the value in a C variable
-	int svc_num = -1;
-	__asm__(
-		"mov %[svc_num], r3\n"
-		: [svc_num] "=r" (svc_num)
-	);
 
 	// If the SVC number is not passed (or is not valid), return with an error
 	if (svc_num == -1) {
@@ -187,7 +178,9 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
 			"msr psp, r0\n"
 		);	
 	}
-	
+
+    // TODO: this possibly invalidates local variables and leaves garbage on the main stack.
+
 	// Switch the SP used from MSP to PSP and drop privileges before passing the control to the TA function
 	__asm__(
 		"mov r0, #0X03\n"
