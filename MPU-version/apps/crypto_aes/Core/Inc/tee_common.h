@@ -26,6 +26,8 @@
 #define TEEC_VALUE_INOUT            0x00000003
 #define TEEC_MEMREF_TEMP_INPUT      0x00000005
 #define TEEC_MEMREF_TEMP_OUTPUT     0x00000006
+#define TEEC_MEMREF_TEMP_INOUT      0x00000007
+
 
 // Constant used to indicate the login method for the TA
 #define TEEC_LOGIN_PUBLIC			0x00000000

@@ -102,7 +102,7 @@ __attribute__((section(".ram-boot"))) __TEE_OperationHandle * registeredOperatio
  *   @param size Size of the memory area to check
  *   @return 1 if the memory area is within the range, 0 otherwise
  */
-static uint8_t check_mem_ownership(uint8_t ta_num, void * buffer, size_t size)
+static uint8_t check_mem_ownership(uint8_t ta_num, void *buffer, size_t size)
 {
     if(!buffer){
         ERR_MSG("buffer does not exists");
@@ -112,7 +112,7 @@ static uint8_t check_mem_ownership(uint8_t ta_num, void * buffer, size_t size)
         ERR_MSG("size is 0");
         return 0;
     }
-    uintptr_t object = (uintptr_t)buffer;
+    uintptr_t object = buffer;
     if(size > TA1_MEMORY_END_ADDR - TA1_MEMORY_START_ADDR){
         return 0; //Invalid size
     }
@@ -123,13 +123,13 @@ static uint8_t check_mem_ownership(uint8_t ta_num, void * buffer, size_t size)
             return 0;
         }
     } else  */
-    if (ta_num == 1) {
+    if (ta_num == TA1_NUM) {
         // NOTE: Checked this way to avoid integer overflow. Assuming TA1_MEMORY_START_ADDR <= TA1_MEMORY_END_ADDR.
         if(object < TA1_MEMORY_START_ADDR || object > TA1_MEMORY_END_ADDR || TA1_MEMORY_END_ADDR - object < size) {
             ERR_MSG("Memory access error");
             return 0;
         }
-    } else if (ta_num == 2) {
+    } else if (ta_num == TA2_NUM) {
         // NOTE: Checked this way to avoid integer overflow. Assuming TA2_MEMORY_START_ADDR <= TA2_MEMORY_END_ADDR.
         if(object < TA2_MEMORY_START_ADDR || object > TA2_MEMORY_END_ADDR || TA2_MEMORY_END_ADDR - object < size) {
             ERR_MSG("Memory access error");
@@ -2298,14 +2298,15 @@ TEE_Result internal_TEE_CipherDoFinal(TEE_OperationHandle operation,
 
     // destLen now rapresent the logical size of the output buffer as a return parameter
     // destSize is the physical size of the output buffer
-    size_t destSize = *destLen;
+    size_t remaining_size = *destLen;
+    size_t produced_size = 0;
     *destLen = 0;
 
     // If the input data is not empty, update the cipher operation with the input data
     if(srcData && srcLen > 0) {
 
-        if(psa_cipher_update((psa_cipher_operation_t*)op->cipher_op, (const uint8_t*)srcData, srcLen, 
-                                destData, destSize, destLen) != PSA_SUCCESS)
+        if(psa_cipher_update((psa_cipher_operation_t*)op->cipher_op, (const uint8_t*)srcData, srcLen,
+                                destData, remaining_size, &produced_size) != PSA_SUCCESS)
         {
             ERR_MSG("Failed to update cipher");
             psa_cipher_abort((psa_cipher_operation_t*)op->cipher_op);
@@ -2313,13 +2314,19 @@ TEE_Result internal_TEE_CipherDoFinal(TEE_OperationHandle operation,
         }
     }
 
+    // TODO: proper handling.
+    remaining_size -= produced_size;
+    *destLen += produced_size;
+
     // Finalize the cipher operation and store the final cipher in the output buffer using the PSA API 
-    if(psa_cipher_finish((psa_cipher_operation_t*)op->cipher_op, destData + *destLen, destSize, destLen) != PSA_SUCCESS)
+    if(psa_cipher_finish((psa_cipher_operation_t*)op->cipher_op, destData + produced_size, remaining_size, &produced_size) != PSA_SUCCESS)
     {
         ERR_MSG("Failed to finish cipher");
         psa_cipher_abort((psa_cipher_operation_t*)op->cipher_op);
         return TEE_FAILED;
     }
+    
+    *destLen += produced_size;
 
     return TEE_SUCCESS;
 }

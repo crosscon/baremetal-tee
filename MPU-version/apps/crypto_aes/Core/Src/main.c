@@ -144,8 +144,9 @@ int main(void)
   }
 
 
-  TEEC_Operation op;
+  TEEC_Operation op = {0};
 
+  op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT, TEEC_MEMREF_TEMP_INOUT , TEEC_MEMREF_TEMP_OUTPUT, TEEC_MEMREF_TEMP_OUTPUT);
   // param[0] holds the original message that should be encrypted by the TA
   op.params[0].tmpref.buffer = calloc(16, sizeof(char));
   op.params[0].tmpref.size = 16;
@@ -181,14 +182,14 @@ int main(void)
   if(ret != 0){
 	  return -1;
   }
-  printf("Decrypted message: %s\r\n", op.params[2].tmpref.buffer);
+  printf("Decrypted message: %s\n", op.params[2].tmpref.buffer);
 
   // Make the TA calculate the digest of the original message
   ret = TEEC_InvokeCommand(&sn, TEEC_COMMAND_DIGEST, &op, NULL);
   if(ret != 0){
 	  return -1;
   }
-  printf("Digest of the message: %s\r\n", op.params[3].tmpref.buffer);
+  printf("Digest of the message: %s\n", op.params[3].tmpref.buffer);
 
   // Make the TA destroy the key
   ret = TEEC_InvokeCommand(&sn, TEEC_COMMAND_DESTROY_KEY, &op, NULL);

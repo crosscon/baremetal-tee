@@ -14,6 +14,19 @@ TEE_Param  __attribute__((section(".data_TA2 "))) ta_params_2[4] = {0};
 
 
 /**
+ * @brief Check if the given memory block is in the CA memory.
+ * @param ptr The memory base pointer.
+ * @param size The size of the memory block.
+ */
+static inline int is_in_CA_memory(void *ptr, size_t size) {
+    return  ptr >= CA_MEMORY_START_ADDR &&
+            ptr <= CA_MEMORY_END_ADDR &&
+            CA_MEMORY_END_ADDR - ptr >= size;
+}
+
+
+
+/**
  * @brief Function to call a Trusted Application (TA) Client API from the Client Application (CA)
  * This function is called by the SVC Handler when the SVC number corresponds to a TA Client API
  * and it is responsible to manage the switch of context from the non secure world to the secure world,
@@ -61,7 +74,7 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
 
 		//Check validity of the manual frame pointer
 		__disable_irq(); 
-		if(!internal_op || internal_op < CA_MEMORY_START_ADDR || internal_op+ sizeof(internal_operation_t) > CA_MEMORY_END_ADDR) {
+		if(!internal_op || !is_in_CA_memory(internal_op, sizeof(*internal_op))) {
 			ret_val = TEE_FAILED;
 			goto exit;
 		}
@@ -109,7 +122,7 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
 
 			if(ca_params) {
 				//Check if both structures are inside the CA memory area
-				if(ca_params < CA_MEMORY_START_ADDR || ca_params + sizeof(TEEC_Parameter) > CA_MEMORY_END_ADDR) {
+				if (!is_in_CA_memory(ca_params, sizeof(*ca_params))) {
 					ret_val = TEE_FAILED;
 					goto exit;
 				}
@@ -118,8 +131,7 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
 				// Copy the memory reference params from the TEEC_Param structure to TA_Param structure
 				if(ca_params->memref.parent != NULL) {
 					//Check if the various memory pointers are inside the CA memory area
-					if(ca_params->memref.parent->buffer < CA_MEMORY_START_ADDR || 
-					   ca_params->memref.parent->size > (CA_MEMORY_END_ADDR - (uintptr_t) ca_params->memref.parent->buffer)) {
+					if(!is_in_CA_memory(ca_params->memref.parent->buffer, ca_params->memref.parent->size)) {
 						ret_val = TEE_FAILED;
 						goto exit;
 					}
@@ -127,13 +139,11 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
 					ta_params_ptr[i].memref.buffer = ca_params->memref.parent->buffer;
 					ta_params_ptr[i].memref.size = ca_params->memref.parent->size;
 				}
-				
 
 				// Copy the temporary memory reference params from the TEEC_Param structure to TA_Param structure
 				if(ca_params->tmpref.buffer != NULL) {
 					// Check if the temporary memory reference is valid 
-					if(ca_params->tmpref.buffer < CA_MEMORY_START_ADDR || 
-					   ca_params->tmpref.size > (CA_MEMORY_END_ADDR - (uintptr_t) ca_params->tmpref.buffer)) {
+					if(!is_in_CA_memory(ca_params->tmpref.buffer, ca_params->tmpref.size)) {
 						ret_val = TEE_FAILED;
 						goto exit;
 					}
@@ -254,7 +264,7 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
 				int type = TEE_PARAM_GET_TYPES(internal_op->paramTypes, i);
 
 				if(ca_params) {
-					if(ca_params < CA_MEMORY_START_ADDR || ca_params + sizeof(TEEC_Parameter) > CA_MEMORY_END_ADDR) {
+					if(!is_in_CA_memory(ca_params, sizeof(*ca_params))) {
 						ret_val = TEE_FAILED;
 						goto exit;
 					}
@@ -271,8 +281,7 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
 						
 						if (ca_params->memref.parent != NULL) {
 							// Check if the memory reference is valid
-							if(ca_params->memref.parent < CA_MEMORY_START_ADDR || 
-								ca_params->memref.parent + sizeof(TEEC_SharedMemory) > CA_MEMORY_END_ADDR) {
+							if(!is_in_CA_memory(ca_params->memref.parent, sizeof(TEEC_SharedMemory))) {
 								ret_val = TEE_FAILED;
 								goto exit;
 							}
