@@ -1,6 +1,8 @@
 #include "system_instruction_recovery.h"
+#include "PPB_recovery.h"
 #include "simulator_common.h"
 #include "virtual_IPSR.h"
+#include <stdint.h>
 
 /**
  * Simulates the execution of CPS (system instruction) using the original context 
@@ -14,8 +16,8 @@
  * manual_frame: pointer to frame created manually before calling this function
  *
 */
-void Simulate_CPS(unsigned int faulty_inst, unsigned int* auto_frame, unsigned int* manual_frame) {
-	Simulate_Faulty_Instruction(auto_frame, manual_frame, 2);
+static void Simulate_CPS(unsigned int *auto_frame, unsigned int *manual_frame, int32_t inst) {
+	Simulate_Faulty_Instruction(auto_frame, manual_frame, 1, inst);
 	return;
 }
 
@@ -25,25 +27,25 @@ void Simulate_CPS(unsigned int faulty_inst, unsigned int* auto_frame, unsigned i
 * stored in the auto_frame and manual_frame
 * MRS is a 32 bit wide instruction, so it is necessary to set the length to 4
 *
-* Parameters: 
-* faulty_inst: instruction to simulate (MRS in this case) with the necessary parameters (e.g. destination register) 
+* Parameters:
+* faulty_inst: instruction to simulate (MRS in this case) with the necessary parameters (e.g. destination register)
 * auto_frame: pointer to frame created automatically during exception entry
 * manual_frame: pointer to frame created manually before calling this function
 */
-void Simulate_MRS(unsigned int faulty_inst, unsigned int* auto_frame, unsigned int* manual_frame) {
-	/* 
+static void Simulate_MRS(unsigned int* auto_frame, unsigned int* manual_frame, uint32_t inst) {
+	/*
 	* Extract parameters from the MRS instruction:
 	* SYSm: system control space (SCS) register
 	* read_IPSR: if 1, read IPSR register
 	* rd: destination register
 	 */
-	unsigned int SYSm = (faulty_inst & SYS_M_MASK) >> SYS_M_SHIFT;
+	unsigned int SYSm = (inst & SYS_M_MASK) >> SYS_M_SHIFT;
 	unsigned int read_IPSR = SYSm & 0x1;
-	unsigned int rd = (faulty_inst & MRS_RD_MASK) >> MRS_RD_SHIFT;
-	
+	unsigned int rd = (inst & MRS_RD_MASK) >> MRS_RD_SHIFT;
+
 	/* Simulate the instruction */
-	Simulate_Faulty_Instruction(auto_frame, manual_frame, 4);
-	
+	Simulate_Faulty_Instruction(auto_frame, manual_frame, 2, inst);
+
 	if (read_IPSR) {
 		/* When requesting IPSR read, substitute original IPSR value
 		with virtual IPSR value. No need to check if we are in unprioritized
@@ -63,19 +65,19 @@ void Simulate_MRS(unsigned int faulty_inst, unsigned int* auto_frame, unsigned i
 * stored in the auto_frame and manual_frame
 * MSR is a 32 bit wide instruction, so it is necessary to set the length to 4
 *
-* Parameters: 
-* faulty_inst: instruction to simulate (MSR in this case) with the necessary parameters 
+* Parameters:
+* faulty_inst: instruction to simulate (MSR in this case) with the necessary parameters
 * auto_frame: pointer to frame created automatically during exception entry
 * manual_frame: pointer to frame created manually before calling this function
 */
-void Simulate_MSR(unsigned int faulty_inst, unsigned int* auto_frame, unsigned int* manual_frame) {
-	/* 
+static void Simulate_MSR(unsigned int* auto_frame, unsigned int* manual_frame, uint32_t inst) {
+	/*
 	* Extract parameters from the MRS instruction:
 	* SYSm: system control space (SCS) register
 	* rn: source register
 	 */
-	unsigned int SYSm = (faulty_inst & SYS_M_MASK) >> SYS_M_SHIFT;
-	unsigned int rn = (faulty_inst & MSR_RN_MASK) >> MSR_RN_SHIFT;
+	unsigned int SYSm = (inst & SYS_M_MASK) >> SYS_M_SHIFT;
+	unsigned int rn = (inst & MSR_RN_MASK) >> MSR_RN_SHIFT;
 
 	/* Prevent the MSR instruction to override the fileds that control the stack pointer and privilege level */
 	if ((SYSm ^ MSR_SYS_M_CTRL_PATTERN) == 0) {
@@ -95,10 +97,12 @@ void Simulate_MSR(unsigned int faulty_inst, unsigned int* auto_frame, unsigned i
 		}
 
 		Set_Register_Value(rn, auto_frame, manual_frame, rn_value);	// save operand register value
-	}	
+	}
+
+    // TODO: do not allow to write to SP (MSP): arbitrary (privileged) code execution.
 
 	/* Simulate the instruction */
-	Simulate_Faulty_Instruction(auto_frame, manual_frame, 4);
+	Simulate_Faulty_Instruction(auto_frame, manual_frame, 2, inst);
 	return;
 }
 
@@ -125,31 +129,35 @@ void Simulate_MSR(unsigned int faulty_inst, unsigned int* auto_frame, unsigned i
 */
 int Recover_System_Instruction(unsigned int* auto_frame, unsigned int* manual_frame) {
 	/* recover faulty instruction */
-	unsigned short* faulty_addr = (unsigned short*) auto_frame[6];
-	// unsigned char SVC_imm = *(faulty_addr - 1);	//don't care about SVC value
-	unsigned int following_inst = *faulty_addr;
+	const uint16_t* faulty_addr = (uint16_t*) (uintptr_t) auto_frame[6];
 
-	/* Check if the instruction is a CPS instruction and simulate it*/
-	if (((following_inst & CPS_MASK) ^ CPS_PATTERN) == 0) {
-		Simulate_CPS(following_inst, auto_frame, manual_frame);
-		return SYS_INST_OK;
-	}
+    // Size in bytes of the instruction (halfword or double-halfword).
+    size_t halfword_count;
+	uint32_t following_inst = get_instruction_at(faulty_addr, &halfword_count);
 
-	// MRS and MSR are 32 bit wide, load second halfword of the following instruction
-	following_inst = following_inst << 16 | *(faulty_addr + 1);
+    if (1 == halfword_count) {    // Single halfword instruction: CPS.
 
-	// Check whether the instruction is a MRS or MSR instruction and simulate it
-	if (((following_inst & MRS_MASK) ^ MRS_PATTERN) == 0) {
-		Simulate_MRS(following_inst, auto_frame, manual_frame);
-		return SYS_INST_OK;
-	}
+        if ((following_inst & CPS_MASK) == CPS_PATTERN) {
 
-	if (((following_inst & MSR_MASK) ^ MSR_PATTERN) == 0) {
-		Simulate_MSR(following_inst, auto_frame, manual_frame);
-		return SYS_INST_OK;
-	}
+            Simulate_CPS(auto_frame, manual_frame, following_inst);
+            return SYS_INST_OK;
+        }
+    } else if (2 == halfword_count) { // Double halfword instruction: MRS or MSR.
 
-	/* If the instruction is neither a CPS, MRS or MSR the instruction 
+        if ((following_inst & MRS_MASK) == MRS_PATTERN) {
+
+		    Simulate_MRS(auto_frame, manual_frame, following_inst);
+    		return SYS_INST_OK;
+
+        } else if ((following_inst & MSR_MASK) == MSR_PATTERN) {
+
+		    Simulate_MSR(auto_frame, manual_frame, following_inst);
+    		return SYS_INST_OK;
+    	}
+    }
+
+
+	/* If the instruction is neither a CPS, MRS or MSR the instruction
 	is not a system one and the simulation is not needed */
 	return SYS_INST_NOREQ;
 }

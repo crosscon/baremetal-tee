@@ -1,6 +1,9 @@
 #ifndef __SYSTEM_INSTRUCTION_RECOVERY_H
 #define __SYSTEM_INSTRUCTION_RECOVERY_H
 
+#include <stddef.h>
+#include <stdint.h>
+
 #define SYS_INST_OK 0		// system instruciton simulated correctly
 #define SYS_INST_NOREQ 1	// not system instruction execution requested
 
@@ -30,9 +33,5 @@
  */
 int Recover_System_Instruction(unsigned int* auto_frame, unsigned int* manual_frame);
 
-/* Functions to simulate CPS, MRS, MSR instructions */
-void Simulate_CPS(unsigned int faulty_inst, unsigned int* auto_frame, unsigned int* manual_frame);
-void Simulate_MRS(unsigned int faulty_inst, unsigned int* auto_frame, unsigned int* manual_frame);
-void Simulate_MSR(unsigned int faulty_inst, unsigned int* auto_frame, unsigned int* manual_frame);
 
 #endif /* __SYSTEM_INSTRUCTION_RECOVERY_H */

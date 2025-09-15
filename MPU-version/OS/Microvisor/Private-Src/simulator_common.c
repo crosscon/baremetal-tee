@@ -1,4 +1,5 @@
 #include "simulator_common.h"
+#include "PPB_recovery.h"
 #include "bootloader.h"
 #include <stdlib.h>
 
@@ -158,7 +159,8 @@ void Set_Register_Value(unsigned int reg_num, unsigned int* auto_frame, unsigned
  *  - manual_frame: pointer to manual_frame
  * 
  */
-__attribute__((naked)) void Run_With_Context(unsigned int* address, unsigned int* auto_frame, unsigned int* manual_frame) {
+__attribute__((naked))
+static void Run_With_Context(unsigned int* address, unsigned int* auto_frame, unsigned int* manual_frame) {
 	__asm__(
 		"push {r4,r5,r6,r7,r8,r9,r10,r11,lr}\n"	// save callee-preserved registers into the stack
 		"push {r1, r2}\n"						// save auto_frame and manual_frame adresses into the stack
@@ -175,6 +177,9 @@ __attribute__((naked)) void Run_With_Context(unsigned int* address, unsigned int
 		/* Branch to in-memory routine */
 		"orr lr, #1\n"	// thumb instruction set bit
 		"blx lr\n"   // branch to in-memory routine to execute it
+
+        // TODO: if LR or PC is modified by the simulated instruction: possible arbitrary (privileged) code execution.
+        // TODO: if the SP (MSP) is modified by the instruction: possible adversary-controlled behaviour (privilege escalation).
 
 		/* Save modified context */
 		"ldr lr, [sp]\n"				// load auto_frame address to LR
@@ -195,41 +200,53 @@ __attribute__((naked)) void Run_With_Context(unsigned int* address, unsigned int
 }
 
 /**
- * Executes the faulty instuction with the original context (except for registers SP,LR and PC)
- * Advances the stacked PC (created on exception entry) by the instruction lenght
- * to ensure the continuation of the execution after returning from exception.
- * The instruction to simulate is the one stored in the PC register (position 6 of the auto_frame).
+ * @brief   Executes the faulty instuction with the original context (except for registers SP,LR and PC)
+ *          Advances the stacked PC (created on exception entry) by the instruction lenght
+ *          to ensure the continuation of the execution after returning from exception.
+ *          The instruction to simulate is the one stored in the PC register (position 6 of the auto_frame).
  * 
- * Parameters:
- *  auto_frame: frame created automatically during exception entry
- *  manual_frame: frame created manually containing rest of context
- *  inst_len: lenght of faulty instruction (in bytes)
+ * @param auto_frame: frame created automatically during exception entry
+ * @param manual_frame: frame created manually containing rest of context
+ * @param halfword_count: the number of halfword the instruction is composed of (1 or 2).
+ * @param inst: the instruction to simulate, this can be both a single halfword or double halfword.
+ *              In case of a single halfword, the halfword is stored on the lower bits.
+ *              In case of a double halfword, the first halfword is stored on the higher bits.
+ *              The instruction should be fetched once to avoid TOCTOU.
+ *
+ * @warning The caller must ensure that the instruction doesn't modify SP, LR and PC.
  * 
+ * // TODO: void doesn't return.
+ *
  * Returns:
  * SIMULATION_OK: if the simulation was successful
  * SIMULATION_NOMEM: if there was no memory available for the in-memory function
  *
  */
-void Simulate_Faulty_Instruction(unsigned int* auto_frame, unsigned int* manual_frame, unsigned int inst_len) {
+void Simulate_Faulty_Instruction(unsigned int* auto_frame, unsigned int* manual_frame, size_t halfword_count, uint32_t inst) {
 	/* Allocate space for in-memory function */
-	unsigned char* funct_ptr = (unsigned char*) &simulation_mem;  // create pointer to simulation memory	
-	unsigned char* inst_ptr = (unsigned char*) auto_frame[6]; // pointer to faulty instruction (stored in the autoframe, in particular in the PC register)
+	uint16_t* funct_ptr = simulation_mem;  // create pointer to simulation memory
 
-	/* Copy faulty instruction to simulation memory */
-	for(unsigned int i = 0; i < inst_len; i++) {
-		funct_ptr[i] = inst_ptr[i];
-	}
+    switch (halfword_count) {
+        case 2:
+            funct_ptr[0] = (inst >> 16) & 0xFFFF;
+            /* fall-through */
+        case 1:
+            funct_ptr[halfword_count - 1] = inst & 0xFFFF;
+            break;
+        default:
+            return /* SIMULATION_NOMEM */;
+    }
+
 	/* Add return to function (BX LR) */
-	funct_ptr[inst_len] = (BX_LR) & 0xff;
-	funct_ptr[inst_len + 1] = (BX_LR >> 0x8) & 0xfff;
+	funct_ptr[halfword_count] = BX_LR & 0xFFFF;
 
 	/* Execute in-memory function */
 	Run_With_Context((unsigned int*) funct_ptr, auto_frame, manual_frame);
 
 	/* Advance auto_frame PC to next instruction */
-	auto_frame[6] = (int)((unsigned char*) auto_frame[6] + inst_len);
+	auto_frame[6] = (uintptr_t) ((uint16_t*) (uintptr_t) auto_frame[6] + halfword_count);
 
-	return;
+	return /* SIMULATION_OK */;
 }
 
 /**
@@ -274,3 +291,47 @@ uint32_t Simulator_Get_Permission(uint32_t target_address) {
 	}
 	return SIMULATOR_NO_ACCESS;
 }
+
+
+
+
+
+/**
+ * @brief   Get the instruction allocated at the given address.
+ *          Since in thumb mode instructions can be of 16 or 32 bytes, a word is returned.
+ *          The actual number of bytes is put in inst_len.
+ *
+ * @param   address: The starting address of the instruction to extract
+ * @param   inst_len: The variable where the actual instruction length in bytes is put.
+ *
+ * @return  The instruction as a word. In case the instruction was an halfword, it is zero-extended.
+ *          In case the instruction was a double halfword, the first halfword is in the upper bits
+ *          and the second one in the lower ones.
+ *          This doesn't serialize correctly in little-endian systems.
+ */
+uint32_t get_instruction_at(const uint16_t *address, size_t *halfword_count) {
+
+    // This could be only the first hald of a double-halfword instruction.
+    uint32_t instruction = *address;
+
+    // Actually not an opcode, this is (potentially) the pattern to identify two word instructions.
+    uint32_t opcode = instruction & TWO_WORD_INST_MASK;
+
+    // TODO: isn't opcode == ... more readable? Is there any reason to do this?
+    if (
+        (opcode ^ TWO_WORD_INST_PATTERN_1) == 0 ||
+        (opcode ^ TWO_WORD_INST_PATTERN_2) == 0 ||
+        (opcode ^ TWO_WORD_INST_PATTERN_3) == 0
+    ) {
+        /* instruction is 32 bit, fetch second halfword */
+        *halfword_count = 2;
+        instruction = (instruction << 16) | *(address + 1);
+    } else {
+        /* instruction is 16 bit */
+        *halfword_count = 1;
+        // No need to fetch more.
+    }
+
+    return instruction;
+}
+

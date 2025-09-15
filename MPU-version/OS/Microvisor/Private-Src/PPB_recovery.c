@@ -2,6 +2,7 @@
 #include "PPB_handlers.h"
 #include "simulator_common.h"
 #include "stm32l4xx_hal.h"
+#include <stddef.h>
 #include <stdlib.h>
 
 /**
@@ -26,31 +27,18 @@
 */
 int Recover_PPB_Access(unsigned int* auto_frame, unsigned int* manual_frame) {
     /* recover faulty instruction */
-    unsigned short* faulty_addr = (unsigned short*) auto_frame[6];
-    unsigned int faulty_inst = *faulty_addr;
-    unsigned int inst_len;
+    uint16_t* faulty_addr = (uint16_t*) (uintptr_t) auto_frame[6];
 
-    /* determine instruction lenght and fetch second halfword if needed */
-    if (
-        ((faulty_inst & TWO_WORD_INST_MASK) ^ TWO_WORD_INST_PATTERN_1) == 0 || 
-        ((faulty_inst & TWO_WORD_INST_MASK) ^ TWO_WORD_INST_PATTERN_2) == 0 ||
-        ((faulty_inst & TWO_WORD_INST_MASK) ^ TWO_WORD_INST_PATTERN_3) == 0
-    ) {
-        /* instruction is 32 bit, fetch second halfword */
-        inst_len = 4;
-        faulty_inst = faulty_inst << 16 | *(faulty_addr + 1);
-    } else {
-        /* instruction is 16 bit */
-        inst_len = 2;
-    }
+    size_t halfword_count;
+    uint32_t faulty_inst = get_instruction_at(faulty_addr, &halfword_count);
 
     int result = -1;
 
-    /* 
+    /*
     * Check the the faulty instruction match one of the LDR/STR istructions using the mask and pattern
     * and, in the case, simulate it
     */
-    if (inst_len == 2) {    /* 16 bit instructions matching */
+    if (1 == halfword_count) {    /* 16 bit instructions matching */
         if (((faulty_inst & STR_LDR_R1_MASK) ^ STR_LDR_R1_PATTERN) == 0) {
             result = simulate16_str_ldr_r1(faulty_inst, auto_frame, manual_frame);
         } else if (((faulty_inst & STR_LDR_I1_MASK) ^ STR_LDR_I1_PATTERN) == 0) {

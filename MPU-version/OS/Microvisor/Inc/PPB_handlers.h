@@ -8,9 +8,9 @@
 #define PPB_HANDLER_FAIL 1
 #define PPB_HANDLER_NO_PPB_ACCESS 2
 
-/* Instruction lenght */
-#define INST_16BIT 2
-#define INST_32BIT 4
+/* Instruction lenght in halfwords */
+#define INST_16BIT 1
+#define INST_32BIT 2
 
 /**
  * MNEMONIC_XY:

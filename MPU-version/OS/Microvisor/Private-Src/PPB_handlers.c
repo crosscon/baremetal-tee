@@ -2,6 +2,39 @@
 #include "simulator_common.h"
 
 /**
+ * @brief Checks the permissions and simulates a load or store instruction given the address.
+ *
+ * @param auto_frame The frame automatically allocated on exception entry.
+ * @param manual_frame The frame previously allocated containing callee preserved general purpose registers.
+ * @param is_load Whether this is a load (1) or store (0) instruction.
+ * @param address The address the instruction tries to write to or read from.
+ * @param halfword_count The size in halfword of the instruction (halfword or double-halfword).
+ * @param inst The instruction that should be executed.
+ *
+ * @return PPB_HANDLER_OK if the simulation was successful (some operations could be write-ignored)
+ *         PPB_HANDLER_NO_PPB_ACCESS if the address is not accessible.
+ */
+static int simulate(unsigned int *auto_frame, unsigned int *manual_frame, uint32_t is_load, unsigned int address, size_t halfword_count, uint32_t inst) {
+    switch (Simulator_Get_Permission(address)) {
+		case SIMULATOR_RW:
+			Simulate_Faulty_Instruction(auto_frame, manual_frame, halfword_count, inst);
+			return PPB_HANDLER_OK;
+		case SIMULATOR_RO_WI:
+            // permit only LOAD operations, STORE are ignored
+			if(is_load)	{
+				Simulate_Faulty_Instruction(auto_frame, manual_frame, halfword_count, inst);
+            } else {
+                // increase PC by instruction lenth (16 bit)
+				Set_Register_Value(15, auto_frame, manual_frame, Get_Register_Value(15, auto_frame, manual_frame) + 2 * halfword_count);
+            }
+			return PPB_HANDLER_OK;
+		case SIMULATOR_NO_ACCESS:
+		default:
+			return PPB_HANDLER_NO_PPB_ACCESS;
+    }
+}
+
+/**
 *
 * Simulates the execution of STR (store) and LDR (load) instructions using the original context
 * Different version of the function are used to simulate different instruction formats
@@ -24,8 +57,10 @@
 
 /* 16 bit instruction handlers */
 
+
+
 /* LDR and STR, register offset (r1) */
-int simulate16_str_ldr_r1(unsigned int faulty_inst, unsigned int* auto_frame, unsigned int* manual_frame) {
+int simulate16_str_ldr_r1(uint32_t faulty_inst, unsigned int *auto_frame, unsigned int *manual_frame) {
 	/*
 	Rt = register to load or store
 	Rn = register that store the base memory address
@@ -54,20 +89,7 @@ int simulate16_str_ldr_r1(unsigned int faulty_inst, unsigned int* auto_frame, un
 	 *   the function returns PPB_HANDLER_OK in both cases
 	 * - if the address is not in the PPB, the function returns PPB_HANDLER_NO_PPB_ACCESS
 	*/
-	switch(Simulator_Get_Permission(target_address)) {
-		case SIMULATOR_RW:
-			Simulate_Faulty_Instruction(auto_frame, manual_frame, INST_16BIT);
-			return PPB_HANDLER_OK;
-		case SIMULATOR_RO_WI:
-			if(is_load)	// permit only LOAD operations, STORE are ignored
-				Simulate_Faulty_Instruction(auto_frame, manual_frame, INST_16BIT);
-			else
-				Set_Register_Value(15, auto_frame, manual_frame, Get_Register_Value(15, auto_frame, manual_frame) + 2);	// increase PC by instruction lenth (16 bit)
-			return PPB_HANDLER_OK;
-		case SIMULATOR_NO_ACCESS:
-		default:
-			return PPB_HANDLER_NO_PPB_ACCESS;
-	}
+    return simulate(auto_frame, manual_frame, is_load, target_address, INST_16BIT, faulty_inst);
 }
 
 /* LDR and STR, immediate offset (i1)*/
@@ -85,20 +107,8 @@ int simulate16_str_ldr_i1(unsigned int faulty_inst, unsigned int* auto_frame, un
 	unsigned int base_reg = Get_Register_Value(rn, auto_frame, manual_frame);
 	unsigned int target_address = base_reg + imm;
 
-	switch(Simulator_Get_Permission(target_address)) {
-		case SIMULATOR_RW:
-			Simulate_Faulty_Instruction(auto_frame, manual_frame, INST_16BIT);
-			return PPB_HANDLER_OK;
-		case SIMULATOR_RO_WI:
-			if(is_load)	// permit only LOAD operations, STORE are ignored
-				Simulate_Faulty_Instruction(auto_frame, manual_frame, INST_16BIT);
-			else
-				Set_Register_Value(15, auto_frame, manual_frame, Get_Register_Value(15, auto_frame, manual_frame) + 2);	// increase PC by instruction lenth (16 bit)
-			return PPB_HANDLER_OK;
-		case SIMULATOR_NO_ACCESS:
-		default:
-			return PPB_HANDLER_NO_PPB_ACCESS;
-	}
+    return simulate(auto_frame, manual_frame, is_load, target_address, INST_16BIT, faulty_inst);
+
 }
 
 /* LDR and STR, immediate offset (i1), using bytes (b) */
@@ -116,20 +126,7 @@ int simulate16_strb_ldrb_i1(unsigned int faulty_inst, unsigned int* auto_frame, 
 	unsigned int base_reg = Get_Register_Value(rn, auto_frame, manual_frame);
 	unsigned int target_address = base_reg + imm;
 
-	switch(Simulator_Get_Permission(target_address)) {
-		case SIMULATOR_RW:
-			Simulate_Faulty_Instruction(auto_frame, manual_frame, INST_16BIT);
-			return PPB_HANDLER_OK;
-		case SIMULATOR_RO_WI:
-			if(is_load)	// permit only LOAD operations, STORE are ignored
-				Simulate_Faulty_Instruction(auto_frame, manual_frame, INST_16BIT);
-			else
-				Set_Register_Value(15, auto_frame, manual_frame, Get_Register_Value(15, auto_frame, manual_frame) + 2);	// increase PC by instruction lenth (16 bit)
-			return PPB_HANDLER_OK;
-		case SIMULATOR_NO_ACCESS:
-		default:
-			return PPB_HANDLER_NO_PPB_ACCESS;
-	}
+    return simulate(auto_frame, manual_frame, is_load, target_address, INST_16BIT, faulty_inst);
 }
 
 /* LDR and STR, immediate offset (i1), using half-word (h) */
@@ -147,20 +144,7 @@ int simulate16_strh_ldrh_i1(unsigned int faulty_inst, unsigned int* auto_frame, 
 	unsigned int base_reg = Get_Register_Value(rn, auto_frame, manual_frame);
 	unsigned int target_address = base_reg + imm;
 
-	switch(Simulator_Get_Permission(target_address)) {
-		case SIMULATOR_RW:
-			Simulate_Faulty_Instruction(auto_frame, manual_frame, INST_16BIT);
-			return PPB_HANDLER_OK;
-		case SIMULATOR_RO_WI:
-			if(is_load)	// permit only LOAD operations, STORE are ignored
-				Simulate_Faulty_Instruction(auto_frame, manual_frame, INST_16BIT);
-			else
-				Set_Register_Value(15, auto_frame, manual_frame, Get_Register_Value(15, auto_frame, manual_frame) + 2);	// increase PC by instruction lenth (16 bit)
-			return PPB_HANDLER_OK;
-		case SIMULATOR_NO_ACCESS:
-		default:
-			return PPB_HANDLER_NO_PPB_ACCESS;
-	}
+    return simulate(auto_frame, manual_frame, is_load, target_address, INST_16BIT, faulty_inst);
 }
 
 
@@ -181,17 +165,7 @@ int simulate32_strb_strh_i2_str_i3(unsigned int faulty_inst, unsigned int* auto_
 	unsigned int base_reg = Get_Register_Value(rn, auto_frame, manual_frame);
 	unsigned int target_address = base_reg + imm;
 
-	switch(Simulator_Get_Permission(target_address)) {
-		case SIMULATOR_RW:
-			Simulate_Faulty_Instruction(auto_frame, manual_frame, INST_32BIT);
-			return PPB_HANDLER_OK;
-		case SIMULATOR_RO_WI:
-			Set_Register_Value(15, auto_frame, manual_frame, Get_Register_Value(15, auto_frame, manual_frame) + 4);	// increase PC by instruction lenth (32 bit)
-			return PPB_HANDLER_OK;
-		case SIMULATOR_NO_ACCESS:
-		default:
-			return PPB_HANDLER_NO_PPB_ACCESS;
-	}
+    return simulate(auto_frame, manual_frame, is_load, target_address, INST_32BIT, faulty_inst);
 }
 
 /* STR bytes, half-words, words using immediate offset (added or substracted) */
@@ -213,18 +187,8 @@ int simulate32_strb_strh_i3_str_i4(unsigned int faulty_inst, unsigned int* auto_
 	} else {
 		target_address -= imm;
 	}
-	
-	switch(Simulator_Get_Permission(target_address)) {
-		case SIMULATOR_RW:
-			Simulate_Faulty_Instruction(auto_frame, manual_frame, INST_32BIT);
-			return PPB_HANDLER_OK;
-		case SIMULATOR_RO_WI:
-			Set_Register_Value(15, auto_frame, manual_frame, Get_Register_Value(15, auto_frame, manual_frame) + 4);	// increase PC by instruction lenth (32 bit)
-			return PPB_HANDLER_OK;
-		case SIMULATOR_NO_ACCESS:
-		default:
-			return PPB_HANDLER_NO_PPB_ACCESS;
-	}
+
+    return simulate(auto_frame, manual_frame, 0, target_address, INST_32BIT, faulty_inst);
 }
 
 /* STR bytes, half-words, words using register offset (with optional shift) */
@@ -242,18 +206,8 @@ int simulate32_strb_strh_str_r2(unsigned int faulty_inst, unsigned int* auto_fra
 	unsigned int base_reg = Get_Register_Value(rn, auto_frame, manual_frame);
 	unsigned int add_reg = Get_Register_Value(rm, auto_frame, manual_frame) << imm;
 	unsigned int target_address = base_reg + add_reg;
-	
-	switch(Simulator_Get_Permission(target_address)) {
-		case SIMULATOR_RW:
-			Simulate_Faulty_Instruction(auto_frame, manual_frame, INST_32BIT);
-			return PPB_HANDLER_OK;
-		case SIMULATOR_RO_WI:
-			Set_Register_Value(15, auto_frame, manual_frame, Get_Register_Value(15, auto_frame, manual_frame) + 4);	// increase PC by instruction lenth (32 bit)
-			return PPB_HANDLER_OK;
-		case SIMULATOR_NO_ACCESS:
-		default:
-			return PPB_HANDLER_NO_PPB_ACCESS;
-	}
+
+    return simulate(auto_frame, manual_frame, 0, target_address, INST_32BIT, faulty_inst);
 }
 
 /* LDR bytes, half-words, words using immediate offset */
@@ -269,18 +223,8 @@ int simulate32_ldr_i3_ldrh_ldrb_i2_ldrsh_ldrsb_i1(unsigned int faulty_inst, unsi
 
 	unsigned int base_reg = Get_Register_Value(rn, auto_frame, manual_frame);
 	unsigned int target_address = base_reg + imm;
-	
-	switch(Simulator_Get_Permission(target_address)) {
-		case SIMULATOR_RW:
-			Simulate_Faulty_Instruction(auto_frame, manual_frame, INST_32BIT);
-			return PPB_HANDLER_OK;
-		case SIMULATOR_RO_WI:
-			Simulate_Faulty_Instruction(auto_frame, manual_frame, INST_32BIT);
-			return PPB_HANDLER_OK;
-		case SIMULATOR_NO_ACCESS:
-		default:
-			return PPB_HANDLER_NO_PPB_ACCESS;
-	}
+
+    return simulate(auto_frame, manual_frame, 1, target_address, INST_32BIT, faulty_inst);
 }
 
 /* LDR bytes, half-words, words using immediate offset (added or subtracted) */
@@ -302,18 +246,8 @@ int simulate32_ldr_i4_ldrh_ldrb_i3_ldrsh_ldrsb_i2(unsigned int faulty_inst, unsi
 	} else {
 		target_address -= imm;
 	}
-	
-	switch(Simulator_Get_Permission(target_address)) {
-		case SIMULATOR_RW:
-			Simulate_Faulty_Instruction(auto_frame, manual_frame, INST_32BIT);
-			return PPB_HANDLER_OK;
-		case SIMULATOR_RO_WI:
-			Simulate_Faulty_Instruction(auto_frame, manual_frame, INST_32BIT);
-			return PPB_HANDLER_OK;
-		case SIMULATOR_NO_ACCESS:
-		default:
-			return PPB_HANDLER_NO_PPB_ACCESS;
-	}
+
+    return simulate(auto_frame, manual_frame, 1, target_address, INST_32BIT, faulty_inst);
 }
 
 /* LDR bytes, half-words, words using register offset (with optional shift) */
@@ -331,16 +265,6 @@ int simulate32_ldr_ldrh_ldrsh_ldrb_ldrsb_r2(unsigned int faulty_inst, unsigned i
 	unsigned int base_reg = Get_Register_Value(rn, auto_frame, manual_frame);
 	unsigned int add_reg = Get_Register_Value(rm, auto_frame, manual_frame) << imm;
 	unsigned int target_address = base_reg + add_reg;
-	
-	switch(Simulator_Get_Permission(target_address)) {
-		case SIMULATOR_RW:
-			Simulate_Faulty_Instruction(auto_frame, manual_frame, INST_32BIT);
-			return PPB_HANDLER_OK;
-		case SIMULATOR_RO_WI:
-			Simulate_Faulty_Instruction(auto_frame, manual_frame, INST_32BIT);
-			return PPB_HANDLER_OK;
-		case SIMULATOR_NO_ACCESS:
-		default:
-			return PPB_HANDLER_NO_PPB_ACCESS;
-	}
+
+    return simulate(auto_frame, manual_frame, 1, target_address, INST_32BIT, faulty_inst);
 }
