@@ -3,6 +3,13 @@
 #include "bootloader.h"
 #include <stdlib.h>
 
+
+#define IF_GUARD(name, address) \
+    if (name ## _START <= address && address <= name ## _END)
+
+
+
+
 /**
  * RAM region for instruction simulation
  * Requires 1 word and 1 halfword:
@@ -262,7 +269,7 @@ void Simulate_Faulty_Instruction(unsigned int* auto_frame, unsigned int* manual_
  */
 int Is_PPB_Address_Valid(unsigned int target_address) {
 	if(PPB_START <= target_address && target_address <= PPB_END) {
-		if(MPU_START <= target_address && target_address <= MPU_END)	// invalid when trying to access MPU settings
+		if(PPB_MPU_START <= target_address && target_address <= PPB_MPU_END)	// invalid when trying to access MPU settings
 			return 0;
 		return 1;	// valid for rest of PPB access
 	}
@@ -272,23 +279,321 @@ int Is_PPB_Address_Valid(unsigned int target_address) {
 
 /**
  * Retrieves the permissions of a simulated function on a given address
- * 
+ *
  * Parameters:
  * target_address: address to be tested for access
- * 
+ *
  * Returns:
  * - SIMULATOR_RW for read and write access
  * - SIMULATOR_RO_WI for read-only, write-ignored access
  * - SIMULATOR_NO_ACCESS for no access
  */
 uint32_t Simulator_Get_Permission(uint32_t target_address) {
+
+#if ACCESS_PPB
+    // TODO: Maybe a whitelist is more appropriate.
+    // I'm not sure this blacklist considered all the PPB except for the SCB.
 	if(PPB_START <= target_address && target_address <= PPB_END) {
-		if(MPU_START <= target_address && target_address <= MPU_END)	// access to MPU configuration not allowed
+		if(PPB_MPU_START <= target_address && target_address <= PPB_MPU_END)	// access to MPU configuration not allowed
 			return SIMULATOR_NO_ACCESS;
+        // TODO: an attacker could write just one of the bytes of the PPB at different addresses.
 		if(target_address == (uint32_t) &(SCB->VTOR))	// block write access to VTOR
 			return SIMULATOR_RO_WI;
 		return SIMULATOR_RW;	// allow other accesses (inside the PPB)
 	}
+#endif /* ACCESS_PPB */
+
+    // Checks to avoid loosing time searching for the peripheral if already out
+    // of the peripheral space.
+    if (PERIPH_START <= target_address && target_address <= PERIPH_END) {
+
+        // TODO: This peripheral whitelisting is just a proof of work.
+        // Only the DMAs have been addressed.
+
+        // Segmented in regions for faster lookup with many peripherals activated.
+        // This granularity level is arbitrary.
+
+        if (APB1_START <= target_address && target_address <= APB1_END) {
+
+#if ACCESS_TIM2
+            IF_GUARD(TIM2, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_TIM2 */
+#if ACCESS_TIM3
+            IF_GUARD(TIM3, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_TIM3 */
+#if ACCESS_TIM4
+            IF_GUARD(TIM4, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_TIM4 */
+#if ACCESS_TIM5
+            IF_GUARD(TIM5, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_TIM5 */
+#if ACCESS_TIM6
+            IF_GUARD(TIM6, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_TIM6 */
+#if ACCESS_TIM7
+            IF_GUARD(TIM7, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_TIM7 */
+#if ACCESS_LCD
+            IF_GUARD(LCD, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_LCD */
+#if ACCESS_RTC
+            IF_GUARD(RTC, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_RTC */
+#if ACCESS_WWDC
+            IF_GUARD(WWDC, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_WWDC */
+#if ACCESS_IWDC
+            IF_GUARD(IWDC, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_IWDC */
+#if ACCESS_SPI2
+            IF_GUARD(SPI2, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_SPI2 */
+#if ACCESS_SPI3
+            IF_GUARD(SPI3, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_SPI3 */
+#if ACCESS_USART2
+            IF_GUARD(USART2, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_USART2 */
+#if ACCESS_USART3
+            IF_GUARD(USART3, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_USART3 */
+#if ACCESS_UART4
+            IF_GUARD(UART4, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_UART4 */
+#if ACCESS_UART5
+            IF_GUARD(UART5, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_UART5 */
+#if ACCESS_I2C1
+            IF_GUARD(I2C1, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_I2C1 */
+#if ACCESS_I2C2
+            IF_GUARD(I2C2, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_I2C2 */
+#if ACCESS_I2C3
+            IF_GUARD(I2C3, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_I2C3 */
+#if ACCESS_CAN1
+            IF_GUARD(CAN1, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_CAN1 */
+#if ACCESS_PWR
+            IF_GUARD(PWR, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_PWR */
+#if ACCESS_DAC1
+            IF_GUARD(DAC1, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_DAC1 */
+#if ACCESS_OPAMP
+            IF_GUARD(OPAMP, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_OPAMP */
+#if ACCESS_LPTIM1
+            IF_GUARD(LPTIM1, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_LPTIM1 */
+#if ACCESS_LPUART1
+            IF_GUARD(LPUART1, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_LPUART1 */
+#if ACCESS_SWPMI1
+            IF_GUARD(SWPMI1, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_SWPMI1 */
+#if ACCESS_LPTIM2
+            IF_GUARD(LPTIM2, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_LPTIM2 */
+
+        } else if (APB2_START <= target_address && target_address <= APB2_END) {
+
+#if ACCESS_SYSCFG
+            IF_GUARD(SYSCFG, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_SYSCFG */
+#if ACCESS_VREFBUF
+            IF_GUARD(VREFBUF, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_VREFBUF */
+#if ACCESS_COMP
+            IF_GUARD(COMP, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_COMP */
+#if ACCESS_EXTI
+            IF_GUARD(EXTI, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_EXTI */
+#if ACCESS_FIREWALL
+            IF_GUARD(FIREWALL, target_address) {
+                return SIMULATOR_RO;
+            }
+#endif /* ACCESS_FIREWALL */
+#if ACCESS_SDMMC1
+            IF_GUARD(SDMMC1, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_SDMMC1 */
+#if ACCESS_TIM1
+            IF_GUARD(TIM1, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_TIM1 */
+#if ACCESS_SPI1
+            IF_GUARD(SPI1, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_SPI1 */
+#if ACCESS_TIM8
+            IF_GUARD(TIM8, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_TIM8 */
+#if ACCESS_USART1
+            IF_GUARD(USART1, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_USART1 */
+#if ACCESS_TIM15
+            IF_GUARD(TIM15, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_TIM15 */
+#if ACCESS_TIM16
+            IF_GUARD(TIM16, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_TIM16 */
+#if ACCESS_TIM17
+            IF_GUARD(TIM17, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_TIM17 */
+#if ACCESS_SAI1
+            IF_GUARD(SAI1, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_SAI1 */
+#if ACCESS_SAI2
+            IF_GUARD(SAI2, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_SAI2 */
+#if ACCESS_DFSDM1
+            IF_GUARD(DFSDM1, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_DFSDM1 */
+
+        } else if (AHB1_START <= target_address && target_address <= AHB1_END) {
+
+#if ACCESS_DMA1
+            IF_GUARD(DMA1, target_address) {
+                return SIMULATOR_SPECIAL_DMA;
+            }
+#endif /* ACCESS_DMA1 */
+#if ACCESS_DMA2
+            IF_GUARD(DMA2, target_address) {
+                return SIMULATOR_SPECIAL_DMA;
+            }
+#endif /* ACCESS_DMA2 */
+#if ACCESS_RCC
+            IF_GUARD(RCC, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_RCC */
+#if ACCESS_FLASH
+            IF_GUARD(FLASH, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_FLASH */
+#if ACCESS_CRC
+            IF_GUARD(CRC, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_CRC */
+#if ACCESS_TSC
+            IF_GUARD(TSC, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_TSC */
+
+        } else if (AHB2_START <= target_address && target_address <= AHB2_END) {
+
+#if ACCESS_GPIO
+            IF_GUARD(GPIO, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_GPIO */
+#if ACCESS_OTG_FS
+            IF_GUARD(OTG_FS, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_OTG_FS */
+#if ACCESS_ADC
+            IF_GUARD(ADC, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_ADC */
+#if ACCESS_RNG
+            IF_GUARD(RNG, target_address) {
+                return SIMULATOR_RO_WI;
+            }
+#endif /* ACCESS_RNG */
+
+        }
+
+    }
+
 	return SIMULATOR_NO_ACCESS;
 }
 

@@ -127,19 +127,19 @@ __attribute__((naked)) void Exception_Catcher() {
  * (in particular: registers r0-r3, r12, pre-entry-sp, lr)
  * 2. The ISR leaves the MSP in the same state after its execution
  * (key information needs to be retrieved from stack after execution)
- * 
+ *
  * After the execution of the ISR the function should re-gain privileges and setup
  * for the return to the pre-empted execution, unfortunatly this cannot be done
  * straightforward for two reasons:
  * 1. CONTROL.nPRIV is set to 1 (no privileges) and cannot be changed from Thread mode.
  * 2. Writes to EPSR are ignored, meaning that the only way to restore the context is with
  * a proper exception return.
- * 
+ *
  * For these reason a HardFault is triggered on purpuse after the ISR request
  * This HardFault is used to perform the return to the pre-empted execution.
- * 
+ *
  * Parameters:
- * - exception_number: number of the exception 
+ * - exception_number: number of the exception
  * - exception_priority: execution priority of the exception
  */
 __attribute__((naked, section(".microvisor-nopri"))) void Exception_Simulator(int exception_number, int exception_priority) {
@@ -165,14 +165,14 @@ __attribute__((naked, section(".microvisor-nopri"))) void Exception_Simulator(in
 		"mrs r2, CONTROL\n"
 		"orr r2, r2, #1\n"
 		"msr CONTROL, r2\n"
-		
+
 		/* Execute ISR */
 		"ldr r2, =__flash_start__\n"	// load original vector table address
 		"ldr r2, [r2, r0, lsl #2]\n"	// load handler address: base vector table (r2) + exception offset(r0)
 		"mov r0, r3\n"	// copy SVC num to r0 in case of SVC interrupt being handled
 		"pop {r4,r5,r6,r7,r8,r9,r10,r11}\n"	// restore partial context (r4-r11)
 		"blx r2\n"	// branch to handler (to perform the ISR)
-		
+
 		/* Trigger HardFault to perform return sequence */
 		/* Since we are executing unprivileged code, an access to the PPB will trigger a HardFault */
 		".global EXC_RET_START\n" // define a globally visible label to be used in the exception return handler

@@ -24,7 +24,7 @@ static int simulate(unsigned int *auto_frame, unsigned int *manual_frame, uint32
 			if(is_load)	{
 				Simulate_Faulty_Instruction(auto_frame, manual_frame, halfword_count, inst);
             } else {
-                // increase PC by instruction lenth (16 bit)
+                // increase PC by instruction length (16 bit)
 				Set_Register_Value(15, auto_frame, manual_frame, Get_Register_Value(15, auto_frame, manual_frame) + 2 * halfword_count);
             }
 			return PPB_HANDLER_OK;
@@ -60,7 +60,7 @@ static int simulate(unsigned int *auto_frame, unsigned int *manual_frame, uint32
 
 
 /* LDR and STR, register offset (r1) */
-int simulate16_str_ldr_r1(uint32_t faulty_inst, unsigned int *auto_frame, unsigned int *manual_frame) {
+int simulate16_str_ldr_r1(unsigned int faulty_inst, unsigned int *auto_frame, unsigned int *manual_frame) {
 	/*
 	Rt = register to load or store
 	Rn = register that store the base memory address
@@ -81,14 +81,6 @@ int simulate16_str_ldr_r1(uint32_t faulty_inst, unsigned int *auto_frame, unsign
 	unsigned int add_reg = Get_Register_Value(rm, auto_frame, manual_frame);
 	unsigned int target_address = base_reg + add_reg;
 
-	/**
-	 * Check the permissions on the target address using the Simulator_Get_Permission helper function
-	 * - if the address is in the PPB with RW permissions, the instruction is simulated and the function returns PPB_HANDLER_OK
-	 * - if the address is in the PPB with RO_WI permissions, only the load instruction can be simulated, 
-	 *   while the store instruction and the istruction is ignored by increasing the PC by 2 (16 bit instruction lenght):
-	 *   the function returns PPB_HANDLER_OK in both cases
-	 * - if the address is not in the PPB, the function returns PPB_HANDLER_NO_PPB_ACCESS
-	*/
     return simulate(auto_frame, manual_frame, is_load, target_address, INST_16BIT, faulty_inst);
 }
 
@@ -165,7 +157,7 @@ int simulate32_strb_strh_i2_str_i3(unsigned int faulty_inst, unsigned int* auto_
 	unsigned int base_reg = Get_Register_Value(rn, auto_frame, manual_frame);
 	unsigned int target_address = base_reg + imm;
 
-    return simulate(auto_frame, manual_frame, is_load, target_address, INST_32BIT, faulty_inst);
+    return simulate(auto_frame, manual_frame, 0, target_address, INST_32BIT, faulty_inst);
 }
 
 /* STR bytes, half-words, words using immediate offset (added or substracted) */

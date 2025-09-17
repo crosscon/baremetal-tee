@@ -122,7 +122,7 @@ Microvisor/Private-Src/exception_manager.c \
 Microvisor/Private-Src/it.c \
 Microvisor/Private-Src/stm32l4xx_it.c \
 Microvisor/Private-Src/stm32l4xx_hal_msp.c \
-Microvisor/Private-Src/PPB_handlers.c \
+Microvisor/Private-Src/access_handlers.c \
 Microvisor/Private-Src/PPB_recovery.c \
 Microvisor/Private-Src/simulator_common.c \
 Microvisor/Private-Src/system_instruction_recovery.c \
@@ -162,12 +162,13 @@ MCU = $(CPU) -mthumb
 
 # macros for gcc
 # AS defines
-AS_DEFS = 
+AS_DEFS =
 
 # C defines
 C_DEFS =  \
 -DUSE_HAL_DRIVER \
--DSTM32L475xx
+-DSTM32L476xx\
+-DACCESS_PPB
 
 # AS includes
 AS_INCLUDES = 
