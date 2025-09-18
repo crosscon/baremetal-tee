@@ -5,7 +5,7 @@
 
 
 #define IF_GUARD(name, address) \
-    if (name ## _START <= address && address <= name ## _END)
+    if (PERIPH_ ## name ## _START <= address && address <= PERIPH_ ## name ## _END)
 
 
 
@@ -315,32 +315,32 @@ uint32_t Simulator_Get_Permission(uint32_t target_address) {
 
         if (APB1_START <= target_address && target_address <= APB1_END) {
 
-#if ACCESS_TIM2
+#if ACCESS_TIM2 || ACCESS_TIM
             IF_GUARD(TIM2, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_TIM2 */
-#if ACCESS_TIM3
+#if ACCESS_TIM3 || ACCESS_TIM
             IF_GUARD(TIM3, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_TIM3 */
-#if ACCESS_TIM4
+#if ACCESS_TIM4 || ACCESS_TIM
             IF_GUARD(TIM4, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_TIM4 */
-#if ACCESS_TIM5
+#if ACCESS_TIM5 || ACCESS_TIM
             IF_GUARD(TIM5, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_TIM5 */
-#if ACCESS_TIM6
+#if ACCESS_TIM6 || ACCESS_TIM
             IF_GUARD(TIM6, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_TIM6 */
-#if ACCESS_TIM7
+#if ACCESS_TIM7 || ACCESS_TIM
             IF_GUARD(TIM7, target_address) {
                 return SIMULATOR_RW;
             }
@@ -365,52 +365,52 @@ uint32_t Simulator_Get_Permission(uint32_t target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_IWDC */
-#if ACCESS_SPI2
+#if ACCESS_SPI2 || ACCESS_SPI
             IF_GUARD(SPI2, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_SPI2 */
-#if ACCESS_SPI3
+#if ACCESS_SPI3 || ACCESS_SPI
             IF_GUARD(SPI3, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_SPI3 */
-#if ACCESS_USART2
+#if ACCESS_USART2 || ACCESS_UART
             IF_GUARD(USART2, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_USART2 */
-#if ACCESS_USART3
+#if ACCESS_USART3 || ACCESS_UART
             IF_GUARD(USART3, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_USART3 */
-#if ACCESS_UART4
+#if ACCESS_UART4 || ACCESS_UART
             IF_GUARD(UART4, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_UART4 */
-#if ACCESS_UART5
+#if ACCESS_UART5 || ACCESS_UART
             IF_GUARD(UART5, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_UART5 */
-#if ACCESS_I2C1
+#if ACCESS_I2C1 || ACCESS_I2C
             IF_GUARD(I2C1, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_I2C1 */
-#if ACCESS_I2C2
+#if ACCESS_I2C2 || ACCESS_I2C
             IF_GUARD(I2C2, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_I2C2 */
-#if ACCESS_I2C3
+#if ACCESS_I2C3 || ACCESS_I2C
             IF_GUARD(I2C3, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_I2C3 */
-#if ACCESS_CAN1
+#if ACCESS_CAN1 || ACCESS_CAN
             IF_GUARD(CAN1, target_address) {
                 return SIMULATOR_RW;
             }
@@ -420,7 +420,7 @@ uint32_t Simulator_Get_Permission(uint32_t target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_PWR */
-#if ACCESS_DAC1
+#if ACCESS_DAC1 || ACCESS_DAC
             IF_GUARD(DAC1, target_address) {
                 return SIMULATOR_RW;
             }
@@ -430,22 +430,22 @@ uint32_t Simulator_Get_Permission(uint32_t target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_OPAMP */
-#if ACCESS_LPTIM1
+#if ACCESS_LPTIM1 || ACCESS_TIM
             IF_GUARD(LPTIM1, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_LPTIM1 */
-#if ACCESS_LPUART1
+#if ACCESS_LPUART1 || ACCESS_UART
             IF_GUARD(LPUART1, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_LPUART1 */
-#if ACCESS_SWPMI1
+#if ACCESS_SWPMI1 || ACCESS_SWPMI
             IF_GUARD(SWPMI1, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_SWPMI1 */
-#if ACCESS_LPTIM2
+#if ACCESS_LPTIM2 || ACCESS_TIM
             IF_GUARD(LPTIM2, target_address) {
                 return SIMULATOR_RW;
             }
@@ -478,57 +478,57 @@ uint32_t Simulator_Get_Permission(uint32_t target_address) {
                 return SIMULATOR_RO;
             }
 #endif /* ACCESS_FIREWALL */
-#if ACCESS_SDMMC1
+#if ACCESS_SDMMC1 || ACCESS_SDMMC
             IF_GUARD(SDMMC1, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_SDMMC1 */
-#if ACCESS_TIM1
+#if ACCESS_TIM1 || ACCESS_TIM
             IF_GUARD(TIM1, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_TIM1 */
-#if ACCESS_SPI1
+#if ACCESS_SPI1 || ACCESS_SPI
             IF_GUARD(SPI1, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_SPI1 */
-#if ACCESS_TIM8
+#if ACCESS_TIM8 || ACCESS_TIM
             IF_GUARD(TIM8, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_TIM8 */
-#if ACCESS_USART1
+#if ACCESS_USART1 || ACCESS_UART
             IF_GUARD(USART1, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_USART1 */
-#if ACCESS_TIM15
+#if ACCESS_TIM15 || ACCESS_TIM
             IF_GUARD(TIM15, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_TIM15 */
-#if ACCESS_TIM16
+#if ACCESS_TIM16 || ACCESS_TIM
             IF_GUARD(TIM16, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_TIM16 */
-#if ACCESS_TIM17
+#if ACCESS_TIM17 || ACCESS_TIM
             IF_GUARD(TIM17, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_TIM17 */
-#if ACCESS_SAI1
+#if ACCESS_SAI1 || ACCESS_SAI
             IF_GUARD(SAI1, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_SAI1 */
-#if ACCESS_SAI2
+#if ACCESS_SAI2 || ACCESS_SAI
             IF_GUARD(SAI2, target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_SAI2 */
-#if ACCESS_DFSDM1
+#if ACCESS_DFSDM1 || ACCESS_DFSDM
             IF_GUARD(DFSDM1, target_address) {
                 return SIMULATOR_RW;
             }
@@ -536,12 +536,12 @@ uint32_t Simulator_Get_Permission(uint32_t target_address) {
 
         } else if (AHB1_START <= target_address && target_address <= AHB1_END) {
 
-#if ACCESS_DMA1
+#if ACCESS_DMA1 || ACCESS_DMA
             IF_GUARD(DMA1, target_address) {
                 return SIMULATOR_SPECIAL_DMA;
             }
 #endif /* ACCESS_DMA1 */
-#if ACCESS_DMA2
+#if ACCESS_DMA2 || ACCESS_DMA
             IF_GUARD(DMA2, target_address) {
                 return SIMULATOR_SPECIAL_DMA;
             }
@@ -569,11 +569,46 @@ uint32_t Simulator_Get_Permission(uint32_t target_address) {
 
         } else if (AHB2_START <= target_address && target_address <= AHB2_END) {
 
-#if ACCESS_GPIO
-            IF_GUARD(GPIO, target_address) {
+#if ACCESS_GPIOA || ACCESS_GPIO
+            IF_GUARD(GPIOA, target_address) {
                 return SIMULATOR_RW;
             }
-#endif /* ACCESS_GPIO */
+#endif /* ACCESS_GPIOA */
+#if ACCESS_GPIOB || ACCESS_GPIO
+            IF_GUARD(GPIOB, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_GPIOB */
+#if ACCESS_GPIOC || ACCESS_GPIO
+            IF_GUARD(GPIOC, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_GPIOC */
+#if ACCESS_GPIOD || ACCESS_GPIO
+            IF_GUARD(GPIOD, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_GPIOD */
+#if ACCESS_GPIOE || ACCESS_GPIO
+            IF_GUARD(GPIOE, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_GPIOE */
+#if ACCESS_GPIOF || ACCESS_GPIO
+            IF_GUARD(GPIOF, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_GPIOF */
+#if ACCESS_GPIOG || ACCESS_GPIO
+            IF_GUARD(GPIOG, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_GPIOG */
+#if ACCESS_GPIOH || ACCESS_GPIO
+            IF_GUARD(GPIOH, target_address) {
+                return SIMULATOR_RW;
+            }
+#endif /* ACCESS_GPIOH */
 #if ACCESS_OTG_FS
             IF_GUARD(OTG_FS, target_address) {
                 return SIMULATOR_RW;
@@ -584,6 +619,11 @@ uint32_t Simulator_Get_Permission(uint32_t target_address) {
                 return SIMULATOR_RW;
             }
 #endif /* ACCESS_ADC */
+#if ACCESS_AES
+            IF_GUARD(AES, target_address) {
+                return SIMULATOR_RO_WI;
+            }
+#endif /* ACCESS_RNG */
 #if ACCESS_RNG
             IF_GUARD(RNG, target_address) {
                 return SIMULATOR_RO_WI;

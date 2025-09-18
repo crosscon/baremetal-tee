@@ -737,8 +737,8 @@ void Microvisor_SVC_Handler() {
  *  MCU-Fortifier microvisor MemManage_Handler:
  *  Detect if the fault is caused by an MPU violation and execute the MPU violation handler
  */
+__attribute__((naked))
 void Microvisor_MemManage_Handler() {
-	ERR_MSG("MPU violation detected");
 	__asm__(
 		/* Move pre-exception entry SP to R0 */
 		"tst lr, #4\n" // check which stack pointer is in use
@@ -747,8 +747,10 @@ void Microvisor_MemManage_Handler() {
 		"mrsne r0, psp\n"
 
 		/* Check for MPU violation */
-		"push {r4,r5,r6,r7,r8,r9,r10,r11}\n" //push rest of registers to manual_frame
+		"push {r4-r11,lr}\n" //push rest of registers to manual_frame
 		"mov r1, sp\n"
-		"blx MPU_Violation_Handler\n" // branch to the MPU violation handler
+		//"blx MPU_Violation_Handler\n" // branch to the MPU violation handler
+		"blx microvisor_memmanage_handler\n" // branch to the MPU violation handler
+		"pop {r4-r11,pc}\n"  //restore stack state
 	);
 }

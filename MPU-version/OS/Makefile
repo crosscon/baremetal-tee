@@ -150,7 +150,7 @@ SZ = $(GCC_PATH)/$(PREFIX)size
 
 HEX = $(CP) -O ihex
 BIN = $(CP) -O binary -S --gap-fill 0xff
- 
+
 ######################################
 # CFLAGS
 ######################################
@@ -168,10 +168,91 @@ AS_DEFS =
 C_DEFS =  \
 -DUSE_HAL_DRIVER \
 -DSTM32L476xx\
--DACCESS_PPB
+
+# Enable peripherals. This list includes all the STM32L47x/L48x peripherals.
+# Not every peripheral is supported by the specific platform.
+C_DEFS += -DACCESS_PPB
+## Aggregates
+#C_DEFS += -DACCESS_TIM			# Also allows the access to LPTIMs.
+#C_DEFS += -DACCESS_SPI
+#C_DEFS += -DACCESS_UART		# Also allows the access to USARTs/LPUARTs.
+#C_DEFS += -DACCESS_I2C
+#C_DEFS += -DACCESS_CAN
+#C_DEFS += -DACCESS_DAC
+#C_DEFS += -DACCESS_SWPMI
+#C_DEFS += -DACCESS_SDMMC
+#C_DEFS += -DACCESS_SAI
+#C_DEFS += -DACCESS_DFSDM
+#C_DEFS += -DACCESS_DMA
+#C_DEFS += -DACCESS_GPIO
+## APB1
+#C_DEFS += -DACCESS_TIM2
+#C_DEFS += -DACCESS_TIM3
+#C_DEFS += -DACCESS_TIM4
+#C_DEFS += -DACCESS_TIM5
+#C_DEFS += -DACCESS_TIM6
+#C_DEFS += -DACCESS_TIM7
+#C_DEFS += -DACCESS_LCD
+#C_DEFS += -DACCESS_RTC
+#C_DEFS += -DACCESS_WWDC
+#C_DEFS += -DACCESS_IWDC
+#C_DEFS += -DACCESS_SPI2
+#C_DEFS += -DACCESS_SPI3
+#C_DEFS += -DACCESS_USART2
+C_DEFS += -DACCESS_USART3
+#C_DEFS += -DACCESS_UART4
+#C_DEFS += -DACCESS_UART5
+#C_DEFS += -DACCESS_I2C1
+#C_DEFS += -DACCESS_I2C2
+#C_DEFS += -DACCESS_I2C3
+#C_DEFS += -DACCESS_CAN1
+C_DEFS += -DACCESS_PWR
+#C_DEFS += -DACCESS_DAC1
+#C_DEFS += -DACCESS_OPAMP
+#C_DEFS += -DACCESS_LPTIM1
+#C_DEFS += -DACCESS_LPUART1
+#C_DEFS += -DACCESS_SWPMI1
+#C_DEFS += -DACCESS_LPTIM2
+## APB2
+#C_DEFS += -DACCESS_SYSCFG
+#C_DEFS += -DACCESS_VREFBUF
+#C_DEFS += -DACCESS_COMP
+#C_DEFS += -DACCESS_EXTI
+#C_DEFS += -DACCESS_FIREWALL
+#C_DEFS += -DACCESS_SDMMC1
+#C_DEFS += -DACCESS_TIM1
+#C_DEFS += -DACCESS_SPI1
+#C_DEFS += -DACCESS_TIM8
+C_DEFS += -DACCESS_USART1
+#C_DEFS += -DACCESS_TIM15
+#C_DEFS += -DACCESS_TIM16
+#C_DEFS += -DACCESS_TIM17
+#C_DEFS += -DACCESS_SAI1
+#C_DEFS += -DACCESS_SAI2
+#C_DEFS += -DACCESS_DFSDM1
+## AHB1
+#C_DEFS += -DACCESS_DMA1
+#C_DEFS += -DACCESS_DMA2
+C_DEFS += -DACCESS_RCC
+C_DEFS += -DACCESS_FLASH
+#C_DEFS += -DACCESS_CRC
+#C_DEFS += -DACCESS_TSC
+## AHB2
+#C_DEFS += -DACCESS_GPIOA
+#C_DEFS += -DACCESS_GPIOB
+#C_DEFS += -DACCESS_GPIOC
+C_DEFS += -DACCESS_GPIOD
+#C_DEFS += -DACCESS_GPIOE
+#C_DEFS += -DACCESS_GPIOF
+#C_DEFS += -DACCESS_GPIOG
+#C_DEFS += -DACCESS_GPIOH
+#C_DEFS += -DACCESS_OTG_FS
+#C_DEFS += -DACCESS_ADC
+#C_DEFS += -DACCESS_AES
+#C_DEFS += -DACCESS_RNG
 
 # AS includes
-AS_INCLUDES = 
+AS_INCLUDES =
 
 # C includes
 C_INCLUDES =  \
@@ -291,7 +372,7 @@ TA1_CFLAGS += -DTA
 # link script
 MICROVISOR_LDSCRIPT = BOOTLOADER.ld
 
-# libraries	
+# libraries
 LIBS = -Wl,--whole-archive -l$(PROJECT_NAME) -Wl,--no-whole-archive -lc -lm -lnosys -lmbedtls -lmbedx509 -lmbedcrypto
 LIBDIR = -LMiddlewares/mbedtls/library -L$(LIB_DIR)
 MICROVISOR_LDFLAGS = $(MCU) -specs=nano.specs -T$(MICROVISOR_LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(PROJECT_NAME).map,--cref -Wl,--gc-sections -Wl,-z,max-page-size=2048
@@ -340,7 +421,7 @@ $(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
 	$(AS) -c $(ASFLAGS) $< -o $@
 
 # build bootloader
-$(BUILD_DIR)/$(MICROVISOR_ELF): $(MICROVISOR_OBJECTS) Makefile $(LIB_DIR)/$(MICROVISOR_LIB) 
+$(BUILD_DIR)/$(MICROVISOR_ELF): $(MICROVISOR_OBJECTS) Makefile $(LIB_DIR)/$(MICROVISOR_LIB)
 	$(CC) $(MICROVISOR_OBJECTS) $(MICROVISOR_LDFLAGS) -o $@
 	$(SZ) $@
 
@@ -394,13 +475,13 @@ clean-lib:
 	-rm -fR $(TEMP_DIR)
 clean-temp:
 	-rm -fR $(TEMP_DIR)
-  
+
 ######################################
 # dependencies
 ######################################
 -include $(wildcard $(BUILD_DIR)/*.d)
 -include $(wildcard $(TEMP_DIR)/*.d)
--include $(wildcard $(TA1_BUILD_DIR)/*.d)	
+-include $(wildcard $(TA1_BUILD_DIR)/*.d)
 -include $(wildcard $(TA2_BUILD_DIR)/*.d)
 
 # *** EOF ***

@@ -3,6 +3,7 @@
 #include "bootloader.h"
 #include "permanent_storage.h"
 #include "error.h"
+#include "PPB_recovery.h"
 
 
 /**
@@ -138,7 +139,7 @@ void Configure_MPU(void) {
 	MPU_InitStruct.BaseAddress = 0x40000000;
 	MPU_InitStruct.Size = MPU_REGION_SIZE_1GB;
 	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-	MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+	MPU_InitStruct.AccessPermission = MPU_REGION_PRIV_RW;
 	MPU_InitStruct.SubRegionDisable = 0x00;
 	/* Cache properties and shareability  */
 	/* Device type: Device */
@@ -158,7 +159,7 @@ void Configure_MPU(void) {
 	MPU_InitStruct.BaseAddress = 0x80000000;
 	MPU_InitStruct.Size = MPU_REGION_SIZE_1GB;
 	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-	MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+	MPU_InitStruct.AccessPermission = MPU_REGION_PRIV_RW;
 	MPU_InitStruct.SubRegionDisable = 0x00;
 	/* Cache properties and shareability  */
 	/* Device type: Device */
@@ -361,7 +362,7 @@ void Reconfigure_MPU(int TA_number) {
 	MPU_InitStruct.BaseAddress = 0x40000000;
 	MPU_InitStruct.Size = MPU_REGION_SIZE_1GB;
 	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-	MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+	MPU_InitStruct.AccessPermission = MPU_REGION_PRIV_RW;
 	MPU_InitStruct.SubRegionDisable = 0x00;
 	/* Cache properties and shareability  */
 	/* Device type: Device */
@@ -381,7 +382,7 @@ void Reconfigure_MPU(int TA_number) {
 	MPU_InitStruct.BaseAddress = 0x80000000;
 	MPU_InitStruct.Size = MPU_REGION_SIZE_1GB;
 	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-	MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+	MPU_InitStruct.AccessPermission = MPU_REGION_PRIV_RW;
 	MPU_InitStruct.SubRegionDisable = 0x00;
 	/* Cache properties and shareability  */
 	/* Device type: Device */
@@ -425,6 +426,17 @@ void Reconfigure_MPU(int TA_number) {
 	__ISB();
 }
 
+void microvisor_memmanage_handler(unsigned int *auto_frame, unsigned int *manual_frame) {
+
+    // This could still be a legitimate access.
+    // TODO: rename the checking function to be more general.
+    if (PPB_RECOVERY_OK != Recover_PPB_Access(auto_frame, manual_frame)) {
+
+        MPU_Violation_Handler(auto_frame, manual_frame);
+        __builtin_unreachable();
+    }
+
+}
 
 /**
  * Handler to be called when a Memory Protection Unit (MPU) violation occurs

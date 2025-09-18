@@ -12,5 +12,6 @@
 void Configure_MPU(void);
 void Reconfigure_MPU(int TA_number);
 void MPU_Violation_Handler(unsigned int* auto_frame, unsigned int* manual_frame);
+void microvisor_memmanage_handler(unsigned int *auto_frame, unsigned int *manual_frame);
 
 #endif /* __STM32WB55RG_MPU_H */
