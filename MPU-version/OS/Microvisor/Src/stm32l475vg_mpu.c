@@ -40,7 +40,7 @@ void Configure_MPU(void) {
 	MPU_InitStruct.AccessPermission = MPU_REGION_PRIV_RW_URO;	// privileged read+write, unprivileged read only
 	// the subregions for the two TAs (specifically the 2/3/4/5 - each of 128KB) should be disabled
 	// value if binary: 0b00011110 = 0x1E
-	MPU_InitStruct.SubRegionDisable = 0x1E;	
+	MPU_InitStruct.SubRegionDisable = 0x1E;
 	/* Cache properties and shareability  */
 	/* Device type: Normal	Cache: WT */
 	MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
@@ -140,6 +140,7 @@ void Configure_MPU(void) {
 	MPU_InitStruct.Size = MPU_REGION_SIZE_1GB;
 	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
 	MPU_InitStruct.AccessPermission = MPU_REGION_PRIV_RW;
+	//MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
 	MPU_InitStruct.SubRegionDisable = 0x00;
 	/* Cache properties and shareability  */
 	/* Device type: Device */
@@ -160,6 +161,7 @@ void Configure_MPU(void) {
 	MPU_InitStruct.Size = MPU_REGION_SIZE_1GB;
 	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
 	MPU_InitStruct.AccessPermission = MPU_REGION_PRIV_RW;
+	//MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;	// privileged read+write, unprivileged read only
 	MPU_InitStruct.SubRegionDisable = 0x00;
 	/* Cache properties and shareability  */
 	/* Device type: Device */
@@ -363,6 +365,7 @@ void Reconfigure_MPU(int TA_number) {
 	MPU_InitStruct.Size = MPU_REGION_SIZE_1GB;
 	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
 	MPU_InitStruct.AccessPermission = MPU_REGION_PRIV_RW;
+	//MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
 	MPU_InitStruct.SubRegionDisable = 0x00;
 	/* Cache properties and shareability  */
 	/* Device type: Device */
@@ -383,6 +386,7 @@ void Reconfigure_MPU(int TA_number) {
 	MPU_InitStruct.Size = MPU_REGION_SIZE_1GB;
 	MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
 	MPU_InitStruct.AccessPermission = MPU_REGION_PRIV_RW;
+	//MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;	// privileged read+write, unprivileged read only
 	MPU_InitStruct.SubRegionDisable = 0x00;
 	/* Cache properties and shareability  */
 	/* Device type: Device */

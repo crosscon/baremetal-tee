@@ -24,14 +24,15 @@
 /*
 * bootloader file:
 * primary code unit of microvisor, is immediately called by Reset_Handler after board reboot.
-* Performs all necessary initialization tasks (UART, MPU, etc.) 
+* Performs all necessary initialization tasks (UART, MPU, etc.)
 * before transitioning to fortified application execution.
 */
 
-// Define the UART handle used to print messages to the console 
+// Define the UART handle used to print messages to the console
 // This variable is stored in the .TEE_TA_data section of the binary
-// that is accessible by both the TEE and the TAs 
-UART_HandleTypeDef __attribute__((section(".TEE_TA_data"))) puart; 
+// that is accessible by both the TEE and the TAs.
+UART_HandleTypeDef __attribute__((section(".TEE_TA_data"))) puart;
+RNG_HandleTypeDef hrng;
 
 // Define a custom putchar function to put characters on the UART interface
 __attribute__((section(".microvisor-nopri"))) int putchar(int ch)
@@ -131,6 +132,16 @@ static void UART_Init(void)
 	/* Initialization Error */
 	while (1);
   }
+}
+
+// Initialize the UART1 interface
+static void RNG_Init(void)
+{
+    hrng.Instance = RNG;
+    if (HAL_RNG_Init(&hrng) != HAL_OK)
+    {
+        while (1);
+    }
 }
 
 /**
@@ -262,6 +273,7 @@ void boot(void) {
 	SystemClock_Config();
 	/* Initialize the UART interface */
 	UART_Init();
+    RNG_Init();
 
 	/* Disable used interrupts */
 	HAL_NVIC_DisableIRQ(EXTI1_IRQn);

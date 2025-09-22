@@ -718,7 +718,10 @@ void Microvisor_SVC_Handler() {
 		"and r0, #0\n"
 		"msr CONTROL, r0\n"
 
+		// TODO: r0 should contain the auto_frame address.
+
 		"push {r4,r5,r6,r7,r8,r9,r10,r11,lr}\n" //push rest of registers to manual_frame
+		"mov r1, sp\n"
 		"blx call_TEE\n"  // call an internal TEE Core function
 		"pop {r4,r5,r6,r7,r8,r9,r10,r11,lr}\n"  //restore stack state
 

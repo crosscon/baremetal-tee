@@ -475,7 +475,7 @@ uint32_t Simulator_Get_Permission(uint32_t target_address) {
 #endif /* ACCESS_EXTI */
 #if ACCESS_FIREWALL
             IF_GUARD(FIREWALL, target_address) {
-                return SIMULATOR_RO;
+                return SIMULATOR_RW;
             }
 #endif /* ACCESS_FIREWALL */
 #if ACCESS_SDMMC1 || ACCESS_SDMMC
@@ -538,12 +538,12 @@ uint32_t Simulator_Get_Permission(uint32_t target_address) {
 
 #if ACCESS_DMA1 || ACCESS_DMA
             IF_GUARD(DMA1, target_address) {
-                return SIMULATOR_SPECIAL_DMA;
+                return SIMULATOR_RW; // SIMULATOR_SPECIAL_DMA;
             }
 #endif /* ACCESS_DMA1 */
 #if ACCESS_DMA2 || ACCESS_DMA
             IF_GUARD(DMA2, target_address) {
-                return SIMULATOR_SPECIAL_DMA;
+                return SIMULATOR_RW; // SIMULATOR_SPECIAL_DMA;
             }
 #endif /* ACCESS_DMA2 */
 #if ACCESS_RCC
@@ -621,12 +621,12 @@ uint32_t Simulator_Get_Permission(uint32_t target_address) {
 #endif /* ACCESS_ADC */
 #if ACCESS_AES
             IF_GUARD(AES, target_address) {
-                return SIMULATOR_RO_WI;
+                return SIMULATOR_RW; // SIMULATOR_RO_WI;
             }
 #endif /* ACCESS_RNG */
 #if ACCESS_RNG
             IF_GUARD(RNG, target_address) {
-                return SIMULATOR_RO_WI;
+                return SIMULATOR_RW; // SIMULATOR_RO_WI;
             }
 #endif /* ACCESS_RNG */
 
