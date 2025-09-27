@@ -120,7 +120,7 @@
     __asm__("MOV R5, %[x]\n": : [x] "r" (x): "r5");
     __asm__("MOV R6, %[size]\n": : [size] "r" (size): "r6");
 
-    INVOKE_SVC(FUNCTION_MEM_MOVE);
+    INVOKE_SVC(FUNCTION_MEM_FILL);
 
     __asm__("MOV R4, %[temp_val_r4]\n": : [temp_val_r4] "r" (temp_val_r4): "r4");
     __asm__("MOV R5, %[temp_val_r5]\n": : [temp_val_r5] "r" (temp_val_r5): "r5");

@@ -25,12 +25,12 @@
 #define TRUSTED_APP_2         	    0x0002
 #define TA_HEAP_SIZE                1024*10 // For the moment, each TA has a dedicated heap of 10KB
 #define CORE_HEAP_SIZE              1024*8 // For the moment, the TEE core has a dedicated heap of 8KB
-#define TA1_MEMORY_START_ADDR       0x10000000
-#define TA1_MEMORY_END_ADDR         0x10003FFF
-#define TA2_MEMORY_START_ADDR       0x10004000
-#define TA2_MEMORY_END_ADDR         0x10007FFF
-#define TEE_CORE_MEMORY_START_ADDR  0x20000000
-#define TEE_CORE_MEMORY_END_ADDR    0x2000FFFF
+#define TA1_MEMORY_START_ADDR       ((void*) 0x10000000)
+#define TA1_MEMORY_END_ADDR         ((void*) 0x10003FFF)
+#define TA2_MEMORY_START_ADDR       ((void*) 0x10004000)
+#define TA2_MEMORY_END_ADDR         ((void*) 0x10007FFF)
+#define TEE_CORE_MEMORY_START_ADDR  ((void*) 0x20000000)
+#define TEE_CORE_MEMORY_END_ADDR    ((void*) 0x2000FFFF)
 #define CA_MEMORY_START_ADDR        ((void*) 0x20010000)
 #define CA_MEMORY_END_ADDR          ((void*) 0x20017FFF)
 #define TA1_CODE_START_ADDR         0x08020000
@@ -427,6 +427,7 @@ typedef struct Block {
  * The key_len field is used to store the length of the key (in case a crypto key is stored)
  */
 typedef struct{
+    // TODO: TEE_TYPE_DH_KEYPAIR can have 6 attributes.
     TEE_Attribute attrs[4];
     char*     buffer;
     size_t    len;

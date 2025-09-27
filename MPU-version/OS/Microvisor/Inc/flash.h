@@ -1,6 +1,7 @@
 #ifndef __FLASH__
 #define __FLASH__
 
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -17,6 +18,8 @@
 void flash_internalRead(uint8_t* rx_buff, size_t len, int addr);
 
 int flash_writeNewObject(const char* ctx, uint32_t len, int obj_id, uint32_t ta_id);
+
+size_t flash_objectSize(const char* ctx, uint32_t len, int obj_id);
 
 int flash_readObject(const char* ctx, uint32_t len, int obj_id, char* out_buff, size_t out_len);
 

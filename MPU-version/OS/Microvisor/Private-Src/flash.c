@@ -142,7 +142,7 @@ int base64_encode(const unsigned char *input, size_t input_len, char *output, si
 
 // Decodes the input to the output according to the BASE64 encoding
 int base64_decode(const unsigned char *input, size_t input_len, unsigned char *output, size_t output_len) 
-{   
+{
     size_t v;
     size_t required_size = b64_decoded_size((const char *)input);
 
@@ -151,9 +151,9 @@ int base64_decode(const unsigned char *input, size_t input_len, unsigned char *o
         //printf("Burada 116\r\n");
         return 0;
     }
-		
 
-	for (int i=0; i<input_len; i++) 
+
+	for (int i=0; i<input_len; i++)
     {
 		if (b64_isvalidchar((char)input[i]) == 0) {
 			//printf("Burada[%d] 123 %d\r\n", i, input[i]);
@@ -381,6 +381,57 @@ static int flash_init(uint32_t ta_id)
     free(str);
 
     return 0;
+}
+
+/**
+ * @brief Computes the expected length of the content of the object identified by obj_id.
+ *
+ * @param ctx The JSON content
+ * @param len Length of the content
+ * @param obj_id Object id, it indicates the object number
+ *
+ * @return The expected size of the object or 0 in case of errors.
+*/
+size_t flash_objectSize(const char* ctx, uint32_t len, int obj_id)
+{
+    size_t ret_val = 0;
+
+    if(!ctx)
+        return 0;
+
+    cJSON *p = cJSON_ParseWithLength(ctx, len);
+    if(!p)
+        return 0;
+
+    cJSON *objects = cJSON_GetObjectItem(p, "objects");
+    if(!objects)
+        goto end;
+
+    for(int i=0; i<FLASH_MAX_OBJECT; ++i)
+    {
+        cJSON* item = cJSON_GetArrayItem(objects, i);
+        if(!item)
+            goto end;
+
+        cJSON *id = cJSON_GetObjectItem(item, "id");
+        if(!id)
+            goto end;
+
+        if(id->valueint != obj_id)
+            continue;
+
+        cJSON *data = cJSON_GetObjectItem(item, "data");
+        if(!data)
+            goto end;
+
+        ret_val = b64_decoded_size((const unsigned char*)data->valuestring);
+
+        break;
+    }
+
+end:
+    cJSON_Delete(p);
+    return ret_val;
 }
 
 /**

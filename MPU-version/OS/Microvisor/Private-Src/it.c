@@ -95,7 +95,7 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
 
 	// Extract the command ID from the manual frame (passed in r5)
 	// This is the command_id is used only when the SVC number is equal to FUNCTION_INVOKE_COMMAND (4)
-	int command_id = manual_frame[1]; 
+	int command_id = manual_frame[1];
 
 	// Check if the SVC number is equal to FUNCTION_OPEN_SESSION (2) or FUNCTION_INVOKE_COMMAND (4)
 	// In these cases, the parameters are passed by TA inside the memory area used by the internal operation
