@@ -5,7 +5,7 @@
 
 /**
  * Defintion of custom functions to boot the system and to reset the system
-*/
+ */
 void boot(void);
 void soft_reset(void);
 
