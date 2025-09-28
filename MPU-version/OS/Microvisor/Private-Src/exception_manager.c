@@ -85,7 +85,7 @@ __attribute__((naked)) void Exception_Catcher() {
 		"ldr r0, [r0]\n"
 		"mvn r1, #0\n"
 		"push {r0,r1}\n"
-		
+
 		/* Set CTRL.nPRIV to 0 (must allow Execution Simulator to act in privileged mode) */
 		"mrs r0, CONTROL\n"
 		"and r0, #0\n"
@@ -110,8 +110,8 @@ __attribute__((naked)) void Exception_Catcher() {
 		// MSP will point to custom frame after return from exception
 
 		/* Save fake return frame on MSP */
-		"push {r0,r1,r2,r3,r4,r5,r6,r7}\n" 
-		
+		"push {r0,r1,r2,r3,r4,r5,r6,r7}\n"
+
 		/* Setup EXC_RETURN */
 		"ldr lr, =0xfffffff9\n"	// always return to Thread mode with Main stack in use
 
@@ -167,9 +167,11 @@ __attribute__((naked, section(".microvisor-nopri"))) void Exception_Simulator(in
 		"msr CONTROL, r2\n"
 
 		/* Execute ISR */
+        // TODO: if a TA was executing, the MPU is wrongly configured!
 		"ldr r2, =__flash_start__\n"	// load original vector table address
 		"ldr r2, [r2, r0, lsl #2]\n"	// load handler address: base vector table (r2) + exception offset(r0)
 		"mov r0, r3\n"	// copy SVC num to r0 in case of SVC interrupt being handled
+        // TODO: if a TA was executing, this would leak register information.
 		"pop {r4,r5,r6,r7,r8,r9,r10,r11}\n"	// restore partial context (r4-r11)
 		"blx r2\n"	// branch to handler (to perform the ISR)
 
@@ -204,6 +206,7 @@ __attribute__((naked)) void Exception_Return_Handler(unsigned int* auto_frame) {
 		  * This is done by comparing the address that caused the Hard Fault with boundries
 		  * The addresses boundries are defined globally when simulating an exception 
 		*/
+        // TODO: This doesn't really check if we are returning from an ISR as this could have been abused: undefined behaviour.
 		"ldr r3, =EXC_RET_START\n"
 		"cmp r2, r3\n"
 		"blo .NO_EXC_RET_REQUESTED\n" // PC is less than EXC_RET_START, no exception return was requested
@@ -220,7 +223,7 @@ __attribute__((naked)) void Exception_Return_Handler(unsigned int* auto_frame) {
 		"msrne PSP, r0\n"	// and update PSP
 
 		/* Clear CFSR (Configurable Fault Status Register) as the value was changed by the HardFault triggered on purpose */
-		"ldr r2, =0xE000ED28\n" 
+		"ldr r2, =0xE000ED28\n"
 		"ldr r3, =0xFFFFFFFF\n" // clear all bits
 		"str r3, [r2]\n"
 
@@ -235,13 +238,18 @@ __attribute__((naked)) void Exception_Return_Handler(unsigned int* auto_frame) {
 		/* Disable PRIMASK */
 		"cpsie i\n"
 		/* Write EXC_RETURN value to LR to perform the return from the exception */
+
+        // TODO: after ISR execution the SP could have been modified: privilege escalation!
+        // TODO: after ISR execution the stack could have been modified (writable by CA): privilege escalation!
+        // TODO: after ISR execution r4-r11 could have been manipulated to induce faults in the pre-empted function: undefined behaviour.
 		"pop {lr}\n"
-		
+
 		/**
 		 *  No exeption return requested, check if a return from a Global Platform API was requested instead 
 		 *  This is done by comparing the address that caused the Hard Fault with boundries
 		 *  The addresses boundries are defined globally when calling the API 
 		 */
+        // TODO: This doesn't really check if we are returning from an ISR as this could have been abused: undefined behaviour.
 		".NO_EXC_RET_REQUESTED:\n"
 		"ldr r3, =API_RET_START\n"
 		"cmp r2, r3\n"
@@ -259,7 +267,7 @@ __attribute__((naked)) void Exception_Return_Handler(unsigned int* auto_frame) {
 		"msrne PSP, r0\n"	// and update PSP
 
 		/* Clear CFSR (Configurable Fault Status Register) as the value was changed by the HardFault triggered on purpose */
-		"ldr r2, =0xE000ED28\n" 
+		"ldr r2, =0xE000ED28\n"
 		"ldr r3, =0xFFFFFFFF\n" // clear all bits
 		"str r3, [r2]\n"
 
@@ -273,12 +281,16 @@ __attribute__((naked)) void Exception_Return_Handler(unsigned int* auto_frame) {
 		"msr BASEPRI, r3\n"
 		/* Disable PRIMASK */
 		"cpsie i\n"
-		/** 
+		/**
 		 * Reconfigure back the MPU to the original configuration used before the API call
 		 * This enforce isolation and separation between TA and client applications
 		 */
 		"blx Configure_MPU\n"
 		/* Write EXC_RETURN value to LR to perform the return from the exception (to the code called before the API call) */
+
+        // TODO: after ISR execution the SP could have been modified: privilege escalation!
+        // TODO: after ISR execution the stack could have been modified (writable by CA): privilege escalation!
+        // TODO: after ISR execution r4-r11 could have been manipulated to induce faults in the pre-empted function: undefined behaviour.
 		"pop {lr}\n"
 
 		".NO_API_RET_REQUESTED:\n"

@@ -39,6 +39,7 @@ static inline int is_in_CA_memory(void *ptr, size_t size) {
  */
 // TODO: move the svc_num argument to r2.
 // TODO: naked only allows basic asm.
+// TODO: This function was not reviewd extensively.
 __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* auto_frame, unsigned int* manual_frame, int _, int svc_num) {
 
 	int ret_val = -1; // Declare a variable to store the return value
@@ -67,6 +68,7 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
 		__disable_irq(); 
 		if(!internal_op || !is_in_CA_memory(internal_op, sizeof(*internal_op))) {
 			ret_val = TEE_FAILED;
+            // TODO: enable interrupts.
 			goto exit;
 		}
 		__enable_irq();
@@ -151,6 +153,7 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
 				}
 			}
 		}
+        // TODO: reenable in case of gotos.
 		__enable_irq(); 
 	}
 
@@ -164,7 +167,6 @@ __attribute__((naked,section(".microvisor-nopri"))) void call_TA(unsigned int* a
 	Reconfigure_MPU(ta_num);
 
 	// Change the value of the PSP (process stack pointer) to point to the TA memory
-	// TODO: evaluate if we need to modify the PSP to a different value after the execution of the first function of the TA 
 	if(ta_num == 1){
 		__asm__(
 			".equ STACK_PSP_START, (0x10000000 + (8 *1024) -1)\n"
@@ -332,6 +334,8 @@ void call_TEE(unsigned int* auto_frame, unsigned int* manual_frame) {
 	register uintptr_t pc_value = 0;
 	uint8_t ta_num = 0;
 
+    // TODO: the AAPCS ABI defines r2 and r3 as the third and fourth args.
+
 	// Recover the value of the program counter (PC) from r2 register
 	// and the value of SVC number from r3 register and store them in C variables
 	// These two values were placed in the registers by the SVC Handler
@@ -359,6 +363,7 @@ void call_TEE(unsigned int* auto_frame, unsigned int* manual_frame) {
 	} 
 
 	// If the SVC number is not passed (or is not valid), return with an error
+    // TODO: -1 doesn't identify a "not passed" SVC number, and is not the only invalid value.
 	if (svc_num == -1) {
 		ret_val = (void *)TEE_FAILED;
 		goto exit;
@@ -510,6 +515,7 @@ exit:
 */
 void Microvisor_HardFault_Handler() {
 	__asm__(
+        // TODO: The prologue could modify MSP.
 		/* Move pre-exception entry SP to R0 */
 		"tst lr, #4\n"
 		"ite eq\n"
@@ -525,7 +531,7 @@ void Microvisor_HardFault_Handler() {
 		"push {r4,r5,r6,r7,r8,r9,r10,r11}\n" //push rest of registers to manual_frame
 		"mov r1, sp\n"
 		"cpsid i\n" // disable interrupts for critical section
-		"blx Recover_PPB_Access\n"  // branch to the recover PPB access function to perform the simulation 
+		"blx Recover_PPB_Access\n"  // branch to the recover PPB access function to perform the simulation
 		"cpsie i\n" // enable interrupts after critical section
 
 		"cbnz r0, .PPB_RECOVERY_ERROR\n"		// error during recovery
@@ -568,6 +574,7 @@ void Microvisor_SVC_Handler() {
 
 	__asm__(
 		/* Move pre-exception entry SP to R0 */
+        // TODO: The prologue could modify MSP.
 		"tst lr, #4\n"
 		"ite eq\n"
 		"mrseq r0, msp\n"
@@ -677,6 +684,8 @@ void Microvisor_SVC_Handler() {
 		"and r0, #0\n"
 		"msr CONTROL, r0\n"
 
+        // TODO: r0 contains the value for CONTROL, is not modified and is passed as auto_frame.
+
 		/* Save remaining context that was there at the moment of the call to MSP */
 		"push {r4,r5,r6,r7,r8,r9,r10,r11}\n"
 		"mov r1, sp\n"
@@ -686,7 +695,7 @@ void Microvisor_SVC_Handler() {
 
 		/* Save fake return frame on MSP */
 		"push {r0,r1,r2,r3,r4,r5,r6,r7}\n" 
-		
+
 		/* Setup EXC_RETURN */
 		"ldr lr, =0xfffffff9\n"	// always return to Thread mode with Main stack in use
 
@@ -714,6 +723,7 @@ void Microvisor_SVC_Handler() {
 		"ldr r2,[r0, #24]\n"	// load RetAddr
 
 		/* Set CTRL.nPRIV to 0 (TEE core call should happen in privileged mode) */
+        // TODO: CTRL.nPRIV is useless in Handler mode.
 		"mrs r0, CONTROL\n"
 		"and r0, #0\n"
 		"msr CONTROL, r0\n"
@@ -752,7 +762,6 @@ void Microvisor_MemManage_Handler() {
 		/* Check for MPU violation */
 		"push {r4-r11,lr}\n" //push rest of registers to manual_frame
 		"mov r1, sp\n"
-		//"blx MPU_Violation_Handler\n" // branch to the MPU violation handler
 		"blx microvisor_memmanage_handler\n" // branch to the MPU violation handler
 		"pop {r4-r11,pc}\n"  //restore stack state
 	);

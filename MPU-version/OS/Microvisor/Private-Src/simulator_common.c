@@ -297,6 +297,7 @@ uint32_t Simulator_Get_Permission(uint32_t target_address) {
 		if(PPB_MPU_START <= target_address && target_address <= PPB_MPU_END)	// access to MPU configuration not allowed
 			return SIMULATOR_NO_ACCESS;
         // TODO: an attacker could write just one of the bytes of the PPB at different addresses.
+        // TODO: the VTOR is currently tamperable.
 		if(target_address == (uint32_t) &(SCB->VTOR))	// block write access to VTOR
 			return SIMULATOR_RO_WI;
 		return SIMULATOR_RW;	// allow other accesses (inside the PPB)

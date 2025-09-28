@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 /**
- * Checks whether the HardFault is cause by an unprivileged access to the Private Peripheral Bus (PPB)
+ * Checks whether the HardFault is cause by an unprivileged access to the Peripheral Bus (PPB, APB, AHB).
  * if it is, the access is granted and executed with privileges, otherwise a reset
  * of the device is performed.
  * 
@@ -25,6 +25,7 @@
  *  PPB_RECOVERY_FAIL: if the matching instruction was found but the simulation failed
  *  PPB_RECOVERY_NOMATCH: if the matching instruction to simulate was not found
 */
+// TODO: rename as this has been extended to support also AHB and APB.
 int Recover_PPB_Access(unsigned int* auto_frame, unsigned int* manual_frame) {
     /* recover faulty instruction */
     uint16_t* faulty_addr = (uint16_t*) (uintptr_t) auto_frame[6];

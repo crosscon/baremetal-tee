@@ -9,6 +9,17 @@
 #define FLASH_MAX_OBJECT      32
 #define CALC_FREE_SIZE_OFF    80
 
+// TODO: no need for a file system.
+// Just create an index and allocate objects:
+// - Contiguous, shifting while removed.
+// - Contiguous, shifting while adding.
+// - Heap, shifting while exausted.
+// - ...
+
+// TODO: without JSON, objects don't need to be stored in base64: (base-offset, length).
+
+// TODO: since a major rewrite is expected, this implementation was not reviewed.
+
 /**
  * In order to avoid using a file system to manage data in the FLASH memory, 
  * the data are organized in a JSON format (using the cJSON library)
@@ -471,7 +482,7 @@ int flash_readObject(const char* ctx, uint32_t len, int obj_id, char* out_buff, 
         if(!id)
             goto end;
 
-        if(id->valueint != obj_id)  
+        if(id->valueint != obj_id)
             continue;
 
         // Desired object is found
@@ -521,7 +532,7 @@ int flash_writeNewObject(const char* ctx, uint32_t len, int obj_id, uint32_t ta_
 
     if((free_size == total_size) || (free_size == 0))
     {
-        if(flash_init(ta_id) != 0) 
+        if(flash_init(ta_id) != 0)
             return -1;
 
         free_size = flash_getFreeSize(ta_id);
@@ -532,11 +543,13 @@ int flash_writeNewObject(const char* ctx, uint32_t len, int obj_id, uint32_t ta_
     if(free_size < encoded_len)
         return -1;
 
+    // TODO: VLA
     unsigned char flash_content[total_size - free_size];
-    
-    
+
+
     memset(flash_content, 0, total_size - free_size);
 
+    // TODO: VLA
     unsigned char buffer[encoded_len+1];
     if(base64_encode((const unsigned char*)ctx, len, (char*)buffer, encoded_len + 1) <= 0)
         return -1;
@@ -554,7 +567,7 @@ int flash_writeNewObject(const char* ctx, uint32_t len, int obj_id, uint32_t ta_
     cJSON* item = cJSON_CreateObject();
     if(!item)
         goto end;
-    
+
     ret_val = cJSON_AddItemToArray(objects, item);
 
     cJSON* id = cJSON_CreateNumber(obj_id);
@@ -604,6 +617,8 @@ end:
 */
 uint32_t flash_getFreeSize(uint32_t ta_id)
 {
+    // TODO: this implementation assumes the usage of JSON.
+
     char buff[CALC_FREE_SIZE_OFF] = {0};
     int free_size = -1;
     int offset = 0;
@@ -623,6 +638,7 @@ uint32_t flash_getFreeSize(uint32_t ta_id)
         if(buff[CALC_FREE_SIZE_OFF - 1] != 255)
             continue;
         //End of the objects array, that means end of the content is finded
+        // TODO: "]}" could be on the previous page.
         offset = search(buff, CALC_FREE_SIZE_OFF, ']', '}');
         if(offset != -1){
             free_size = total_size - (offset + i + 2); // +2 for the some extra character end of the content like } or etc.
@@ -650,6 +666,7 @@ int flash_deleteObject(uint32_t ta_id, int obj_id)
     flash_getConfig(ta_id, &start_addr, &total_size);
     // Set buffer to read flash area as a raw data
     uint16_t len = total_size -free_size;
+    // TODO: VLA
     char temp_buff[len]; 
     memset(temp_buff, 0, len);
     flash_internalRead(temp_buff, len, start_addr);

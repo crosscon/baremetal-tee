@@ -12,8 +12,8 @@
 #include "cJSON.h"
 #include "tee_common.h"
 
-// TODO: split in multiple files.
-// TODO: audit/rewrite the functions: many issues have been found, more are expected.
+// TODO: split in multiple files: heap, objects, crypto ...
+// TODO: this implementation was only reviewd partially.
 
 #define TEE_HEAP_START_ADDR                 ((void*) heapCore)
 #define TEE_HEAP_END_ADDR                   (TEE_HEAP_START_ADDR + CORE_HEAP_SIZE)
@@ -36,6 +36,9 @@
 #define ASSERT_OUTBUF(ta_num, buf, size)    ASSERT_INOUTBUF(ta_num, buf, size)
 #define ASSERT_INBUF(ta_num, buf, size)     ASSERT_INOUTBUF(ta_num, buf, size)
 
+// TODO: add asserts for the other annotations.
+// TODO: migrate the checks to use the assertions for readibility.
+// TODO: differentiate between in/out etc.
 
 
 
@@ -130,12 +133,12 @@ static inline bool is_segment_contained(void *base, size_t size, void *start, vo
 
 
 /**
- *  @brief  Check if the memory address is owned by the TA (in its memory area).
+ * @brief   Check if the memory address is owned by the TA (in its memory area).
  *          This check corresponds to the [in], [out], [inout] annotations in the GP specification.
- *  @param  ta_num TA number (0 for TEE Core, 1 for TA1, 2 for TA2)
- *  @param  buffer Pointer to the memory area to check
- *  @param  size Size of the memory area to check
- *  @return true if the memory area is within the range, false otherwise
+ * @param   ta_num TA number (0 for TEE Core, 1 for TA1, 2 for TA2)
+ * @param   buffer Pointer to the memory area to check
+ * @param   size Size of the memory area to check
+ * @return  true if the memory area is within the range, false otherwise
  */
 static bool check_mem_ownership(uint8_t ta_num, void *buffer, size_t size)
 {
@@ -168,23 +171,25 @@ static bool check_mem_ownership(uint8_t ta_num, void *buffer, size_t size)
 }
 
 /**
- *  @brief  Check if the memory address is accessible by the TA (in its memory area or shared memory).
+ * @brief   Check if the memory address is accessible by the TA (in its memory area or shared memory).
  *          This check corresponds to the [inbuf], [outbuf], [inoutbuf] annotations in the GP specification.
- *  @param  ta_num TA number (0 for TEE Core, 1 for TA1, 2 for TA2)
- *  @param  buffer Pointer to the memory area to check
- *  @param  size Size of the memory area to check
- *  @return true if the memory area is within the range, false otherwise
+ * @param   ta_num TA number (0 for TEE Core, 1 for TA1, 2 for TA2)
+ * @param   buffer Pointer to the memory area to check
+ * @param   size Size of the memory area to check
+ * @return  true if the memory area is within the range, false otherwise
  */
 static bool check_mem_accessibility(uint8_t ta_num, void *buffer, size_t size)
 {
-    if (0 == size) {
+    if (0 == size && NULL == buffer) {
         // Empty buffers are "entirely" accessible.
         return true;
     }
-    if (NULL == buffer) {
+    if (0 == size || NULL == buffer) {
         ERR_MSG("buffer does not exists");
         return false;
     }
+
+    // Check if the object is owned.
 
     if (check_mem_ownership(ta_num, buffer, size) == true) {
         return true;
@@ -203,11 +208,11 @@ static bool check_mem_accessibility(uint8_t ta_num, void *buffer, size_t size)
 }
 
 /**
- *  @brief Check if the memory address is within the range of the heap memory for the given ta_num.
- *   @param ta_num TA number (0 for TEE Core, 1 for TA1, 2 for TA2)
- *   @param buffer Pointer to the memory area to check
- *   @param size Size of the memory area to check
- *   @return 1 if the memory area is within the range, 0 otherwise
+ * @brief Check if the memory address is within the range of the heap memory for the given ta_num.
+ * @param ta_num TA number (0 for TEE Core, 1 for TA1, 2 for TA2)
+ * @param buffer Pointer to the memory area to check
+ * @param size Size of the memory area to check
+ * @return 1 if the memory area is within the range, 0 otherwise
  */
 static uint8_t check_heap_ownership(uint8_t ta_num, void *buffer, size_t size)
 {
@@ -422,7 +427,7 @@ static __TEE_ObjectHandle *allocate_object_handler(uint8_t ta_num, uint32_t obj_
 }
 
 /**
- * @brief Deallocates a previously allocated object.
+ * @brief Deallocates a previously allocated object handler.
  *        The object is unregistered, its buffer and the object are then freed.
  *
  * @param obj The object to deallocate.
@@ -959,6 +964,7 @@ TEE_Result internal_TEE_ReadObjectData(TEE_ObjectHandle object,
 
         // Create a buffer to read raw flash data
         // If the temp_buffer is too big it will overflow into an unmapped memory area.
+        // TODO: VLA
         char temp_buff[total_size - free_size];
         memset(temp_buff, 0, total_size - free_size);
 
@@ -1193,7 +1199,6 @@ TEE_Result internal_TEE_CloseAndDeletePersistentObject(TEE_ObjectHandle object, 
         return TEE_ERROR_BAD_PARAMETERS;
     }
     __TEE_ObjectHandle * temp_obj = (__TEE_ObjectHandle*)object;
-
 
     // Check if the object is persistent and delete it
     if(temp_obj->obj_storage_type == TEE_OBJ_TYPE_PERSISTENT) {

@@ -35,10 +35,9 @@ static int simulate(unsigned int *auto_frame, unsigned int *manual_frame, uint32
 }
 
 /**
-*
 * Simulates the execution of STR (store) and LDR (load) instructions using the original context
 * Different version of the function are used to simulate different instruction formats
-* 
+*
 * Versions: MNEMONIC_XY:
 * X indicates whether the instruction is immediate (I) or register (R)
 * Y indicates the number of encoding (1 = T1, 2 = T2...)
