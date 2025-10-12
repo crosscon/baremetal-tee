@@ -83,7 +83,7 @@ MEMORY {
   
   /* New segments for the allocation of the protected ISR */
 
-  TCM_ISR         : ORIGIN = 0xF800, LENGTH = 0x0236       
+  TCM_ISR         : ORIGIN = 0xF800, LENGTH = 0x023A       
   TCM_ISR1        : ORIGIN = 0xF800, LENGTH = 0x0008
   TCM_ISR2        : ORIGIN = 0xF808, LENGTH = 0x0008
   TCM_ISR3        : ORIGIN = 0xF810, LENGTH = 0x0008
@@ -149,47 +149,51 @@ MEMORY {
   TCM_ISR63       : ORIGIN = 0xF9F0, LENGTH = 0x0008
 
   /* Handler for the various ISRs */
-  TCM_HANDLER     : ORIGIN = 0xF9F8, LENGTH = 0x003e
+  TCM_HANDLER     : ORIGIN = 0xF9F8, LENGTH = 0x0042
   
   
   /** New segments for the allocation of the virtual functions */
+  /* NB! Sync these addresses with those in core.c */
 
-  VIRT_FUN         : ORIGIN = 0xFC00, LENGTH = 0x02e8 
+  VIRT_FUN         : ORIGIN = 0xFC00, LENGTH = 0x033a
   SAFE_BR          : ORIGIN = 0xFC00, LENGTH = 0x0026
   SAFE_BRA         : ORIGIN = 0xFC26, LENGTH = 0x0026
-  SAFE_CALL        : ORIGIN = 0xFC4C, LENGTH = 0x0060
-  SAFE_CALLA       : ORIGIN = 0xFC54, LENGTH = 0x0060
-  SAFE_RET         : ORIGIN = 0xfd0C, LENGTH = 0x005a
-  SAFE_RETI        : ORIGIN = 0xfd66, LENGTH = 0x004a
-  SAFE_RETA        : ORIGIN = 0xfdae, LENGTH = 0x0028
+  SAFE_CALL        : ORIGIN = 0xFC4C, LENGTH = 0x0064
+  SAFE_CALLA       : ORIGIN = 0xFCB0, LENGTH = 0x0064
+  SAFE_RET         : ORIGIN = 0xFD14, LENGTH = 0x005A
+  SAFE_RETI        : ORIGIN = 0xFD6E, LENGTH = 0x004A
+  SAFE_RETA        : ORIGIN = 0xFDB8, LENGTH = 0x0028
   
-  WRITE_MOV        : ORIGIN = 0xfdd6, LENGTH = 0x0012
-  WRITE_MOVX       : ORIGIN = 0xfdE8, LENGTH = 0x0014
+  WRITE_MOV        : ORIGIN = 0xFDDE, LENGTH = 0x0016
+  WRITE_MOVX       : ORIGIN = 0xFDF4, LENGTH = 0x0018
   
-  WRITE_XOR        : ORIGIN = 0xfdfc, LENGTH = 0x0012
-  WRITE_XORX       : ORIGIN = 0xfe0e, LENGTH = 0x0014
+  WRITE_XOR        : ORIGIN = 0xFE0C, LENGTH = 0x0016
+  WRITE_XORX       : ORIGIN = 0xFE22, LENGTH = 0x0018
   
-  WRITE_ADD        : ORIGIN = 0xfe22, LENGTH = 0x0012
-  WRITE_ADDX       : ORIGIN = 0xfe34, LENGTH = 0x0014
+  WRITE_ADD        : ORIGIN = 0xFE3A, LENGTH = 0x0016
+  WRITE_ADDX       : ORIGIN = 0xFE50, LENGTH = 0x0018
   
-  WRITE_ADDC       : ORIGIN = 0xfe48, LENGTH = 0x0012
-  WRITE_ADDCX      : ORIGIN = 0xfe5a, LENGTH = 0x0014
+  WRITE_ADDC       : ORIGIN = 0xFE68, LENGTH = 0x0016
+  WRITE_ADDCX      : ORIGIN = 0xFE7E, LENGTH = 0x0018
   
-  WRITE_DADD       : ORIGIN = 0xfe6e, LENGTH = 0x0012
-  WRITE_DADDX      : ORIGIN = 0xfe80, LENGTH = 0x0014
+  WRITE_DADD       : ORIGIN = 0xFE96, LENGTH = 0x0016
+  WRITE_DADDX      : ORIGIN = 0xFEAC, LENGTH = 0x0018
   
-  WRITE_SUB        : ORIGIN = 0xfe94, LENGTH = 0x0012
-  WRITE_SUBX       : ORIGIN = 0xfea6, LENGTH = 0x0014
+  WRITE_SUB        : ORIGIN = 0xFEC4, LENGTH = 0x0016
+  WRITE_SUBX       : ORIGIN = 0xFEDA, LENGTH = 0x0018
   
-  WRITE_SUBC       : ORIGIN = 0xfeba, LENGTH = 0x0012
-  WRITE_SUBCX      : ORIGIN = 0xfecc, LENGTH = 0x0014
+  WRITE_SUBC       : ORIGIN = 0xFEF2, LENGTH = 0x0016
+  WRITE_SUBCX      : ORIGIN = 0xFF08, LENGTH = 0x0018
   
-  STOP_MCU         : ORIGIN = 0xfee0, LENGTH = 0x0004
+  STOP_MCU         : ORIGIN = 0xFF20, LENGTH = 0x0004
   
-  /** Auxiliary functions which can be called by the untrusted application **/
-  RECEIVE_UPDATE   : ORIGIN = 0xfee4, LENGTH = 0x0004 /* Sync it with the TCMhook*/
+  /** Auxiliary functions **/
+  RECEIVE_UPDATE   : ORIGIN = 0xFF24, LENGTH = 0x0008
+
+
+ 
   
-  CHECK_SP         : ORIGIN = 0xfee8, LENGTH = 0x000E
+  CHECK_SP         : ORIGIN = 0xff2c, LENGTH = 0x000E
 
   /** New safe IVT integrity protected **/
   

@@ -10,6 +10,10 @@
 ; destination (20bit) = 10006
 ; base usr ISR address = 0x10400
 #include <msp430.h>
+
+
+.extern checkStackPointer
+
 ;Define all of the protected Interrupt Service Routines 
 .text
     .section    .prt_isr,"ax",@progbits  ;Inject into the linker all together
@@ -458,6 +462,7 @@ prt_isr_63:
 
 ;All of the handlers jump to this function
 .prt_isr_handler:
+    CALL #checkStackPointer ; verify SP integrity
 	MOV #0xa500, &0x0144	; unlock memory controller
 	MOV #0xa502, &0x0140 	; enable segment erase --> need to clear flash before writing to it
     MOVX.W #0, &0x10000     ; clear segment 512 bytes (0x200)

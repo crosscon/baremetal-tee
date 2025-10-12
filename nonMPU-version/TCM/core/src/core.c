@@ -41,27 +41,28 @@ __attribute__((section(".tcm:rodata"))) const uint32_t vectorBottom         = 0x
 __attribute__((section(".tcm:rodata"))) const uint16_t safe_br      = 0xfc00;
 __attribute__((section(".tcm:rodata"))) const uint16_t safe_bra     = 0xfc26;
 __attribute__((section(".tcm:rodata"))) const uint16_t safe_call    = 0xfc4c;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_calla   = FLASHADOW_ENABLED ? 0xfc54 : 0xfc72;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_calla   = FLASHADOW_ENABLED ? 0xfcac : 0xfc72;
 __attribute__((section(".tcm:rodata"))) const uint16_t safe_ret     = FLASHADOW_ENABLED ? 0xfd0c : 0xfc98;
 __attribute__((section(".tcm:rodata"))) const uint16_t safe_reti    = FLASHADOW_ENABLED ? 0xfd66 : 0xfcc0;
 __attribute__((section(".tcm:rodata"))) const uint16_t safe_reta    = FLASHADOW_ENABLED ? 0xfdae : 0xfd08;
 
 __attribute__((section(".tcm:rodata"))) const uint16_t safe_mov     = FLASHADOW_ENABLED ? 0xfdd6 : 0xfd30;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_movx    = FLASHADOW_ENABLED ? 0xfde8 : 0xfd46;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_xor     = FLASHADOW_ENABLED ? 0xfdfc : 0xfd5e;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_xorx    = FLASHADOW_ENABLED ? 0xfe0e : 0xfd74;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_add     = FLASHADOW_ENABLED ? 0xfe22 : 0xfd8c;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_addx    = FLASHADOW_ENABLED ? 0xfe34 : 0xfda2;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_addc    = FLASHADOW_ENABLED ? 0xfe48 : 0xfdba;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_addcx   = FLASHADOW_ENABLED ? 0xfe5a : 0xfdd0;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_dadd    = FLASHADOW_ENABLED ? 0xfe6e : 0xfde8;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_daddx   = FLASHADOW_ENABLED ? 0xfe80 : 0xfdfe;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_sub     = FLASHADOW_ENABLED ? 0xfe94 : 0xfe16;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_subx    = FLASHADOW_ENABLED ? 0xfea6 : 0xfe2c;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_subc    = FLASHADOW_ENABLED ? 0xfeba : 0xfe44;
-__attribute__((section(".tcm:rodata"))) const uint16_t safe_subcx   = FLASHADOW_ENABLED ? 0xfecc : 0xfe5a;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_movx    = FLASHADOW_ENABLED ? 0xfdec : 0xfd46;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_xor     = FLASHADOW_ENABLED ? 0xfe04 : 0xfd5e;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_xorx    = FLASHADOW_ENABLED ? 0xfe1a : 0xfd74;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_add     = FLASHADOW_ENABLED ? 0xfe32 : 0xfd8c;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_addx    = FLASHADOW_ENABLED ? 0xfe48 : 0xfda2;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_addc    = FLASHADOW_ENABLED ? 0xfe60 : 0xfdba;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_addcx   = FLASHADOW_ENABLED ? 0xfe76 : 0xfdd0;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_dadd    = FLASHADOW_ENABLED ? 0xfe8e : 0xfde8;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_daddx   = FLASHADOW_ENABLED ? 0xfea4 : 0xfdfe;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_sub     = FLASHADOW_ENABLED ? 0xfebc : 0xfe16;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_subx    = FLASHADOW_ENABLED ? 0xfed2 : 0xfe2c;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_subc    = FLASHADOW_ENABLED ? 0xfeea : 0xfe44;
+__attribute__((section(".tcm:rodata"))) const uint16_t safe_subcx   = FLASHADOW_ENABLED ? 0xff00 : 0xfe5a;
 
-__attribute__((section(".tcm:rodata"))) const uint16_t receive_update_address = FLASHADOW_ENABLED ? 0xfee4 : 0xfe76;
+__attribute__((section(".tcm:rodata"))) const uint16_t receive_update_address = FLASHADOW_ENABLED ? 0xff1c : 0xfe76;
+
 
 
 __attribute__((section(".tcm:rodata"))) const uint16_t entryPointBSL = 0x1002;

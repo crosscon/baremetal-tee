@@ -374,6 +374,7 @@ write_subcx_fun:
     .global receiveUpdate
     .type receiveUpdate, @function
 receiveUpdate:
+    MOV #0x43ff, r1         ; Restore the stack pointer
     BR #secureUpdate
 
     .balign 2

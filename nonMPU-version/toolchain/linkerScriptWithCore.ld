@@ -83,7 +83,7 @@ MEMORY {
   
   /* New segments for the allocation of the protected ISR */
 
-  TCM_ISR         : ORIGIN = 0xF800, LENGTH = 0x0236       
+  TCM_ISR         : ORIGIN = 0xF800, LENGTH = 0x023a       
   TCM_ISR1        : ORIGIN = 0xF800, LENGTH = 0x0008
   TCM_ISR2        : ORIGIN = 0xF808, LENGTH = 0x0008
   TCM_ISR3        : ORIGIN = 0xF810, LENGTH = 0x0008
@@ -149,12 +149,13 @@ MEMORY {
   TCM_ISR63       : ORIGIN = 0xF9F0, LENGTH = 0x0008
 
   /* Handler for the various ISRs */
-  TCM_HANDLER     : ORIGIN = 0xF9F8, LENGTH = 0x003e
+  TCM_HANDLER     : ORIGIN = 0xF9F8, LENGTH = 0x0043
   
   
   /** New segments for the allocation of the virtual functions */
+    /* NB! Sync these addresses with those in core.c */
 
-  VIRT_FUN         : ORIGIN = 0xFC00, LENGTH = 0x0288 
+  VIRT_FUN         : ORIGIN = 0xFC00, LENGTH = 0x028c 
   SAFE_BR          : ORIGIN = 0xFC00, LENGTH = 0x0026
   SAFE_BRA         : ORIGIN = 0xFC26, LENGTH = 0x0026
   SAFE_CALL        : ORIGIN = 0xFC4C, LENGTH = 0x0026
@@ -187,9 +188,9 @@ MEMORY {
   STOP_MCU         : ORIGIN = 0xFE72, LENGTH = 0x0004
   
   /** Auxiliary functions which can be called by the untrusted application **/
-  RECEIVE_UPDATE   : ORIGIN = 0xFE76, LENGTH = 0x0004 /* Sync it with the TCMhook*/
+  RECEIVE_UPDATE   : ORIGIN = 0xFE76, LENGTH = 0x0008 
 
-  CHECK_SP         : ORIGIN = 0xFE7A, LENGTH = 0x000E
+  CHECK_SP         : ORIGIN = 0xFE7E, LENGTH = 0x000E
   
 
   /** New safe IVT integrity protected **/

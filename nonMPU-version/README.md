@@ -207,7 +207,7 @@ The software-based isolation of Flash, RAM and MMIO is achieved by means of a cu
 - (optional) Java for the execution of powerConsumption measurement scripts.
 
 ## Configuration
-Before deploying the baremetal-TEE we have to configure its TCM. This can be done through the `TCM/core/src/core.h` header file which contains several macros that define the behaviour of the TEE. In particular, we have the `FLASHADOW_ENABLE` macro that allows the TEE to be shipped with the control flow integrity module for the protection of the backward edges, i.e. a shadow stack. 
+Before deploying the baremetal-TEE we have to configure its TCM. This can be done through the `TCM/core/src/core.h` header file which contains several macros that define the behaviour of the TEE. In particular, we have the `FLASHADOW_ENABLED` macro that allows the TEE to be shipped with the control flow integrity module for the protection of the backward edges, i.e. a shadow stack. 
 
 
 ## Loading nonMPU-BareMetal-TEE TCM (with the default untrusted application)
