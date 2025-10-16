@@ -146,6 +146,41 @@ def getOffsetMode(pattern,mode,src=False,syntax=None,label=None):
         substr = substr.replace(r"\(","").replace(r"(?!","") #Remove real parenthesis
         return substr.count("(") + modeTmp + syntaxParenthesis + initialParenthesis
 
+
+
+def getAddressFromFile(variableName, flashadowEnabled):
+    # Read the file TCM/core/src/core.c and look for the string 'variableName'
+    # Then extract its value. The variable are deefined as:
+    # uint16_t safe_calla   = FLASHADOW_ENABLED ? 0xfcac : 0xfc72;
+    # which must return the value 0xfc72 if flashadowEnabled is 0 or 0xfcb0 if flashadowEnabled is 1. Alternatively, the variable can be defined as: 
+    # uint16_t safe_calla   = 0xfc72;
+    # In which case the address is the same independently of the flashadowEnabled value
+    address = None
+    pattern = re.compile(r"uint16_t\s+{}\s*=\s*(FLASHADOW_ENABLED\s*\?\s*)?(0x[\da-f]+)\s*:\s*(0x[\da-f]+);".format(variableName),re.I)
+    patternNoFlashadow = re.compile(r"uint16_t\s+{}\s*=\s*(0x[\da-f]+);".format(variableName),re.I)
+    with open("../TCM/core/src/core.c","r") as coreFile:
+        for line in coreFile:
+            match = pattern.search(line)
+            if match is not None:
+                if match.group(1) is not None: #Flashadow dependent
+                    if flashadowEnabled == 1:
+                        address = int(match.group(2),16)
+                    else:
+                        address = int(match.group(3),16)
+                else: #Flashadow independent
+                    address = int(match.group(2),16)
+                break
+            else:
+                match = patternNoFlashadow.search(line)
+                if match is not None:
+                    address = int(match.group(1),16)
+                    break
+    if address is None:
+        logging.error("Cannot find the address of variable {} in TCM/core/src/core.c".format(variableName))
+        exit(1)
+    print("Address of {} is 0x{:04x}".format(variableName,address))
+    return address
+
 #### TCM ####
 # In order to reduce the number of rejection we choose addresses that might be interpreted as AND instructions.
 # AND, in fact, is always allowed on anything but the PC --> avoid [f|_|0___|0]
@@ -175,33 +210,31 @@ write_subcx = "write_subcx_fun"
 
 secure_update= "receiveUpdate"
 
-#If the virtual labels should not be used, use absolute addresses (to be synched!)
 if(virtualLabel == 0):
-    safe_br     = 0xfc00
-    safe_bra    = 0xfc26 
-    safe_call   = 0xfc4c 
-    safe_calla  = 0xfc72 if flashadow == 0 else 0xFC54
-    safe_ret    = 0xfc98 if flashadow == 0 else 0xfd0C
-    safe_reti   = 0xfcc0 if flashadow == 0 else 0xfd66
-    safe_reta   = 0xfd08 if flashadow == 0 else 0xfdae
+    safe_br     = getAddressFromFile("safe_br",flashadow)
+    safe_bra    = getAddressFromFile("safe_bra",flashadow)
+    safe_call   = getAddressFromFile("safe_call",flashadow)
+    safe_calla  = getAddressFromFile("safe_calla",flashadow)
+    safe_ret    = getAddressFromFile("safe_ret",flashadow)
+    safe_reti   = getAddressFromFile("safe_reti",flashadow)
+    safe_reta   = getAddressFromFile("safe_reta",flashadow)
 
-    write_mov   = 0xfd30 if flashadow == 0 else 0xfdd6
-    write_movx  = 0xFD46 if flashadow == 0 else 0xfdE8
-    write_xor   = 0xFD5e if flashadow == 0 else 0xfdfc
-    write_xorx  = 0xFD74 if flashadow == 0 else 0xfe0e
-    write_add   = 0xFD8c if flashadow == 0 else 0xfe22
-    write_addx  = 0xFDa2 if flashadow == 0 else 0xfe34
-    write_addc  = 0xFDba if flashadow == 0 else 0xfe48
-    write_addcx = 0xFDd0 if flashadow == 0 else 0xfe5a
-    write_dadd  = 0xFDe8 if flashadow == 0 else 0xfe6e
-    write_daddx = 0xFDfe if flashadow == 0 else 0xfe80
-    write_sub   = 0xFE16 if flashadow == 0 else 0xfe94
-    write_subx  = 0xFE2C if flashadow == 0 else 0xfea6
-    write_subc  = 0xFE44 if flashadow == 0 else 0xfeba
-    write_subcx = 0xFE5A if flashadow == 0 else 0xfecc
+    write_mov   = getAddressFromFile("write_mov",flashadow)
+    write_movx  = getAddressFromFile("write_movx",flashadow)
+    write_xor   = getAddressFromFile("write_xor",flashadow)
+    write_xorx  = getAddressFromFile("write_xorx",flashadow)
+    write_add   = getAddressFromFile("write_add",flashadow)
+    write_addx  = getAddressFromFile("write_addx",flashadow)
+    write_addc  = getAddressFromFile("write_addc",flashadow)
+    write_addcx = getAddressFromFile("write_addcx",flashadow)
+    write_dadd  = getAddressFromFile("write_dadd",flashadow)
+    write_daddx = getAddressFromFile("write_daddx",flashadow)
+    write_sub   = getAddressFromFile("write_sub",flashadow)
+    write_subx  = getAddressFromFile("write_subx",flashadow)
+    write_subc  = getAddressFromFile("write_subc",flashadow)
+    write_subcx = getAddressFromFile("write_subcx",flashadow)
 
-    secure_update= 0xFE76 if flashadow == 0 else 0xfee4
-
+    secure_update = getAddressFromFile("receive_update_address",flashadow)
 
 
 # The pointer, or registers, used to store the different temp data during the verification process
