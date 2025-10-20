@@ -435,7 +435,6 @@ typedef struct Block {
  * field is used to store the length of the key (in case a crypto key is stored)
  */
 typedef struct {
-  // TODO: TEE_TYPE_DH_KEYPAIR can have 6 attributes.
   TEE_Attribute attrs[4];
   char *buffer;
   size_t len;

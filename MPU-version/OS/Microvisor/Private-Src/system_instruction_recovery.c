@@ -111,9 +111,6 @@ static void Simulate_MSR(unsigned int *auto_frame, unsigned int *manual_frame,
                        rn_value); // save operand register value
   }
 
-  // TODO: do not allow to write to SP (MSP): arbitrary (privileged) code
-  // execution.
-
   /* Simulate the instruction */
   Simulate_Faulty_Instruction(auto_frame, manual_frame, 2, inst);
   return;

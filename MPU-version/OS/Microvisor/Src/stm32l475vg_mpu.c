@@ -480,7 +480,6 @@ void microvisor_memmanage_handler(unsigned int *auto_frame,
                                   unsigned int *manual_frame) {
 
   // This could still be a legitimate access.
-  // TODO: rename the checking function to be more general.
   if (PPB_RECOVERY_OK != Recover_PPB_Access(auto_frame, manual_frame)) {
 
     MPU_Violation_Handler(auto_frame, manual_frame);

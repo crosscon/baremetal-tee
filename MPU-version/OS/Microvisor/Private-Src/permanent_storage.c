@@ -3,8 +3,6 @@
 #include "memory_map.h"
 #include "microvisor_config.h"
 
-// TODO: not reviewd.
-
 /**
  * \brief Erases all the content of the permanent storage (1 page only on the
  * flash memory)

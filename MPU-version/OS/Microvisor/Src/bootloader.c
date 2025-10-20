@@ -209,7 +209,6 @@ void Clear_Data_BSS() {
 }
 
 // Used to initlialize the internal object arrays
-// TODO: IT would be nice to use the BSS but I haven't managed yet
 static void internal_TEE_ClearObjects() {
   memset(registeredObjects, 0, sizeof(registeredObjects));
   memset(registeredOperations, 0, sizeof(registeredOperations));

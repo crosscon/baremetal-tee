@@ -194,11 +194,6 @@ Run_With_Context(unsigned int *address, unsigned int *auto_frame,
       "orr lr, #1\n" // thumb instruction set bit
       "blx lr\n"     // branch to in-memory routine to execute it
 
-      // TODO: if LR or PC is modified by the simulated instruction: possible
-      // arbitrary (privileged) code execution.
-      // TODO: if the SP (MSP) is modified by the instruction: possible
-      // adversary-controlled behaviour (privilege escalation).
-
       /* Save modified context */
       "ldr lr, [sp]\n"                        // load auto_frame address to LR
       "stm lr, {r0,r1,r2,r3,r12}\n"           // save modified r0,r1,r2,r3,r12
@@ -236,8 +231,6 @@ Run_With_Context(unsigned int *address, unsigned int *auto_frame,
  *
  * @warning The caller must ensure that the instruction doesn't modify SP, LR
  * and PC.
- *
- * // TODO: void doesn't return.
  *
  * Returns:
  * SIMULATION_OK: if the simulation was successful
@@ -313,16 +306,11 @@ int Is_PPB_Address_Valid(unsigned int target_address) {
 uint32_t Simulator_Get_Permission(uint32_t target_address) {
 
 #if ACCESS_PPB
-  // TODO: Maybe a whitelist is more appropriate.
-  // I'm not sure this blacklist considered all the PPB except for the SCB.
   if (PPB_START <= target_address && target_address <= PPB_END) {
     if (PPB_MPU_START <= target_address &&
         target_address <=
             PPB_MPU_END) // access to MPU configuration not allowed
       return SIMULATOR_NO_ACCESS;
-    // TODO: an attacker could write just one of the bytes of the PPB at
-    // different addresses.
-    // TODO: the VTOR is currently tamperable.
     if (target_address == (uint32_t)&(SCB->VTOR)) // block write access to VTOR
       return SIMULATOR_RO_WI;
     return SIMULATOR_RW; // allow other accesses (inside the PPB)
@@ -332,9 +320,6 @@ uint32_t Simulator_Get_Permission(uint32_t target_address) {
   // Checks to avoid loosing time searching for the peripheral if already out
   // of the peripheral space.
   if (PERIPH_START <= target_address && target_address <= PERIPH_END) {
-
-    // TODO: This peripheral whitelisting is just a proof of work.
-    // Only the DMAs have been addressed.
 
     // Segmented in regions for faster lookup with many peripherals activated.
     // This granularity level is arbitrary.
@@ -570,7 +555,6 @@ uint32_t get_instruction_at(const uint16_t *address, size_t *halfword_count) {
   // word instructions.
   uint32_t opcode = instruction & TWO_WORD_INST_MASK;
 
-  // TODO: isn't opcode == ... more readable? Is there any reason to do this?
   if ((opcode ^ TWO_WORD_INST_PATTERN_1) == 0 ||
       (opcode ^ TWO_WORD_INST_PATTERN_2) == 0 ||
       (opcode ^ TWO_WORD_INST_PATTERN_3) == 0) {

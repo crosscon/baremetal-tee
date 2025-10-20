@@ -34,9 +34,6 @@ static inline int is_in_CA_memory(void *ptr, size_t size) {
  * @param _: a filler to shift svc_num as it is passed in r3.
  * @param svc_num: the requested svc number.
  */
-// TODO: move the svc_num argument to r2.
-// TODO: naked only allows basic asm.
-// TODO: This function was not reviewd extensively.
 __attribute__((naked, section(".microvisor-nopri"))) void
 call_TA(unsigned int *auto_frame, unsigned int *manual_frame, int _,
         int svc_num) {
@@ -71,7 +68,6 @@ call_TA(unsigned int *auto_frame, unsigned int *manual_frame, int _,
     __disable_irq();
     if (!internal_op || !is_in_CA_memory(internal_op, sizeof(*internal_op))) {
       ret_val = TEE_FAILED;
-      // TODO: enable interrupts.
       goto exit;
     }
     __enable_irq();
@@ -166,7 +162,6 @@ call_TA(unsigned int *auto_frame, unsigned int *manual_frame, int _,
         }
       }
     }
-    // TODO: reenable in case of gotos.
     __enable_irq();
   }
 
@@ -191,9 +186,6 @@ call_TA(unsigned int *auto_frame, unsigned int *manual_frame, int _,
             "ldr r0, =STACK_PSP_START\n"
             "msr psp, r0\n");
   }
-
-  // TODO: this possibly invalidates local variables and leaves garbage on the
-  // main stack.
 
   // Switch the SP used from MSP to PSP and drop privileges before passing the
   // control to the TA function
@@ -233,7 +225,6 @@ call_TA(unsigned int *auto_frame, unsigned int *manual_frame, int _,
 
   case FUNCTION_OPEN_SESSION:
     // Call TEE_openTASession, corresponding to TEEC_OpenSession() function
-    // TODO: ask if it was an implementation choice to not pass the session
     if (ta_num == 1)
       ret_val = TA_OpenSessionEntryPoint1(internal_op->paramTypes,
                                           ta_params_ptr, NULL);
@@ -255,7 +246,6 @@ call_TA(unsigned int *auto_frame, unsigned int *manual_frame, int _,
   case FUNCTION_CLOSE_SESSION:
     // Call TA_closeSessionEntryPoint, corresponding to TEEC_CloseSession()
     // function
-    // TODO: ask if it was an implementation choice to not pass the session
     (ta_num == 1) ? TA_CloseSessionEntryPoint1(NULL)
                   : TA_CloseSessionEntryPoint2(NULL);
     // The function does not have any return value, so we set the return value
@@ -266,7 +256,6 @@ call_TA(unsigned int *auto_frame, unsigned int *manual_frame, int _,
   case FUNCTION_INVOKE_COMMAND:
     // Call TA_invokeCommandEntryPoint, correspond to TEEC_InvokeCommand()
     // function
-    // TODO: ask if it was an implementation choice to not pass the session
     if (ta_num == 1)
       ret_val = TA_InvokeCommandEntryPoint1(
           NULL, command_id, internal_op->paramTypes, ta_params_ptr);
@@ -370,8 +359,6 @@ void call_TEE(unsigned int *auto_frame, unsigned int *manual_frame) {
   register uintptr_t pc_value = 0;
   uint8_t ta_num = 0;
 
-  // TODO: the AAPCS ABI defines r2 and r3 as the third and fourth args.
-
   // Recover the value of the program counter (PC) from r2 register
   // and the value of SVC number from r3 register and store them in C variables
   // These two values were placed in the registers by the SVC Handler
@@ -399,8 +386,6 @@ void call_TEE(unsigned int *auto_frame, unsigned int *manual_frame) {
   }
 
   // If the SVC number is not passed (or is not valid), return with an error
-  // TODO: -1 doesn't identify a "not passed" SVC number, and is not the only
-  // invalid value.
   if (svc_num == -1) {
     ret_val = (void *)TEE_FAILED;
     goto exit;
@@ -621,7 +606,6 @@ exit:
  */
 void Microvisor_HardFault_Handler() {
   __asm__(
-      // TODO: The prologue could modify MSP.
       /* Move pre-exception entry SP to R0 */
       "tst lr, #4\n"
       "ite eq\n"
@@ -695,7 +679,6 @@ void Microvisor_SVC_Handler() {
 
   __asm__(
       /* Move pre-exception entry SP to R0 */
-      // TODO: The prologue could modify MSP.
       "tst lr, #4\n"
       "ite eq\n"
       "mrseq r0, msp\n"
@@ -751,8 +734,7 @@ void Microvisor_SVC_Handler() {
 
       ".INVALID_STACK:\n"
       /* R0 is out of valid range */
-      "b .INVALID_STACK\n" // TODO: handle invalid stack case, e.g., trigger a
-                           // HardFault or reset the MCU
+      "b .INVALID_STACK\n"
 
       ".VALID_STACK:\n"
 
@@ -818,9 +800,6 @@ void Microvisor_SVC_Handler() {
       "and r0, #0\n"
       "msr CONTROL, r0\n"
 
-      // TODO: r0 contains the value for CONTROL, is not modified and is passed
-      // as auto_frame.
-
       /* Save remaining context that was there at the moment of the call to MSP
        */
       "push {r4,r5,r6,r7,r8,r9,r10,r11}\n"
@@ -861,12 +840,9 @@ void Microvisor_SVC_Handler() {
       "ldr r2,[r0, #24]\n" // load RetAddr
 
       /* Set CTRL.nPRIV to 0 (TEE core call should happen in privileged mode) */
-      // TODO: CTRL.nPRIV is useless in Handler mode.
       "mrs r0, CONTROL\n"
       "and r0, #0\n"
       "msr CONTROL, r0\n"
-
-      // TODO: r0 should contain the auto_frame address.
 
       "push {r4,r5,r6,r7,r8,r9,r10,r11,lr}\n" // push rest of registers to
                                               // manual_frame

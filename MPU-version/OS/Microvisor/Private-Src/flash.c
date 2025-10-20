@@ -10,19 +10,6 @@
 #define FLASH_MAX_OBJECT 32
 #define CALC_FREE_SIZE_OFF 80
 
-// TODO: no need for a file system.
-// Just create an index and allocate objects:
-// - Contiguous, shifting while removed.
-// - Contiguous, shifting while adding.
-// - Heap, shifting while exausted.
-// - ...
-
-// TODO: without JSON, objects don't need to be stored in base64: (base-offset,
-// length).
-
-// TODO: since a major rewrite is expected, this implementation was not
-// reviewed.
-
 /**
  * In order to avoid using a file system to manage data in the FLASH memory,
  * the data are organized in a JSON format (using the cJSON library)
@@ -538,12 +525,10 @@ int flash_writeNewObject(const char *ctx, uint32_t len, int obj_id,
   if (free_size < encoded_len)
     return -1;
 
-  // TODO: VLA
   unsigned char flash_content[total_size - free_size];
 
   memset(flash_content, 0, total_size - free_size);
 
-  // TODO: VLA
   unsigned char buffer[encoded_len + 1];
   if (base64_encode((const unsigned char *)ctx, len, (char *)buffer,
                     encoded_len + 1) <= 0)
@@ -611,7 +596,6 @@ end:
  * @return if it is success, return free size in the flash area else returns -1
  */
 uint32_t flash_getFreeSize(uint32_t ta_id) {
-  // TODO: this implementation assumes the usage of JSON.
 
   char buff[CALC_FREE_SIZE_OFF] = {0};
   int free_size = -1;
@@ -631,7 +615,6 @@ uint32_t flash_getFreeSize(uint32_t ta_id) {
     if (buff[CALC_FREE_SIZE_OFF - 1] != 255)
       continue;
     // End of the objects array, that means end of the content is finded
-    //  TODO: "]}" could be on the previous page.
     offset = search(buff, CALC_FREE_SIZE_OFF, ']', '}');
     if (offset != -1) {
       free_size =
@@ -660,7 +643,6 @@ int flash_deleteObject(uint32_t ta_id, int obj_id) {
   flash_getConfig(ta_id, &start_addr, &total_size);
   // Set buffer to read flash area as a raw data
   uint16_t len = total_size - free_size;
-  // TODO: VLA
   char temp_buff[len];
   memset(temp_buff, 0, len);
   flash_internalRead(temp_buff, len, start_addr);

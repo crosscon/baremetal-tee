@@ -12,9 +12,6 @@
 #include "stm32l4xx_hal.h"
 #include "tee_common.h"
 
-// TODO: split in multiple files: heap, objects, crypto ...
-// TODO: this implementation was only reviewd partially.
-
 #define TEE_HEAP_START_ADDR ((void *)heapCore)
 #define TEE_HEAP_END_ADDR (TEE_HEAP_START_ADDR + CORE_HEAP_SIZE)
 
@@ -23,8 +20,6 @@
 
 #define TA2_HEAP_START_ADDR ((void *)heapTA2)
 #define TA2_HEAP_END_ADDR (TA2_HEAP_START_ADDR + TA_HEAP_SIZE)
-
-// TODO: these assertions should panic the calling TA.
 
 // A set of assertions for the [in], [out], [inout] annotations.
 #define ASSERT_INOUT(ta_num, buf, size)                                        \
@@ -37,10 +32,6 @@
   if (check_mem_accessibility(ta_num, buf, size) != true)
 #define ASSERT_OUTBUF(ta_num, buf, size) ASSERT_INOUTBUF(ta_num, buf, size)
 #define ASSERT_INBUF(ta_num, buf, size) ASSERT_INOUTBUF(ta_num, buf, size)
-
-// TODO: add asserts for the other annotations.
-// TODO: migrate the checks to use the assertions for readibility.
-// TODO: differentiate between in/out etc.
 
 /************************** RANDOM VALUES GENERATION FUNCTIONS
  * ********************************* */
@@ -207,10 +198,6 @@ static bool check_mem_accessibility(uint8_t ta_num, void *buffer, size_t size) {
   }
 
   // Check if the buffer is in shared memory.
-
-  // TODO: currently all the CA memory is considered shared memory. This is
-  // expected to change in the future as the CA and TA should be separated for
-  // security reasons. A proper implementation of shared memory is needed.
 
   if (is_segment_contained(buffer, size, CA_MEMORY_START_ADDR,
                            CA_MEMORY_END_ADDR) == true) {
@@ -509,7 +496,6 @@ void *internal_TEE_Malloc(size_t size, uint32_t hint, uint8_t ta_num) {
 
   while (curr != NULL) {
     if (!check_block_ownership(ta_num, curr)) {
-      // TODO: This means the heap memory has been tampered or was corrupted.
       return NULL;
     }
 
@@ -552,7 +538,6 @@ void internal_TEE_Free(void *buffer, uint8_t ta_num) {
     return;
   }
 
-  // TODO: possible integer overflow (will probably not pass the next check).
   Block *block = (Block *)(buffer - sizeof(Block));
 
   if (!check_block_ownership(ta_num, block)) {
@@ -731,9 +716,7 @@ TEE_Result internal_TEE_PopulateTransientObject(TEE_ObjectHandle object,
   __TEE_ObjectHandle *temp_obj = (__TEE_ObjectHandle *)object;
 
   // Copy the attributes from the parameter to the object
-  // TODO: it is better to validate the attributes.
   for (uint32_t i = 0; i < attrCount; i++) {
-    // TODO: overflow if attrCount > 4.
     temp_obj->attrs[i].attributeID = attrs[i].attributeID;
     temp_obj->attrs[i].content.ref.buffer = attrs[i].content.ref.buffer;
     temp_obj->attrs[i].content.ref.length = attrs[i].content.ref.length;
@@ -952,7 +935,6 @@ TEE_Result internal_TEE_ReadObjectData(TEE_ObjectHandle object,
     // Create a buffer to read raw flash data
     // If the temp_buffer is too big it will overflow into an unmapped memory
     // area.
-    // TODO: VLA
     char temp_buff[total_size - free_size];
     memset(temp_buff, 0, total_size - free_size);
 
@@ -1051,7 +1033,6 @@ TEE_Result internal_TEE_CreatePersistentObject(
     return TEE_ERROR_BAD_PARAMETERS;
   }
 
-  // TODO: object is [outopt]
   if (check_mem_ownership(ta_num, (void *)object, sizeof(TEE_ObjectHandle)) !=
       true) {
     return TEE_ERROR_BAD_PARAMETERS;
@@ -1095,7 +1076,6 @@ TEE_Result internal_TEE_CreatePersistentObject(
     }
   }
 
-  // TODO: object can be NULL.
   *object = (void *)temp_obj;
 
   return TEE_SUCCESS;
@@ -1123,7 +1103,6 @@ TEE_Result internal_TEE_OpenPersistentObject(
     return TEE_ERROR_BAD_PARAMETERS;
   }
 
-  // TODO: If objectIDLen < 4 this can be used to exfiltrate data.
   uint32_t obj_id = *(uint32_t *)objectID;
 
   // Initialize the cJSON hooks (to be able to use cJSON functions and avoid
@@ -1141,7 +1120,6 @@ TEE_Result internal_TEE_OpenPersistentObject(
   }
 
   flash_getConfig(storageID, &start_addr, &total_size);
-  // TODO: VLA
   char temp_buff[total_size - free_size];
   memset(temp_buff, 0, total_size - free_size);
 
@@ -2128,7 +2106,6 @@ TEE_Result internal_TEE_GenerateKey(TEE_ObjectHandle object, uint32_t keySize,
   // Params will be checked in the internal_TEE_PopulateTransientObject function
   __TEE_ObjectHandle *obj = (__TEE_ObjectHandle *)object;
 
-  // TODO: VLA
   char temp_buffer[keySize / 8];
 
   // Initialize entropy to generate key
@@ -2232,7 +2209,6 @@ void internal_TEE_GenerateRandom(void *randomBuffer, size_t randomBufferLen,
   } while (len < randomBufferLen);
 }
 
-// TODO: Implement the following function if needed
 void internal_TEE_DeriveKey(TEE_OperationHandle operation,
                             TEE_Attribute *params, uint32_t paramCount,
                             TEE_ObjectHandle derivedKey, uint8_t ta_num) {
@@ -2412,7 +2388,6 @@ TEE_Result internal_TEE_CipherDoFinal(TEE_OperationHandle operation,
     }
   }
 
-  // TODO: proper handling.
   remaining_size -= produced_size;
   *destLen += produced_size;
 
