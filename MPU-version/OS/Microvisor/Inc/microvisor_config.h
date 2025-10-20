@@ -1,13 +1,15 @@
 #ifndef __MICROVISOR_CONFIG_H
 #define __MICROVISOR_CONFIG_H
 
+#include <stdint.h>
+
 /* Generic MCU Configuration */
 #define LICENSE_LEN 32
 extern const uint8_t license[LICENSE_LEN]; // MCU-Fortifier license
 extern const uint32_t firmware_size;       // user application size
 
 /* Network Connection Configuration */
-#define SSID "test"
+#define SSID_NAME "test"
 #define PASSWORD "ciao1234"
 
 /* Update Server Connection Configuration */

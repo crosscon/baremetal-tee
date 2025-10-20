@@ -1,7 +1,7 @@
 #include "exception_manager.h"
+#include "stm32l4xx_hal.h"
 #include "core_cm4.h"
 #include "it.h"
-#include "stm32l4xx_hal.h"
 
 #define PRIGROUP_MASK 0b11100000000
 #define PRIGROUP_SHIFT 8
