@@ -35,10 +35,6 @@ TA2_BUILD_DIR = $(BUILD_DIR)/TA/TA2
 
 
 # First TA main file path and include path
-#TA1 = TAs/aes-ta/aes-ta.c
-#TA1_INCLUDE = \
-#-ITAs/aes-ta \
-#-ITAs/aes-ta/include
 TA1 = TAs/bitcoin-wallet-ta/bitcoin_wallet_ta.c
 TA1_INCLUDE = \
 -ITAs/bitcoin-wallet-ta \
@@ -49,7 +45,6 @@ TA1_INCLUDE = \
 TA2 = TAs/ta2/ta2.c
 TA2_INCLUDE = -ITAs/ta2/include
 
-#TODO: move the includes of the tee_common.h to the TA folder
 #TA1_INCLUDE += -ITAs -IMicrovisor/Inc
 TA1_INCLUDE += -ITAs -IMicrovisor/Inc
 TA2_INCLUDE += -ITAs -IMicrovisor/Inc
@@ -69,11 +64,6 @@ TAs/bitcoin-wallet-ta/crypto/ta_ripemd160.c \
 TAs/bitcoin-wallet-ta/crypto/memzero.c \
 TAs/bitcoin-wallet-ta/crypto/bignum.c \
 TAs/bitcoin-wallet-ta/crypto/pbkdf2.c \
-
-#######################################
-## TA1 code (AES TA) and TA2 code
-#######################################
-#TA1_C_SOURCES = \
 
 TA2_C_SOURCES = \
 
@@ -167,7 +157,7 @@ AS_DEFS =
 # C defines
 C_DEFS =  \
 -DUSE_HAL_DRIVER \
--DSTM32L476xx\
+-DSTM32L475xx
 
 # Enable peripherals. This list includes all the STM32L47x/L48x peripherals.
 # Not every peripheral is supported by the specific platform.
