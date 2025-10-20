@@ -71,6 +71,7 @@ safe_bra_fun:
 safe_call_fun:
     DINT
     NOP
+    CALL #checkStackPointer ; Check integrity of SP. If modified to RO mem, the final RET could fetch an illigitimate addres
     CMP #0x4303, @R6
     JNE .stop
     INCD R6
@@ -116,6 +117,7 @@ safe_call_fun:
 safe_calla_fun:
     DINT
     NOP
+    CALL #checkStackPointer ; Check integrity of SP. If modified to RO mem, the final RET could fetch an illigitimate addres
     CMP #0x4303, @R6
     JNE .stop
     INCD R6
@@ -453,6 +455,7 @@ write_subcx_fun:
     .global receiveUpdate
     .type receiveUpdate, @function
 receiveUpdate:
+    MOV #0x43ff, r1         ; Restore the stack pointer
     BR #secureUpdate
 
     .balign 2
