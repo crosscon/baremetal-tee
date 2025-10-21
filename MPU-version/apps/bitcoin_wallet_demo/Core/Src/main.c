@@ -128,11 +128,8 @@ unsigned int command_ids[] = {TA_BITCOIN_WALLET_CMD_2,   //Generate master key
 
 
 static TEEC_Result ta_bitcoin_cmd_generate_new_masterkey(TEEC_Session sess, uint32_t pin, uint32_t cmd_id, uint32_t err_origin, char *mnemonic){
-	TEEC_Operation op;
+	TEEC_Operation op = {0};
 	TEEC_Result res;
-
-	// Clear the TEEC_Operation struct, same as clearing parameter type
-	memset(&op, 0, sizeof(op));
 
 	printf("Generating new master key...\r\n");
 	// Defining the parameter value sent to TA, the parameter are
@@ -384,18 +381,18 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  MX_GPIO_Init();
+  // MX_GPIO_Init();
   MX_USART1_UART_Init();
-  MX_RNG_Init();
+  // MX_RNG_Init();
   /* USER CODE BEGIN 2 */
 
   // Set the random number generator
-  rng_init();
+  // rng_init();
 
   // Variables used by the TEE Client API
   TEEC_Result res;
-  TEEC_Context ctx;
-  TEEC_Session sess;
+  TEEC_Context ctx = {0};
+  TEEC_Session sess = {0};
   TEEC_UUID uuid = TA_BITCOIN_WALLET_UUID;
 
   uint32_t err_origin;
@@ -503,7 +500,7 @@ int main(void)
   TEEC_FinalizeContext(&ctx);
 
   // Deinit RNG
-  rng_deinit();
+  // rng_deinit();
 
   goto exit;
 

@@ -1,7 +1,8 @@
 #ifndef __MEMORY_MAP_H
 #define __MEMORY_MAP_H
 
-/* Define the variables to store the start and end addresses for the various region of the memory */
+/* Define the variables to store the start and end addresses for the various
+ * region of the memory */
 extern unsigned int __flash_boot_start__;
 extern unsigned int __flash_boot_size__;
 extern unsigned int __flash_boot_nopri_start__;

@@ -164,6 +164,8 @@ static TEE_Result generate_new_masterkey(uint32_t param_types, TEE_Param params[
 
 	from_mnemonic_to_masterkey(mnemonic);
 
+    TEE_Free(mnemonic);
+
 	return TEE_SUCCESS;
 }
 
@@ -189,6 +191,8 @@ static TEE_Result mnemonic_to_masterkey(uint32_t param_types, TEE_Param params[4
 	TEE_MemMove(mnemonic, params[1].memref.buffer, MNEMONIC_LENGTH);
 
 	from_mnemonic_to_masterkey(mnemonic);
+
+    TEE_Free(mnemonic);
 
 	return TEE_SUCCESS;
 }
@@ -492,6 +496,7 @@ static uint32_t sign_raw_tx(uint8_t *rawtx, size_t bytes, uint8_t *sig, uint32_t
 	res = TEE_AllocateOperation(&op, TEE_ALG_SHA256, TEE_MODE_DIGEST, 0);
 	res = TEE_DigestDoFinal(op, rawtx, bytes, hash, &hlen);
 	res = TEE_DigestDoFinal(op, hash, hlen, hash, &hlen);
+    TEE_FreeOperation(op);
 
 	//DMSG("Key retrieved");
 	res = TEE_AllocateOperation(&op2, TEE_ALG_ECDSA_P256, TEE_MODE_SIGN, 256);
@@ -511,6 +516,7 @@ static uint32_t sign_raw_tx(uint8_t *rawtx, size_t bytes, uint8_t *sig, uint32_t
 
 	/* Sign the hash of the raw transaction */
 	res = TEE_AsymmetricSignDigest(op2, NULL, 0, hash, hlen, sig, &siglen);
+    TEE_FreeOperation(op2);
 	//if(res != TEE_SUCCESS){
 	//	//DMSG("Error signing 0x%x", res);
 	//} else {
@@ -610,6 +616,8 @@ static TEE_Result ecdsa_to_bitaddr(TEE_ObjectHandle obj, uint8_t *bcadd, uint8_t
 	TEE_MemMove(extripe + 1, ripehash, 20);
 	res = TEE_DigestDoFinal(sha256_op, extripe, 21, shahash, &shasize);
 	res = TEE_DigestDoFinal(sha256_op, shahash, 32, shahash, &shasize);
+
+    TEE_FreeOperation(sha256_op);
 
 
 	/* Sixth stage: Retrieve the checksum and append on the extended key. */

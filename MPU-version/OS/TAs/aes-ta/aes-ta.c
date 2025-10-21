@@ -7,12 +7,14 @@
 
 #include "include/aes-ta.h"
 
+#define AES_BLOCK_SIZE	16
+
 struct  
 {
 	uint32_t algo;			/* AES flavour */
 	uint32_t mode;			/* Encode or decode */
 	uint32_t key_size;		/* AES key size in byte */
-	char     iv[16];
+	char     iv[AES_BLOCK_SIZE];
 	TEE_OperationHandle op;	/* AES ciphering operation */
 	TEE_ObjectHandle key;	/* transient object to load the key */
 }aes;
@@ -68,7 +70,18 @@ int ta_test_aesEncrypt(TEE_Param params[4])
     TEE_CipherInit(aes.op, aes.iv, sizeof(aes.iv));
     //TEE_CipherInit(aes.op, NULL, 0);
 
-    ret = TEE_CipherDoFinal(aes.op, params[0].memref.buffer, params[0].memref.size, params[1].memref.buffer, &params[1].memref.size);
+    if (AES_BLOCK_SIZE != params[0].memref.size && AES_BLOCK_SIZE != params[0].memref.size){
+    	return -1;
+    }
+
+    uint8_t data[AES_BLOCK_SIZE];
+    size_t size = params[1].memref.size;
+    memcpy(data, params[0].memref.buffer, AES_BLOCK_SIZE);
+
+    ret = TEE_CipherDoFinal(aes.op, data, params[0].memref.size, data, &size);
+    params[1].memref.size = size;
+    memcpy(params[1].memref.buffer, data, AES_BLOCK_SIZE);
+
     if(ret != 0){
         return -1;
     }
@@ -100,7 +113,14 @@ int ta_test_aesDecrypt(TEE_Param params[4])
     TEE_CipherInit(aes.op, aes.iv, sizeof(aes.iv));
     //TEE_CipherInit(aes.op, NULL, 0);
 
-    ret = TEE_CipherDoFinal(aes.op, params[1].memref.buffer, params[1].memref.size, params[2].memref.buffer, &params[2].memref.size);
+    uint8_t data[AES_BLOCK_SIZE];
+	size_t size = params[2].memref.size;
+	memcpy(data, params[1].memref.buffer, AES_BLOCK_SIZE);
+
+	ret = TEE_CipherDoFinal(aes.op, data, params[1].memref.size, data, &size);
+	params[2].memref.size = size;
+	memcpy(params[2].memref.buffer, data, AES_BLOCK_SIZE);
+
     if(ret != 0){
         return -1;
     }
